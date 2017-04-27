@@ -13,3 +13,7 @@ hs_err_pid*
 
 # Python pre-compiled
 *.pyc
+
+# (python) enviroment folder
+flask/
+env/

@@ -1,0 +1,4 @@
+- Nice tutorial on project structure and setup
+    https://www.digitalocean.com/community/tutorials/how-to-structure-large-flask-applications
+    for the python env, see this
+    http://stackoverflow.com/questions/31252791/flask-importerror-no-module-named-flask
