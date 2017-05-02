@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='style.css') }}">
+    <title>Strain Web Tool</title>
+</head>
+
+<body>
+<h2>Ntua Strain Estimation Tool</h2>
+
+<hr>
+<p>Select file to upload</p>
+<!-- upload txt file iwith crd, vel, etc... -->
+<form action="/upload" method=post enctype=multipart/form-data>
+    <p><input type=file name=file>
+    <input type=submit value=Upload>
+</form>
+<hr>
+
+<!-- This block is used to display the read stations -->
+{% if stations %}
+    <table id="stations-table">
+    <tr>
+        <th>Name</th>
+        <th>Longtitude (&deg)</th>
+        <th>Latitude (&deg)</th>
+        <th>V<sub>east</sub>(mm/yr)</th>
+        <th>V<sub>north</sub>(mm/yr)</th>
+    </tr>
+    {% for s in stations %}
+    <tr>
+        <td>{{ s.name }}</td>
+        <td>{{ s.lon }}</td>
+        <td>{{ s.lat }}</td>
+        <td>{{ s.ve }}</td>
+        <td>{{ s.vn }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+{% endif %}
+
+<!-- This block is used to display error and warning messages -->
+{% with messages = get_flashed_messages(category_filter=["error"]) %}
+  {% if messages %}
+    <script>
+      var messages = {{ messages | safe }};
+      for (var i=0; i<messages.length; i++) {
+        alert(messages[i]);
+      }
+    </script>
+  {% endif %}
+{% endwith %}
+
+</body>
+
+</html>
