@@ -1,3 +1,5 @@
+from pystrain.station import Station
+
 def parse_ascii_input(filename):
     stations = []
     with open(filename) as fin:

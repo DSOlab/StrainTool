@@ -1,4 +1,5 @@
 from math import sqrt, atan2, atan, pi
+from pystrain import ellipsoid
 
 def top2daz(north, east, up):
     """
@@ -59,7 +60,7 @@ def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
     # Finished.
     return x, y, z
 
-def car2elll(x, y, z, ell=Ellipsoid("wgs84"))
+def car2elll(x, y, z, ell=Ellipsoid("wgs84")):
     """
         Cartesian to ellipsoidal coordinates. Reference: Fukushima, T., 
         "Transformation from Cartesian to geodetic coordinates
