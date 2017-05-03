@@ -68,20 +68,18 @@ def make_grid(sta_list, y_step, x_step):
     return Grid(y_min, y_max, y_step, x_min, x_max, x_step)
 
 def z_weights(sta_lst, cx, cy):
-    n = len(sta_lst)
+    n         = len(sta_lst)
     azimouths = []
     thetas    = []
-    i = 0
-    for sta in sta_lst:
+    for idx, sta in enumerate(sta_lst):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': i}) # normalize to [0, 2pi]
-        i+=1
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
     thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'], 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[0]['az'] - azimouths[n-2]['az'] + 2*pi, 'nr':azimouths[n-1]['nr']})
-    return [ x['w']*n/4*pi for x in sorted(thetas, key=operator.itemgetter('nr') ]
+    return [ x['w']*n/4*pi for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 """
 def ls_matrices(sta_lst):
