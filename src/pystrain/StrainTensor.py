@@ -1,15 +1,48 @@
-#! /usr/bin/python
+#! /usr/bin/python2.7
 
-## standard libls
+############################################## standard libs
 import sys
 from copy import deepcopy
-from math import degrees, floor
-## numpy
+from math import degrees, radians, floor, ceil
+##############################################  numpy
 import numpy
-## pystrain
+##############################################  pystrain
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
+############################################## ploting
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+
+def plot_map(sta_list, stensor_list):
+    lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
+    lon0    = degrees(sum([ x.lon for x in sta_list ])/len(sta_list))
+    lons    = [ degrees(x.lon) for x in sta_list ]
+    lats    = [ degrees(x.lat) for x in sta_list ]
+    lon_off = (max(lons)-min(lons))/10
+    lat_off = (max(lats)-min(lats))/10
+    my_map = Basemap(projection='merc', lat_0 = lat0, lon_0 = lon0, resolution = 'c', llcrnrlon=min(lons)-lon_off, llcrnrlat=min(lats)-lat_off, urcrnrlon=max(lons)+lon_off, urcrnrlat=max(lats)+lat_off)
+    my_map.drawcoastlines()
+    my_map.drawcountries()
+    my_map.fillcontinents(color = 'coral')
+    my_map.drawmapboundary()
+    my_map.drawmeridians(numpy.arange(floor(min(lons)), ceil(max(lons)), 2), labels=[True,False,False,True])
+    my_map.drawparallels(numpy.arange(floor(min(lats)), ceil(max(lats)), 2), labels=[False,True,True,False], fontsize=10)
+
+    for sta in sta_list:
+        x, y = my_map(degrees(sta.lon), degrees(sta.lat))
+        my_map.plot(x, y, 'bo', markersize=10)
+        plt.text(x, y, sta.name)
+        print 'Point at {}, {}'.format(degrees(sta.lon), degrees(sta.lat))
+
+    for tnr in stensor_list:
+        x, y = my_map(degrees(tnr.lon), degrees(tnr.lat))
+        my_map.plot(x, y, 'r+', markersize=8)
+        print 'Tensor at {}, {}'.format(degrees(tnr.lon), degrees(tnr.lat))
+
+    print '[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats))
+    plt.show()
+    return
 
 X_GRID_STEP = 40000
 Y_GRID_STEP = 40000
@@ -41,11 +74,16 @@ print '\t[DEBUG] Northing: from {} to {} with step {}'.format(grd.y_min, grd.y_m
 
 print '[DEBUG] Estimating strain tensor for each cell center'
 ##  Iterate through the grid (on each cell center)
+strain_list = []
 for x, y in grd:
-    print '\t[DEBUG] Strain at E={}, N={}'.format(x, y)
+    clat, clon = utm2ell(x, y, utm_zone)
+    print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
     ##  Construct the LS matrices, A and b
     A, b = ls_matrices(sta_list_utm, x, y)
     ##  Solve LS
     x, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
     ## print result
     print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
+    strain_list.append(Station(lat=clat, lon=clon))
+
+plot_map(sta_list_ell, strain_list)
