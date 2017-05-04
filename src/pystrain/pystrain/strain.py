@@ -106,23 +106,26 @@ def z_weights(sta_lst, cx, cy):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
-    print '\t[DEBUG] Station azimouths (decimal degrees):'
-    for ii in azimouths:
-        print '\t\tstation {} A={}'.format(sta_lst[ii['nr']].name, degrees(ii['az']))
-    thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'], 'nr':azimouths[0]['nr']})
+    #print '\t[DEBUG] Station azimouths (decimal degrees):'
+    #for ii in azimouths:
+    #    print '\t\tstation {} A={}'.format(sta_lst[ii['nr']].name, degrees(ii['az']))
+    thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'] + 2*pi, 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[0]['az'] - azimouths[n-2]['az'] + 2*pi, 'nr':azimouths[n-1]['nr']})
-    print '\t[DEBUG] Station theta angles (decimal degrees):'
-    for ii in thetas:
-        print '\t\tstation {} theta={}'.format(sta_lst[ii['nr']].name, degrees(ii['w']))
+    # double check!
+    for angle in thetas:
+        assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(sta_lst[angle['nr']].name)
+    #print '\t[DEBUG] Station theta angles (decimal degrees):'
+    #for ii in thetas:
+    #    print '\t\tstation {} theta={}'.format(sta_lst[ii['nr']].name, degrees(ii['w']))
     #return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
     Z = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
-    for z in Z:
-        print '\t[DEBUG] z(i)={}'.format(z)
+    for z in sorted(thetas, key=operator.itemgetter('nr')):
+        print '\t[DEBUG] {} Z={}'.format(sta_lst[z['nr']].name, z['w']*n/(4*pi))
     return Z
 
-def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=1):
+def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=20):
     """
     """
     if dmin >= dmax or dstep < 0:
@@ -131,9 +134,13 @@ def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=1):
     dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy)) for x in sta_lst ]
     # iterate through [dmin, dmax] to find optimal d
     for d in numpy.arange(dmin, dmax, dstep):
+        print '\t[DEBUG] Computing Li for d={}'.format(d)
         l    = [ exp(-pow(dri/d,2)) for dri in dr ]
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ]) # w(i) = l(i)*z(i)
-        if w == Wt: return l
+        for idx,li in enumerate(l):
+            print '\t\t{} L={} (distance={}, value={})'.format(sta_lst[idx].name, li, dr[idx], l[idx])
+        if w == Wt:
+            return l
         print '\t[DEBUG] l_weights: w={} != Wt={}'.format(w, Wt)
     # fuck! cannot find optimal D
     print '[DEBUG] Cannot compute optimal D in weighting scheme'
