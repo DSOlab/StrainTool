@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import sys, numpy, operator
-from math import atan2, exp, sqrt, floor, pi
+from math import atan2, exp, sqrt, floor, pi, degrees
 from station import Station
 
 class Grid:
@@ -106,11 +106,21 @@ def z_weights(sta_lst, cx, cy):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
+    print '\t[DEBUG] Station azimouths (decimal degrees):'
+    for ii in azimouths:
+        print '\t\tstation {} A={}'.format(sta_lst[ii['nr']].name, degrees(ii['az']))
     thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'], 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[0]['az'] - azimouths[n-2]['az'] + 2*pi, 'nr':azimouths[n-1]['nr']})
-    return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+    print '\t[DEBUG] Station theta angles (decimal degrees):'
+    for ii in thetas:
+        print '\t\tstation {} theta={}'.format(sta_lst[ii['nr']].name, degrees(ii['w']))
+    #return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+    Z = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+    for z in Z:
+        print '\t[DEBUG] z(i)={}'.format(z)
+    return Z
 
 def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=1):
     """
