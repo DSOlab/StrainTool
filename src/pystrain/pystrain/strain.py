@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import sys, numpy, operator
-from math import atan2, exp, sqrt, floor
+from math import atan2, exp, sqrt, floor, pi
 from station import Station
 
 class Grid:
@@ -70,13 +70,13 @@ def make_grid(sta_lst, x_step, y_step):
     x_max = sys.float_info.min
     for s in sta_lst:
         if   s.lon > x_max:
-            max_x = s.lon
+            x_max = s.lon
         elif s.lon < x_min:
-            min_x = s.lon
+            x_min = s.lon
         if   s.lat > y_max:
-            max_y = s.lat
+            y_max = s.lat
         elif s.lat < y_min:
-            min_y = s.lat
+           y_min = s.lat
     # adjust max and min to step
     div = (y_max-y_min)/y_step
     rem = div - floor(div)
@@ -104,13 +104,13 @@ def z_weights(sta_lst, cx, cy):
     thetas    = []
     for idx, sta in enumerate(sta_lst):
         az = atan2(sta.lon-cx, sta.lat-cy)
-        azimouths.append({'az': az+int(az<0)*2*pi, 'nr': i}) # normalize to [0, 2pi]
+        azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
     thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'], 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[0]['az'] - azimouths[n-2]['az'] + 2*pi, 'nr':azimouths[n-1]['nr']})
-    return [ x['w']*n/4*pi for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+    return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=1):
     """
@@ -121,9 +121,10 @@ def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=1):
     dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy)) for x in sta_lst ]
     # iterate through [dmin, dmax] to find optimal d
     for d in numpy.arange(dmin, dmax, dstep):
-        l = [ exp(-pow(dri/d,2)) for dri in dr ]
-        w = sum([ x[0]*x[1] for x in zip(l,z_weights) ])
+        l    = [ exp(-pow(dri/d,2)) for dri in dr ]
+        w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ]) # w(i) = l(i)*z(i)
         if w == Wt: return l
+        print '\t[DEBUG] l_weights: w={} != Wt={}'.format(w, Wt)
     # fuck! cannot find optimal D
     print '[DEBUG] Cannot compute optimal D in weighting scheme'
     raise RuntimeError

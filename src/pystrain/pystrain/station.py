@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, radians
 
 # Any Station instance, can have any (or all) of these attributes
 station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
@@ -29,8 +29,8 @@ class Station:
         l = input_line.split()
         try:
             self.name = l[0]
-            self.lon  = float(l[1])
-            self.lat  = float(l[2])
+            self.lon  = radians(float(l[1]))
+            self.lat  = radians(float(l[2]))
             self.ve   = float(l[3])
             self.vn   = float(l[4])
             self.se   = float(l[5])

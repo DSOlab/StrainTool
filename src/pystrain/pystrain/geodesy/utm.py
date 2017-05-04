@@ -10,7 +10,7 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), lcm=None):
 
     Zone = floor(degrees(lon)/6)+31
     Zone = Zone + int(Zone<=0)*60 - int(Zone>60)*60
-    lcm = radians(Zone*6-183)
+    lcm  = radians(Zone*6-183)
 
     ko = 0.9996   # Scale factor
     if lat > 0:
