@@ -3,7 +3,66 @@
 from math import floor, degrees, radians, pi, sin, cos, tan
 from pystrain.geodesy.ellipsoid import Ellipsoid
 
+def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
+    if not lcm:
+        lcm = radians(abs(zone)*6-183)
+
+    f   = ell.f
+    a   = ell.a
+    e2  = ell.eccentricity_squared()
+    e22 = e2*e2
+    e23 = e22*e2
+    e24 = e23*e2
+
+    No = 0           # False northing (north)
+    if zone < 0:
+        No = 1e7     # False northing (south)
+    Eo = 500000      # False easting
+    N = N-No
+    E = E-Eo
+    Zone = abs(zone) # Remove negative zone indicator for southern hemisphere
+    ko = 0.9996      # UTM scale factor
+    lat1 = N/ko/a
+    dlat = 1
+    while abs(dlat) > 1e-12:
+        A0=1-(e2/4)-(e22*3/64.0)-(e23*5/256.0)-(e24*175/16384.0)
+        A2=(3/8.0)*( e2+(e22/4.0)+(e23*15/128.0)-(e24*455/4096.0) )
+        A4=(15/256.0)*( e22+(e23*3/4.0)-(e24*77/128.0) )
+        A6=(35/3072.0)*( e23-(e24*41/32.0) )
+        A8=-(315/131072.0)*e24
+        f1=a*( A0*lat1-A2*sin(2*lat1)+A4*sin(4*lat1)-A6*sin(6*lat1)+A8*sin(8*lat1) )-N/ko
+        f2=a*( A0-2*A2*cos(2*lat1)+4*A4*cos(4*lat1)-6*A6*cos(6*lat1)+8*A8*cos(8*lat1) )
+        dlat=-f1/f2
+        lat1=lat1+dlat
+    RN = ell.N(lat)
+    RM = ell.M(lat)
+    h2 = e2*pow(cos(lat1),2)/(1-e2)
+    t  = tan(lat1)
+    t2 = pow(t,2)
+    t4 = t2*t2
+    t6 = t4*t2
+
+    E0 = E/ko/RN
+    E1 = E0
+    E2 = pow(E0,3)/6.*(1+2*t2+h2)
+    E3 = pow(E0,5)/120.*(5+6*h2+28*t2-3*h2^2+8*t2*h2+24*t4-4*h2^3+4*t2*h2^2+24*t2*h2^3)
+    E4 = pow(E0,7)/5040.*(61 + 662*t2 + 1320*t4 + 720*t6)
+    lon = sec(lat1)*(E1-E2+E3-E4)+lcm
+
+    E0=E/ko
+    N1=(t.*E0.^2)./(2*RM.*RN)
+    N2=(t.*E0.^4)./(24*RM.*RN.^3).*(5+3.*t.^2+h2-4*h2.^2-9*h2.*t.^2)
+    N3=(t.*E0.^6)./(720*RM.*RN.^5).*(61-90*t.^2+46*h2+45*t.^4-252*t.^2.*h2- ...
+            5*h2.^2+100*h2.^3-66*t.^2.*h2.^2-90*t.^4.*h2+88*h2.^4+225*t.^4.*h2.^2+ ...
+            84*t.^2.*h2.^3 - 192*t.^2.*h2.^4)
+    N4=(t.*E0.^8)./(40320*RM.*RN.^7).*(1385+3633*t.^2+4095*t.^4+1575*t.^6)
+    lat=lat1-N1+N2-N3+N4
+
 def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
+    """
+        All input arguments in radians.
+        TODO zone should be given in degrees
+    """
     f  = ell.f
     a  = ell.a
     e2 = ell.eccentricity_squared()
@@ -22,7 +81,7 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
         No = 1e7  # False northing (south)
     Eo = 500000   # False easting
 
-    lam = lon-lcm;
+    lam = lon-lcm
     if lam >= pi: lam = lam - pi*2
 
     RN = ell.N(lat)
