@@ -54,6 +54,6 @@ class Station:
         self.t    = None
 
     def distance_from(self, sta):
-        dlat = sta.lat - self.lat
         dlon = sta.lon - self.lon
+        dlat = sta.lat - self.lat
         return dlat, dlon, sqrt(dlat*dlat + dlon*dlon)
