@@ -3,13 +3,16 @@
 from math import floor, degrees, radians, pi, sin, cos, tan
 from pystrain.geodesy.ellipsoid import Ellipsoid
 
-def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), lcm=None):
+def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
     f  = ell.f
     a  = ell.a
     e2 = ell.eccentricity_squared()
 
-    Zone = floor(degrees(lon)/6)+31
-    Zone = Zone + int(Zone<=0)*60 - int(Zone>60)*60
+    if zone:
+        Zone = zone
+    else:
+        Zone = floor(degrees(lon)/6)+31
+        Zone = Zone + int(Zone<=0)*60 - int(Zone>60)*60
     lcm  = radians(Zone*6-183)
 
     ko = 0.9996   # Scale factor

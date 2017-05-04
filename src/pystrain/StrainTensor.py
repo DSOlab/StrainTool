@@ -3,6 +3,7 @@
 ## standard libls
 import sys
 from copy import deepcopy
+from math import degrees, floor
 ## numpy
 import numpy
 ## pystrain
@@ -19,12 +20,17 @@ sta_list_ell = parse_ascii_input( sys.argv[1] )
 print '\t[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
 
 ##  Make a new station list (copy of the original one), where all coordinates
-##+ are in UTM
+##+ are in UTM. All points should belong to the same ZONE.
+mean_lon = degrees(sum([ x.lon for x in sta_list_ell ])/len(sta_list_ell))
+utm_zone = floor(mean_lon/6)+31
+utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
+print '[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone)
 sta_list_utm = deepcopy(sta_list_ell)
 for idx, sta in enumerate(sta_list_utm):
-    N, E, Zone, lcm = ell2utm(sta.lat, sta.lon)
+    N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), utm_zone)
     sta_list_utm[idx].lon = E
     sta_list_utm[idx].lat = N
+    assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
 print '[DEBUG] Station list transformed to UTM.'
 for sta in sta_list_utm:
     print '\t[DEBUG] {} E={} N={}'.format(sta.name, sta.lon, sta.lat)
