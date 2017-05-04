@@ -120,30 +120,32 @@ def z_weights(sta_lst, cx, cy):
     #for ii in thetas:
     #    print '\t\tstation {} theta={}'.format(sta_lst[ii['nr']].name, degrees(ii['w']))
     #return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
-    Z = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
-    for z in sorted(thetas, key=operator.itemgetter('nr')):
-        print '\t[DEBUG] {} Z={}'.format(sta_lst[z['nr']].name, z['w']*n/(4*pi))
-    return Z
+    return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+    #for z in sorted(thetas, key=operator.itemgetter('nr')):
+    #    #print '\t[DEBUG] {} Z={}'.format(sta_lst[z['nr']].name, z['w']*n/(4*pi))
+    #return Z
 
-def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=100, dstep=20):
+def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=500, dstep=2):
     """
+        dmin, dmax and dstep must be given in km.
     """
     if dmin >= dmax or dstep < 0:
         raise RuntimeError
     # distance from center for each station
-    dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy)) for x in sta_lst ]
+    dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000 for x in sta_lst ]
     # iterate through [dmin, dmax] to find optimal d
     for d in numpy.arange(dmin, dmax, dstep):
-        print '\t[DEBUG] Computing Li for d={}'.format(d)
+        #print '\t[DEBUG] Computing Li for d={}'.format(d)
         l    = [ exp(-pow(dri/d,2)) for dri in dr ]
-        w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ]) # w(i) = l(i)*z(i)
-        for idx,li in enumerate(l):
-            print '\t\t{} L={} (distance={}, value={})'.format(sta_lst[idx].name, li, dr[idx], l[idx])
-        if w == Wt:
+        w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
+        #for idx,li in enumerate(l):
+        #    print '\t\t{} L={} (distance={}km, value={})'.format(sta_lst[idx].name, li, dr[idx], l[idx])
+        #print '\t[DEBUG] Sum of weights = {}'.format(w)
+        if int(round(w)) == Wt:
             return l
-        print '\t[DEBUG] l_weights: w={} != Wt={}'.format(w, Wt)
+        #print '\t[DEBUG] l_weights: w={} != Wt={}'.format(w, Wt)
     # fuck! cannot find optimal D
-    print '[DEBUG] Cannot compute optimal D in weighting scheme'
+    print '[ERROR] Cannot compute optimal D in weighting scheme'
     raise RuntimeError
 
 def ls_matrices(sta_lst, cx, cy):
@@ -155,6 +157,7 @@ def ls_matrices(sta_lst, cx, cy):
     zw = z_weights(sta_lst, cx, cy)
     # the distance weights
     lw = l_weights(sta_lst, cx, cy, zw)
+    assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
     # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
     # a column vector
     # W = numpy.zeros(shape=(N,1))
@@ -164,18 +167,18 @@ def ls_matrices(sta_lst, cx, cy):
     xyr = [ x.distance_from(cc) for x in sta_lst ]
     ## design matrix A, observation matrix b
     A = numpy.zeros(shape=(N,M))
-    b = numpy.zeros(shape=(M,1))
+    b = numpy.zeros(shape=(N,1))
     i = 0
-    for sta in sta_lst:
-        dx, dy, dr = xyr[i]
-        Wx     = (1.0/sta.ve)*zw[i]*lw[i]
-        Wy     = (1.0/sta.vn)*zw[i]*lw[i]
-        A[i]   = [1, 0,  dy,  dx, dy,  0] * Wx
-        A[i+1] = [0, 1, -dx,   0, dx, dy] * Wy
-        b[i]   = sta.ve * Wx
-        b[i+1] = sta.vn * Wy
+    for idx,sta in enumerate(sta_lst):
+        dx, dy, dr = xyr[idx]
+        Wx     = (1.0/sta.ve)*zw[idx]*lw[idx]
+        Wy     = (1.0/sta.vn)*zw[idx]*lw[idx]
+        A[i]   = [ Wx*j for j in [1, 0,  dy,  dx, dy,  0] ]
+        A[i+1] = [ Wy*j for j in [0, 1, -dx,   0, dx, dy] ]
+        b[i]   = (sta.ve/1000) * Wx
+        b[i+1] = (sta.vn/1000) * Wy
         i+=2
-    assert i is N*2, "[DEBUG] Failed to construct ls matrices"
+    assert i is N, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
     return A, b

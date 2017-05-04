@@ -11,8 +11,8 @@ from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 
-X_GRID_STEP = 20000
-Y_GRID_STEP = 20000
+X_GRID_STEP = 40000
+Y_GRID_STEP = 40000
 print '[DEBUG] x and y step sizes are {} and {} meters on UTM'.format(X_GRID_STEP, Y_GRID_STEP)
 
 ##  Parse stations from input file
@@ -32,8 +32,6 @@ for idx, sta in enumerate(sta_list_utm):
     sta_list_utm[idx].lat = N
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
 print '[DEBUG] Station list transformed to UTM.'
-for sta in sta_list_utm:
-    print '\t[DEBUG] {} E={} N={}'.format(sta.name, sta.lon, sta.lat)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 grd = make_grid(sta_list_utm, X_GRID_STEP, Y_GRID_STEP)
@@ -48,4 +46,6 @@ for x, y in grd:
     ##  Construct the LS matrices, A and b
     A, b = ls_matrices(sta_list_utm, x, y)
     ##  Solve LS
-    linalg.lstsq(A, b)
+    x, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+    ## print result
+    print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
