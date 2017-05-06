@@ -23,28 +23,36 @@ class Grid:
 
     """
     def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
-        self.y_min = y_min
-        self.y_max = y_max
-        self.y_step= y_step
         self.x_min = x_min
         self.x_max = x_max
         self.x_step= x_step
-        self.cy    = self.y_min + self.y_step/2
-        self.cx    = self.x_min + self.x_step/2
+        self.y_min = y_min
+        self.y_max = y_max
+        self.y_step= y_step
+        self.cxi    = 0
+        self.cyi    = 0
+        self.xpts   = (x_max-x_min)/x_step - 1
+        self.ypts   = (y_max-y_min)/y_step - 1
 
     def __iter__(self):
         return self
 
+    def xidx2xval(self, idx):
+        return self.x_min + self.x_step/2 + self.x_step*idx
+    
+    def yidx2yval(self, idx):
+        return self.y_min + self.y_step/2 + self.y_step*idx
+
     def next(self):
-        if self.cx >=  self.x_max - self.x_step/2:
-            if self.cy >= self.y_max - self.y_step/2:
+        if self.cxi > self.xpts:
+            if self.cyi > self.ypts:
                 raise StopIteration
-            self.cx =  self.x_min + self.x_step/2
-            self.cy += self.y_step
-            return self.cy - self.y_step, self.x_max - self.x_step/2
+            self.cxi  = 0
+            self.cyi += 1
+            return self.x_max - self.x_step/2, self.yidx2yval(self.cyi-1)
         else:
-            self.cx += self.x_step
-            return self.cy, self.cx - self.x_step
+            self.cxi += 1
+            return self.xidx2xval(self.cxi-1), self.yidx2yval(self.cyi)
 
 def barycenter(sta_list):
     '''
@@ -64,6 +72,7 @@ def make_grid(sta_lst, x_step, y_step):
         extracted from the station coordinates; if needed, they are adjusted
         so that (xmax-xmin) is divisible (without remainder) with xstep.
     """
+    print "[DEBUG] Constructing grid in UTM"
     y_min = sys.float_info.max
     y_max = sys.float_info.min
     x_min = sys.float_info.max
@@ -78,16 +87,19 @@ def make_grid(sta_lst, x_step, y_step):
         elif s.lat < y_min:
            y_min = s.lat
     # adjust max and min to step
-    div = (y_max-y_min)/y_step
-    rem = div - floor(div)
-    y_min -= rem/2
-    y_max += rem/2
-    div = (x_max-x_min)/x_step
-    rem = div - floor(div)
-    x_min -= rem/2
-    x_max += rem/2
+    print "\tRegion: Easting: {}/{} Northing: {}/{}".format(x_min, x_max, y_min, y_max)
+    s      = float((floor((y_max-y_min)/y_step)+1)*y_step)
+    r      = s-(y_max-y_min)
+    y_min -= r/2
+    y_max += r/2
+    print "\tAdjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step)
+    s      = float((floor((x_max-x_min)/x_step)+1)*x_step)
+    r      = s-(x_max-x_min)
+    x_min -= r/2
+    x_max += r/2
+    print "\tAdjusted Easting: from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step)
     # return a Grid instance
-    return Grid(y_min, y_max, y_step, x_min, x_max, x_step)
+    return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
 def z_weights(sta_lst, cx, cy):
     """

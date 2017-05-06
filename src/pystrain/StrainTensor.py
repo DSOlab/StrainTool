@@ -50,7 +50,7 @@ print '[DEBUG] x and y step sizes are {} and {} meters on UTM'.format(X_GRID_STE
 
 ##  Parse stations from input file
 sta_list_ell = parse_ascii_input( sys.argv[1] )
-print '\t[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
+print '[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
@@ -69,21 +69,26 @@ print '[DEBUG] Station list transformed to UTM.'
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 grd = make_grid(sta_list_utm, X_GRID_STEP, Y_GRID_STEP)
 print '[DEBUG] Constructed the grid. Limits are:'
-print '\t[DEBUG] Easting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
-print '\t[DEBUG] Northing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
+print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
+print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
 
 print '[DEBUG] Estimating strain tensor for each cell center'
 ##  Iterate through the grid (on each cell center)
 strain_list = []
+prev_x = 0
+prev_y = 0
 for x, y in grd:
     clat, clon = utm2ell(x, y, utm_zone)
     print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
+    print '\t[DEBUG] x_step={}, y_step={}'.format(x-prev_x, y-prev_y)
     ##  Construct the LS matrices, A and b
     A, b = ls_matrices(sta_list_utm, x, y)
     ##  Solve LS
-    x, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+    estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
     ## print result
-    print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
+    # print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
     strain_list.append(Station(lat=clat, lon=clon))
+    prev_x = x
+    prev_y = y
 
 plot_map(sta_list_ell, strain_list)
