@@ -4,8 +4,9 @@
 import sys
 from copy import deepcopy
 from math import degrees, radians, floor, ceil
-##############################################  numpy
+##############################################  numpy & argparse
 import numpy
+import argparse
 ##############################################  pystrain
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
@@ -44,12 +45,33 @@ def plot_map(sta_list, stensor_list):
     plt.show()
     return
 
-X_GRID_STEP = 40000
-Y_GRID_STEP = 40000
-print '[DEBUG] x and y step sizes are {} and {} meters on UTM'.format(X_GRID_STEP, Y_GRID_STEP)
+parser = argparse.ArgumentParser(
+    description='Estimate Strain Tensor(s) from GNSS derived velocities.',
+    epilog=('National Technical University of Athens\n'
+    'Dionysos Satellite Observatory\n'
+    'Send bug reports to:\n'
+    'Xanthos Papanikolaou xanthos@mail.ntua.gr\n'
+    'Demitris Anastasiou danast@mail.ntua.gr'))
+parser.add_argument('-i', '--input-file',
+    default=None,
+    metavar='INPUT_FILE',
+    dest='gps_file')
+parser.add_argument('--x-grid-step',
+    default=50000,
+    metavar='X_GRID_STEP',
+    dest='x_grid_step',
+    type=float,
+    required=False)
+parser.add_argument('--y-grid-step',
+    default=50000,
+    metavar='Y_GRID_STEP',
+    dest='y_grid_step',
+    type=float,
+    required=False)
+args = parser.parse_args()
 
 ##  Parse stations from input file
-sta_list_ell = parse_ascii_input( sys.argv[1] )
+sta_list_ell = parse_ascii_input(args.gps_file)
 print '[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
 
 ##  Make a new station list (copy of the original one), where all coordinates
@@ -67,7 +89,7 @@ for idx, sta in enumerate(sta_list_utm):
 print '[DEBUG] Station list transformed to UTM.'
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
-grd = make_grid(sta_list_utm, X_GRID_STEP, Y_GRID_STEP)
+grd = make_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
 print '[DEBUG] Constructed the grid. Limits are:'
 print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
 print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)

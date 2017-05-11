@@ -1,4 +1,5 @@
 #! /usr/bin/python
+#-*- coding: utf-8 -*-
 
 import sys, numpy, operator
 from math import atan2, exp, sqrt, floor, pi, degrees
@@ -87,23 +88,23 @@ def make_grid(sta_lst, x_step, y_step):
         elif s.lat < y_min:
            y_min = s.lat
     # adjust max and min to step
-    print "\tRegion: Easting: {}/{} Northing: {}/{}".format(x_min, x_max, y_min, y_max)
+    print "\t[DEBUG] Region: Easting: {}/{} Northing: {}/{}".format(x_min, x_max, y_min, y_max)
     s      = float((floor((y_max-y_min)/y_step)+1)*y_step)
     r      = s-(y_max-y_min)
     y_min -= r/2
     y_max += r/2
-    print "\tAdjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step)
+    print "\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step)
     s      = float((floor((x_max-x_min)/x_step)+1)*x_step)
     r      = s-(x_max-x_min)
     x_min -= r/2
     x_max += r/2
-    print "\tAdjusted Easting: from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step)
+    print "\t[DEBUG] Adjusted Easting: from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step)
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
 def z_weights(sta_lst, cx, cy):
     """
-        Given a  list of Stations and the coordinates of a central point (i.e.
+        Given a list of Stations and the coordinates of a central point (i.e.
         cx, cy), compute and return the function:
         Z(i) = n*theta(i)/4pi
         which is used as a weighting function from strain estimation in Shen 
@@ -118,9 +119,6 @@ def z_weights(sta_lst, cx, cy):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
-    #print '\t[DEBUG] Station azimouths (decimal degrees):'
-    #for ii in azimouths:
-    #    print '\t\tstation {} A={}'.format(sta_lst[ii['nr']].name, degrees(ii['az']))
     thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'] + 2*pi, 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
@@ -128,39 +126,83 @@ def z_weights(sta_lst, cx, cy):
     # double check!
     for angle in thetas:
         assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(sta_lst[angle['nr']].name)
-    #print '\t[DEBUG] Station theta angles (decimal degrees):'
-    #for ii in thetas:
-    #    print '\t\tstation {} theta={}'.format(sta_lst[ii['nr']].name, degrees(ii['w']))
-    #return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
     return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
-    #for z in sorted(thetas, key=operator.itemgetter('nr')):
-    #    #print '\t[DEBUG] {} Z={}'.format(sta_lst[z['nr']].name, z['w']*n/(4*pi))
-    #return Z
 
-def l_weights(sta_lst, cx, cy, z_weights, Wt=24, dmin=1, dmax=500, dstep=2):
+def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     """
-        dmin, dmax and dstep must be given in km.
+        Compute L(i) for each of the points in the station list sta_lst, where
+        L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
+        L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
+
+        To compute the function, the parameter D is needed; in this function the
+        approach is to try different D values (from dmin to dmax with step
+        dstep), untill the total re-weighting coefficient of the data approaches
+        the limit Wt. The re-weighting coefficient is:
+        W = Σ{i=0, i=len(sta_lst)*2}G(i)
+        where Σ denotes the sum and G(i) = L(i) * Z(i); this is why we also need
+        (as function input) the Z weights (as list).
+
+        The parameters dmin, dmax and dstep must be given in km. Wt must be an
+        integer.
+
+        Args:
+            sta_lst: A list of Station instances, i.e. the list of stations
+            cx: The x coordinate of the center point
+            cy: The y coordinate of the center point
+            z_weights: A list of weights (i.e. float values) for each station
+            **kwargs: Arbitrary keyword arguments; the following are relevant:
+                ltype: type of weighting function; can be either 'gaussian', or
+                    'quadratic'.
+                Wt:    value for optimal Wt; default is 24
+                dmin:  Minimum value of tested D's; default is 1
+                dmax:  Maximum value of tested D's; defult is 500
+                dstep: Step for searching for optimal D, from dmin to dmax untill
+                    we hit Wt; default is 2
+
+        Returns:
+            a list of weights (i.e. L(i) values) for each station.
+
+        Raises:
+            RuntimeError if dmin > dmax, or if we cannot find an optimal D.
     """
-    if dmin >= dmax or dstep < 0:
+    if not 'ltype' in kargs : kargs['ltype'] = 'gaussian'
+    if not 'Wt' in kargs    : kargs['Wt']    = 24
+    if not 'dmin' in kargs  : kargs['dmin']  = 1
+    if not 'dmax' in kargs  : kargs['dmax']  = 500
+    if not 'dstep' in kargs : kargs['dstep'] = 2
+
+    def gaussian(dri, d):  return exp(-pow(dri/d,2))
+    def quadratic(dri, d): return 1.0/(1.0+pow(dri/d,2))
+
+    if kargs['dmin'] >= kargs['dmax'] or kargs['dstep'] < 0: raise RuntimeError
+
+    if kargs['ltype'] == 'gaussian':
+        l_i = gaussian
+    elif kargs['ltype'] == 'quadratic':
+        l_i = quadratic
+    else:
         raise RuntimeError
-    # distance from center for each station
+
+    # list of distances for each point from center
     dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000 for x in sta_lst ]
     # iterate through [dmin, dmax] to find optimal d
-    for d in numpy.arange(dmin, dmax, dstep):
-        #print '\t[DEBUG] Computing Li for d={}'.format(d)
-        l    = [ exp(-pow(dri/d,2)) for dri in dr ]
+    for d in numpy.arange(kargs['dmin'], kargs['dmax'], kargs['dstep']):
+        #l    = [ exp(-pow(dri/d,2)) for dri in dr ]
+        l    = [ l_i(dri,d) for dri in dr ]
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
-        #for idx,li in enumerate(l):
-        #    print '\t\t{} L={} (distance={}km, value={})'.format(sta_lst[idx].name, li, dr[idx], l[idx])
-        #print '\t[DEBUG] Sum of weights = {}'.format(w)
-        if int(round(w)) == Wt:
+        if int(round(w)) == kargs['Wt']:
             return l
-        #print '\t[DEBUG] l_weights: w={} != Wt={}'.format(w, Wt)
     # fuck! cannot find optimal D
     print '[ERROR] Cannot compute optimal D in weighting scheme'
     raise RuntimeError
 
-def ls_matrices(sta_lst, cx, cy):
+def ls_matrices(sta_lst, cx, cy, **kargs):
+    """
+        Construct Least Square Matrices (A and b) to be solved for. The function
+        will first evaluate the covariance matrix C, where:
+        W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
+        of each obervable.
+    """
     # numper of rows (observations)
     N = len(sta_lst)*2
     # number of columns (parameters)
@@ -168,7 +210,7 @@ def ls_matrices(sta_lst, cx, cy):
     # the (spatial) weights, i.e. Z(i)
     zw = z_weights(sta_lst, cx, cy)
     # the distance weights
-    lw = l_weights(sta_lst, cx, cy, zw)
+    lw = l_weights(sta_lst, cx, cy, zw, **kargs)
     assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
     # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
     # a column vector
