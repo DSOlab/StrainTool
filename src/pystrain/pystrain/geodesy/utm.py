@@ -3,6 +3,15 @@
 from math import floor, degrees, radians, pi, sin, cos, tan
 from pystrain.geodesy.ellipsoid import Ellipsoid
 
+def dd2dms(dd):
+    dd1  = abs(float(dd))
+    cdeg = int(dd1)
+    minsec = dd1 - cdeg
+    cmin = int(minsec * 60)
+    csec = (minsec % 60) / float(3600)
+    if dd < 0: cdeg = cdeg * -1
+    return cdeg,cmin,csec
+
 def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
     if not lcm:
         lcm = radians(abs(zone)*6-183)
@@ -17,11 +26,11 @@ def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
     No = 0           # False northing (north)
     if zone < 0:
         No = 1e7     # False northing (south)
-    Eo = 500000      # False easting
-    N = N-No
-    E = E-Eo
+    Eo   = 500000      # False easting
+    N    = N-No
+    E    = E-Eo
     Zone = abs(zone) # Remove negative zone indicator for southern hemisphere
-    ko = 0.9996      # UTM scale factor
+    ko   = 0.9996      # UTM scale factor
     lat1 = N/ko/a
     dlat = 1
     while abs(dlat) > 1e-12:
@@ -45,11 +54,11 @@ def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
     h23 = h22*h2
     h24 = h23*h2
 
-    E0 = E/ko/RN
-    E1 = E0
-    E2 = pow(E0,3)/6.*(1+2*t2+h2)
-    E3 = pow(E0,5)/120.*(5+6*h2+28*t2-3*h22+8*t2*h2+24*t4-4*h23+4*t2*h22+24*t2*h23)
-    E4 = pow(E0,7)/5040.*(61 + 662*t2 + 1320*t4 + 720*t6)
+    E0  = E/ko/RN
+    E1  = E0
+    E2  = pow(E0,3)/6.*(1+2*t2+h2)
+    E3  = pow(E0,5)/120.*(5+6*h2+28*t2-3*h22+8*t2*h2+24*t4-4*h23+4*t2*h22+24*t2*h23)
+    E4  = pow(E0,7)/5040.*(61 + 662*t2 + 1320*t4 + 720*t6)
     lon = (1/cos(lat1))*(E1-E2+E3-E4)+lcm
 
     E0 = E/ko
@@ -74,13 +83,14 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
     else:
         Zone = floor(degrees(lon)/6)+31
         Zone = Zone + int(Zone<=0)*60 - int(Zone>60)*60
-    lcm  = radians(Zone*6-183)
+    lcm = radians(Zone*6-183)
 
     ko = 0.9996   # Scale factor
     if lat > 0:
         No = 0    # False northing (north)
     else:
         No = 1e7  # False northing (south)
+        Zone *= -1e0
     Eo = 500000   # False easting
 
     lam = lon-lcm
@@ -146,11 +156,13 @@ if __name__ == "__main__":
         [5812911.69963288, 320704.446318808, 55, 2.56563400043166],
         [4285969.85875752, 487890.758080714, 29, -0.157079632679490]]
     for i in range(0, len(lats)):
+        print '> Testing Point #{} lat={} lon={}'.format(i, lats[i], lons[i])
         n, e, z, l = ell2utm(lats[i], lons[i], ell)
-        print '{} {} {} {}'.format(n, e, z, l)
-        print 'Octave diffs={} {} {} {}'.format(abs(n-octave[i][0]), abs(e-octave[i][1]), abs(z-octave[i][2]), abs(l-octave[i][3]))
+        print '\tNorthing={} Easting={} Zone={} Central Mer.={}'.format(n, e, z, l)
+        print '\tOctave (abs) diffs: dN{} dE{} dZ{} dCM{}'.format(abs(n-octave[i][0]), abs(e-octave[i][1]), abs(z-octave[i][2]), abs(l-octave[i][3]))
         clat, clon = utm2ell(e, n, z, ell)
         if abs(clat-lats[i])>1e-12 or abs(clon-lons[i])>1e-12:
             print '\tERROR Too big discrepancies for station #{}'.format(i)
             print '\tdlat={} dlon={} in decimal degrees'.format(degrees(abs(clat-lats[i])), degrees(abs(clon-lons[i])))
+            print '\tdLat={} dLon={} in seconds'.format(degrees(abs(clat-lats[i]))*3600e0, degrees(abs(clon-lons[i]))*3600e0)
             print '\tInput {}, {} output {}, {}'.format(degrees(lats[i]), degrees(lons[i]), degrees(clat), degrees(clon))
