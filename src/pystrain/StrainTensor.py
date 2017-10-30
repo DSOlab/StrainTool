@@ -46,28 +46,36 @@ def plot_map(sta_list, stensor_list):
     return
 
 parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawTextHelpFormatter,
     description='Estimate Strain Tensor(s) from GNSS derived velocities.',
-    epilog=('National Technical University of Athens\n'
-    'Dionysos Satellite Observatory\n'
-    'Send bug reports to:\n'
-    'Xanthos Papanikolaou xanthos@mail.ntua.gr\n'
-    'Demitris Anastasiou danast@mail.ntua.gr'))
+    epilog=('''National Technical University of Athens,
+    Dionysos Satellite Observatory\n
+Send bug reports to:
+  Xanthos Papanikolaou, xanthos@mail.ntua.gr
+  Demitris Anastasiou,danast@mail.ntua.gr
+November, 2017'''))
+
 parser.add_argument('-i', '--input-file',
     default=None,
     metavar='INPUT_FILE',
-    dest='gps_file')
+    dest='gps_file',
+    required=True)
+
 parser.add_argument('--x-grid-step',
     default=50000,
     metavar='X_GRID_STEP',
     dest='x_grid_step',
     type=float,
     required=False)
+
 parser.add_argument('--y-grid-step',
     default=50000,
     metavar='Y_GRID_STEP',
     dest='y_grid_step',
     type=float,
     required=False)
+
+##  Parse command line arguments.
 args = parser.parse_args()
 
 ##  Parse stations from input file

@@ -4,15 +4,45 @@ from math import floor, degrees, radians, pi, sin, cos, tan
 from pystrain.geodesy.ellipsoid import Ellipsoid
 
 def dd2dms(dd):
+    ''' Decimal degrees to hexicondal degrees.
+        
+        Parameters:
+        -----------
+        dd: float (or something convertible to float).
+
+        Returns:
+        --------
+        tuple of 3 elements. The elements are:
+            # 0 -> integer degrees
+            # 1 -> integer minutes
+            # 2 -> float seconds
+    '''
     dd1  = abs(float(dd))
     cdeg = int(dd1)
     minsec = dd1 - cdeg
     cmin = int(minsec * 60)
     csec = (minsec % 60) / float(3600)
-    if dd < 0: cdeg = cdeg * -1
+    if dd < 0e0: cdeg = cdeg * -1
     return cdeg,cmin,csec
 
 def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
+    '''
+        Convert UTM coordinates (i.e. Easting and Northing) to ellipsoidal
+        coordinates.
+
+        Parameters:
+        -----------
+        E: Easting (float)
+        N: Northing (float)
+        zone:
+        ell:
+        lcm:
+
+        Returns:
+        --------
+        A tuple of two floats; first is latitude and second is longtitude, both
+        in degrees.
+    '''
     if not lcm:
         lcm = radians(abs(zone)*6-183)
 
@@ -26,11 +56,11 @@ def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
     No = 0           # False northing (north)
     if zone < 0:
         No = 1e7     # False northing (south)
-    Eo   = 500000      # False easting
+    Eo   = 500000    # False easting
     N    = N-No
     E    = E-Eo
     Zone = abs(zone) # Remove negative zone indicator for southern hemisphere
-    ko   = 0.9996      # UTM scale factor
+    ko   = 0.9996    # UTM scale factor
     lat1 = N/ko/a
     dlat = 1
     while abs(dlat) > 1e-12:
@@ -161,7 +191,7 @@ if __name__ == "__main__":
         print '\tNorthing={} Easting={} Zone={} Central Mer.={}'.format(n, e, z, l)
         print '\tOctave (abs) diffs: dN{} dE{} dZ{} dCM{}'.format(abs(n-octave[i][0]), abs(e-octave[i][1]), abs(z-octave[i][2]), abs(l-octave[i][3]))
         clat, clon = utm2ell(e, n, z, ell)
-        if abs(clat-lats[i])>1e-12 or abs(clon-lons[i])>1e-12:
+        if abs(clat-lats[i])>5e-10 or abs(clon-lons[i])>5e-10:
             print '\tERROR Too big discrepancies for station #{}'.format(i)
             print '\tdlat={} dlon={} in decimal degrees'.format(degrees(abs(clat-lats[i])), degrees(abs(clon-lons[i])))
             print '\tdLat={} dLon={} in seconds'.format(degrees(abs(clat-lats[i]))*3600e0, degrees(abs(clon-lons[i]))*3600e0)

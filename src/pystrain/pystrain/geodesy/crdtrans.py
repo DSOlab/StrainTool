@@ -2,8 +2,7 @@ from math import sqrt, atan2, atan, pi
 from pystrain import ellipsoid
 
 def top2daz(north, east, up):
-    """
-        Compute azimouth, zenith and distance from a topocentric vector.
+    """ Compute azimouth, zenith and distance from a topocentric vector.
     """
     distance = math.sqrt(north*north + east*east + up*up)
     a        = math.atan2(east, north) % (math.pi*2) # normalized [0, 2pi]
@@ -11,8 +10,7 @@ def top2daz(north, east, up):
     return distance, a, zenith
 
 def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
-    """
-        Transform a vector expressed in cartesian coordinates to the topocentric,
+    """ Transform a vector expressed in cartesian coordinates to the topocentric,
         local system around point i (i.e. North(i), East(i), Up(i)).
     """
     # Cartesian to ellipsoidal for reference point.
@@ -37,8 +35,7 @@ def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
     return north, east, up
 
 def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
-    """
-        Ellipsoidal to cartesian coordinates.
+    """ Ellipsoidal to cartesian coordinates.
     """
     # Eccentricity squared.
     e2 = ell.eccentricity_squared()
@@ -61,8 +58,7 @@ def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
     return x, y, z
 
 def car2elll(x, y, z, ell=Ellipsoid("wgs84")):
-    """
-        Cartesian to ellipsoidal coordinates. Reference: Fukushima, T., 
+    """ Cartesian to ellipsoidal coordinates. Reference: Fukushima, T., 
         "Transformation from Cartesian to geodetic coordinates
         accelerated by Halley's method", J. Geodesy (2006), 79(12): 689-693
     """

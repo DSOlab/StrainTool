@@ -3,72 +3,22 @@
 
 import sys, numpy, operator
 from math import atan2, exp, sqrt, floor, pi, degrees
+
 from station import Station
-
-class Grid:
-    """
-        A very simple Grid class to be used within the StrainTensor project.
-        A Grid instance has x- and y- axis limits and step sizes (i.e x_min,
-        x_max, x_step, y_min, y_max, y_step).
-        It is iterable; when iterating, the instance will return the center
-        of each cell, starting from the bottom left corner and ending at the
-        top right. The iteration is performed row-wise (i.e.
-        > [x0+xstep/2, y0+ystep/2]
-        > [x0+xstep/2, y0+ystep/2+ystep]
-        > [x0+xstep/2, y0+ystep/2+2*ystep]
-        > ...
-        > [x0+xstep/2, ymax-ystep/2]
-        > [x0+xstep/2+xstep, y0+ystep/2]
-        > [x0+xstep/2+xstep, y0+ystep/2+ystep]
-        > [x0+xstep/2+xstep, y0+ystep/2+2*ystep]
-
-    """
-    def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
-        self.x_min = x_min
-        self.x_max = x_max
-        self.x_step= x_step
-        self.y_min = y_min
-        self.y_max = y_max
-        self.y_step= y_step
-        self.cxi    = 0
-        self.cyi    = 0
-        self.xpts   = (x_max-x_min)/x_step - 1
-        self.ypts   = (y_max-y_min)/y_step - 1
-
-    def __iter__(self):
-        return self
-
-    def xidx2xval(self, idx):
-        return self.x_min + self.x_step/2 + self.x_step*idx
-    
-    def yidx2yval(self, idx):
-        return self.y_min + self.y_step/2 + self.y_step*idx
-
-    def next(self):
-        if self.cxi > self.xpts:
-            if self.cyi > self.ypts:
-                raise StopIteration
-            self.cxi  = 0
-            self.cyi += 1
-            return self.x_max - self.x_step/2, self.yidx2yval(self.cyi-1)
-        else:
-            self.cxi += 1
-            return self.xidx2xval(self.cxi-1), self.yidx2yval(self.cyi)
+from grid    import Grid
 
 def barycenter(sta_list):
-    '''
-        Compute the barycenter from a list of stations
+    ''' Compute the barycenter from a list of stations
     '''
     y_mean = sta_list[0].y
     x_mean = sta_list[0].x
     for i in range(1, len(sta_list)):
-        y_mean = (sta_list[i].y + (i-1)*y_mean)/i
-        x_mean = (sta_list[i].x + (i-1)*x_mean)/i
+        y_mean = (sta_list[i].y + (i-1)*y_mean) / float(i)
+        x_mean = (sta_list[i].x + (i-1)*x_mean) / float(i)
     return y_mean, x_mean
 
 def make_grid(sta_lst, x_step, y_step):
-    """
-        Given a list of Stations and x- and y-axis step sizes, compute and
+    """ Given a list of Stations and x- and y-axis step sizes, compute and
         return a Grid instance. The max/min x and y values (of the Grid) are
         extracted from the station coordinates; if needed, they are adjusted
         so that (xmax-xmin) is divisible (without remainder) with xstep.
@@ -103,8 +53,7 @@ def make_grid(sta_lst, x_step, y_step):
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
 def z_weights(sta_lst, cx, cy):
-    """
-        Given a list of Stations and the coordinates of a central point (i.e.
+    """ Given a list of Stations and the coordinates of a central point (i.e.
         cx, cy), compute and return the function:
         Z(i) = n*theta(i)/4pi
         which is used as a weighting function from strain estimation in Shen 
@@ -129,8 +78,7 @@ def z_weights(sta_lst, cx, cy):
     return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 def l_weights(sta_lst, cx, cy, z_weights, **kargs):
-    """
-        Compute L(i) for each of the points in the station list sta_lst, where
+    """ Compute L(i) for each of the points in the station list sta_lst, where
         L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
         L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
 
@@ -197,8 +145,7 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     raise RuntimeError
 
 def ls_matrices(sta_lst, cx, cy, **kargs):
-    """
-        Construct Least Square Matrices (A and b) to be solved for. The function
+    """ Construct Least Squares Matrices (A and b) to be solved for. The function
         will first evaluate the covariance matrix C, where:
         W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
         of each obervable.

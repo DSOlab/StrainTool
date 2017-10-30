@@ -12,6 +12,9 @@ ref_ell_dict = {
 }
 
 class Ellipsoid:
+    """
+        A class to represent reference ellipsoids.
+    """
     def __init__(self, name, a=None, f=None):
         """
             Constructor for Ellipsoid. You can either pass in a standard name
@@ -37,14 +40,17 @@ class Ellipsoid:
             self.f = f
 
     def eccentricity_squared(self):
+        """ Computed and return the ellipsoid's squared eccentricity.
+        """
         return ( 2.0e0 - self.f ) * self.f;
 
     def semi_minor(self):
+        """ Computed and return the ellipsoid's semi-minor axis.
+        """
         return self.a * (1.0e0 - self.f)
 
     def N(self, lat):
-        """
-            Compute the normal radius of curvature at a given latitude.
+        """  Compute the normal radius of curvature at a given latitude.
             'lat' parameter should be in radians.
         """
         cosf  = cos(lat)
@@ -55,8 +61,7 @@ class Ellipsoid:
         return (self.a * self.a) / den;
 
     def M(self, lat):
-        """
-            Compute the meridional radii of curvature at a given latitude.
+        """  Compute the meridional radii of curvature at a given latitude.
             'lat' parameter should be in radians.
         """
         a     = self.a
@@ -69,11 +74,10 @@ class Ellipsoid:
         return ( (a*b)/tmpd ) * ( (a*b)/sqrt(tmpd) )
 
     def __getattr__(self, name):
-        """
-            For ease of use, the instances has the following attributes:
-            e2   -> eccentricity squared
-            b    -> semi-minor axis
-            finv -> inverse flattening
+        """ For ease of use, the instances has the following attributes:
+                * e2   -> eccentricity squared
+                * b    -> semi-minor axis
+                * finv -> inverse flattening
             I.e. the user can legaly write:
             ell1 = Ellipsoid("grs80")
             ell1.b

@@ -4,17 +4,17 @@ from math import sqrt, radians
 station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
 
 class Station:
-    """
-        Station constructor; construction can be performed:
-        1 from an input string of type:
-            "name lon lat Ve Vn Se Sn RHO T"
-        2 given any of the (above mentioned) instance members
 
-        e.g. s = Station("akyr +24.91260690 +34.98083160 0.00871244 -0.0151236 0.00136367 0.000278371 0.5  2.5")
-             s = Station(name="akyr")
-             s = Station(name="akyr", lat=34.98083160, ve=-0.0151236)
-    """
     def __init__(self, *args, **kargs):
+        """ Station constructor; construction can be performed:
+            1 from an input string of type:
+                "name lon lat Ve Vn Se Sn RHO T"
+            2 given any of the (above mentioned) instance members
+
+            e.g. s = Station("akyr +24.91260690 +34.98083160 0.00871244 -0.0151236 0.00136367 0.000278371 0.5  2.5")
+                 s = Station(name="akyr")
+                 s = Station(name="akyr", lat=34.98083160, ve=-0.0151236)
+        """
         self.set_none()
 
         if len(args) is not 0:
