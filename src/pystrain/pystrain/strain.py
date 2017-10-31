@@ -1,7 +1,9 @@
 #! /usr/bin/python
 #-*- coding: utf-8 -*-
 
-import sys, numpy, operator
+import sys
+import numpy
+import operator
 from math import atan2, exp, sqrt, floor, pi, degrees
 
 from station import Station
@@ -55,26 +57,49 @@ def make_grid(sta_lst, x_step, y_step):
 def z_weights(sta_lst, cx, cy):
     """ Given a list of Stations and the coordinates of a central point (i.e.
         cx, cy), compute and return the function:
-        Z(i) = n*theta(i)/4pi
-        which is used as a weighting function from strain estimation in Shen 
+        Z(i) = n*θ(i) / 4π
+        which is used as a weighting function fom strain estimation in Shen 
         et al, 2015, see Equation (5a).
         The individual station weights are returned in a list, in the order they
         were passed in in the sta_lst list.
+
+        Parameters:
+        -----------
+        sta_lst: list
+                A list of Station instances. For each one a weight will be
+                computed and returned.
+        cx:      float
+                The x-component of the central point
+        cy:      float
+                The y-component of the central point
+
+        Returns:
+        --------
+        list
+            Each element in the list is the weight of the respective station in
+            the input station list.
     """
     n         = len(sta_lst)
     azimouths = []
     thetas    = []
+    #  Get the azimouth of each line from central point (cx,cy) to each point in
+    #+ the list.
     for idx, sta in enumerate(sta_lst):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
-    thetas.append({'w': azimouths[1]['az'] - azimouths[n-1]['az'] + 2*pi, 'nr':azimouths[0]['nr']})
+    for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+    #  Make a list of the 'theta' angles; for each point, the theta angle is an
+    #+ azimouth difference, of the previous minus the next point.
+    #  Special care for the first and last elements (theta angles)
+    thetas.append({'w': azimouths[n-1]['az'] - azimouths[1]['az'], 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
-    thetas.append({'w':azimouths[0]['az'] - azimouths[n-2]['az'] + 2*pi, 'nr':azimouths[n-1]['nr']})
-    # double check!
+    thetas.append({'w':azimouths[n-2]['az'] - azimouths[0]['az'], 'nr':azimouths[n-1]['nr']})
+    #  Double-check !! All theta angles must be in the range [0, 2*π)
     for angle in thetas:
         assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(sta_lst[angle['nr']].name)
+    #  Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
     return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 def l_weights(sta_lst, cx, cy, z_weights, **kargs):
@@ -88,7 +113,7 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
         the limit Wt. The re-weighting coefficient is:
         W = Σ{i=0, i=len(sta_lst)*2}G(i)
         where Σ denotes the sum and G(i) = L(i) * Z(i); this is why we also need
-        (as function input) the Z weights (as list).
+        (as function input) the Z weights.
 
         The parameters dmin, dmax and dstep must be given in km. Wt must be an
         integer.
@@ -106,6 +131,9 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
                 dmax:  Maximum value of tested D's; defult is 500
                 dstep: Step for searching for optimal D, from dmin to dmax untill
                     we hit Wt; default is 2
+                d:     Value D for computing the weights; if given, then
+                       it is used and no effort is made to find an 'optimal'
+                       D value.
 
         Returns:
             a list of weights (i.e. L(i) values) for each station.
@@ -114,15 +142,16 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
             RuntimeError if dmin > dmax, or if we cannot find an optimal D.
     """
     if not 'ltype' in kargs : kargs['ltype'] = 'gaussian'
-    if not 'Wt' in kargs    : kargs['Wt']    = 24
-    if not 'dmin' in kargs  : kargs['dmin']  = 1
-    if not 'dmax' in kargs  : kargs['dmax']  = 500
-    if not 'dstep' in kargs : kargs['dstep'] = 2
+    if not 'Wt'    in kargs : kargs['Wt']    = 24
+    if not 'dmin'  in kargs : kargs['dmin']  = 1
+    if not 'dmax'  in kargs : kargs['dmax']  = 1000
+    if not 'dstep' in kargs : kargs['dstep'] = 10
 
     def gaussian(dri, d):  return exp(-pow(dri/d,2))
     def quadratic(dri, d): return 1.0/(1.0+pow(dri/d,2))
 
-    if kargs['dmin'] >= kargs['dmax'] or kargs['dstep'] < 0: raise RuntimeError
+    if kargs['dmin'] >= kargs['dmax'] or kargs['dstep'] < 0:
+        raise RuntimeError
 
     if kargs['ltype'] == 'gaussian':
         l_i = gaussian
@@ -131,16 +160,22 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     else:
         raise RuntimeError
 
-    # list of distances for each point from center
+    #  Distances for each point from center in km.
     dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000 for x in sta_lst ]
-    # iterate through [dmin, dmax] to find optimal d
+    #  If 'd' is given (at input), just compute and return the weights
+    if 'd' in kargs:
+        d = float(kargs['d'])
+        return [ l_i(dri,d) for dri in dr ]
+    #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
+    #+ return the weights.
     for d in numpy.arange(kargs['dmin'], kargs['dmax'], kargs['dstep']):
-        #l    = [ exp(-pow(dri/d,2)) for dri in dr ]
         l    = [ l_i(dri,d) for dri in dr ]
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
-        if int(round(w)) == kargs['Wt']:
+        if int(round(w)) >= kargs['Wt']:
             return l
-    # fuck! cannot find optimal D
+        #else:
+        #    print '[DEBUG] Checking d {}, w={}, Wt={}'.format(d,w,kargs['Wt'])
+    # Fuck! cannot find optimal D
     print '[ERROR] Cannot compute optimal D in weighting scheme'
     raise RuntimeError
 

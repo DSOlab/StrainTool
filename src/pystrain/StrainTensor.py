@@ -34,12 +34,12 @@ def plot_map(sta_list, stensor_list):
         x, y = my_map(degrees(sta.lon), degrees(sta.lat))
         my_map.plot(x, y, 'bo', markersize=10)
         plt.text(x, y, sta.name)
-        print 'Point at {}, {}'.format(degrees(sta.lon), degrees(sta.lat))
+        #print 'Point at {}, {}'.format(degrees(sta.lon), degrees(sta.lat))
 
     for tnr in stensor_list:
         x, y = my_map(degrees(tnr.lon), degrees(tnr.lat))
         my_map.plot(x, y, 'r+', markersize=8)
-        print 'Tensor at {}, {}'.format(degrees(tnr.lon), degrees(tnr.lat))
+        #print 'Tensor at {}, {}'.format(degrees(tnr.lon), degrees(tnr.lat))
 
     print '[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats))
     plt.show()
@@ -107,16 +107,19 @@ print '[DEBUG] Estimating strain tensor for each cell center'
 strain_list = []
 prev_x = 0
 prev_y = 0
+node_nr = 0
 for x, y in grd:
     clat, clon = utm2ell(x, y, utm_zone)
-    print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
-    print '\t[DEBUG] x_step={}, y_step={}'.format(x-prev_x, y-prev_y)
+    #print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
+    #print '\t[DEBUG] x_step={}, y_step={}'.format(x-prev_x, y-prev_y)
     ##  Construct the LS matrices, A and b
     A, b = ls_matrices(sta_list_utm, x, y)
     ##  Solve LS
     estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
     ## print result
     # print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
+    node_nr += 1
+    print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
     strain_list.append(Station(lat=clat, lon=clon))
     prev_x = x
     prev_y = y
