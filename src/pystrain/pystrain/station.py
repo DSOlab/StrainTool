@@ -1,3 +1,12 @@
+""" This module defines a Station class. A station is supposed to represent a
+    point on the globe. It has coordinates (usually defined as longtitude and
+    latitude), a name, (tectonic) velocities and respective standard deviations
+    (in east and north components), a correlation coefficient between East and
+    North velocity components and a time-span.
+    This class is designed to assist the estimation of strain tensors; hence,
+    only attributes that could help with this are considered.
+"""
+
 from math import sqrt, radians
 
 # Any Station instance, can have any (or all) of these attributes
@@ -9,7 +18,7 @@ class Station:
         """ Station constructor; construction can be performed:
             1 from an input string of type:
                 "name lon lat Ve Vn Se Sn RHO T"
-            2 given any of the (above mentioned) instance members
+            2 given any of the (above mentioned) instance members/attributes.
 
             e.g. s = Station("akyr +24.91260690 +34.98083160 0.00871244 -0.0151236 0.00136367 0.000278371 0.5  2.5")
                  s = Station(name="akyr")

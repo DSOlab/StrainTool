@@ -60,7 +60,7 @@ class Grid:
         return self.y_min + self.y_step/2e0 + self.y_step*idx
 
     def next(self):
-        """ Return the next cell.
+        """ Return the (centre of the) next cell (aka x,y coordinate pair).
         """
         if self.cxi >= self.xpts:
             if self.cyi+1 >= self.ypts:

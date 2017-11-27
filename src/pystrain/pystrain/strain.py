@@ -10,7 +10,8 @@ from station import Station
 from grid    import Grid
 
 def barycenter(sta_list):
-    ''' Compute the barycenter from a list of stations
+    ''' Compute the barycenter from a list of stations. The function will use
+        each station's self.x and self.y components.
     '''
     y_mean = sta_list[0].y
     x_mean = sta_list[0].x
@@ -54,7 +55,7 @@ def make_grid(sta_lst, x_step, y_step):
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
-def z_weights(sta_lst, cx, cy):
+def z_weights(sta_lst, cx, cy, debug_mode=False):
     """ Given a list of Stations and the coordinates of a central point (i.e.
         cx, cy), compute and return the function:
         Z(i) = n*θ(i) / 4π
@@ -62,6 +63,10 @@ def z_weights(sta_lst, cx, cy):
         et al, 2015, see Equation (5a).
         The individual station weights are returned in a list, in the order they
         were passed in in the sta_lst list.
+        It is assumed, that the coordinates of every point in the list and the
+        cx,cy coordinates, are given in meters.
+        Note that, Easting is considered as 'x' or longtitude.
+        Northing is considered as 'y' or latitude.
 
         Parameters:
         -----------
@@ -87,8 +92,13 @@ def z_weights(sta_lst, cx, cy):
     for idx, sta in enumerate(sta_lst):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
+        #print '[DEBUG] New entry: {:} with azimouth {:} and nr {:}'.format(sta.name, az, idx)
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
     for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+    if debug_mode:
+        print '[DEBUG] Here are the azimouths:'
+        for o in azimouths:
+            print '\t{:} -> az = {:}'.format(sta_lst[o['nr']].name,degrees(o['az']))
     #  Make a list of the 'theta' angles; for each point, the theta angle is an
     #+ azimouth difference, of the previous minus the next point.
     #  Special care for the first and last elements (theta angles)
@@ -162,17 +172,20 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
 
     #  Distances for each point from center in km.
     dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000 for x in sta_lst ]
+
     #  If 'd' is given (at input), just compute and return the weights
     if 'd' in kargs:
         d = float(kargs['d'])
-        return [ l_i(dri,d) for dri in dr ]
+        print '[DEBUG] Using passedin \'d\' coef = {}'.format(d)
+        return [ l_i(dri,d) for dri in dr ], d
     #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
     #+ return the weights.
     for d in numpy.arange(kargs['dmin'], kargs['dmax'], kargs['dstep']):
         l    = [ l_i(dri,d) for dri in dr ]
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
         if int(round(w)) >= kargs['Wt']:
-            return l
+            print '[DEBUG] Found optimal \'d\' coef = {}'.format(d)
+            return l, d
         #else:
         #    print '[DEBUG] Checking d {}, w={}, Wt={}'.format(d,w,kargs['Wt'])
     # Fuck! cannot find optimal D
@@ -192,7 +205,7 @@ def ls_matrices(sta_lst, cx, cy, **kargs):
     # the (spatial) weights, i.e. Z(i)
     zw = z_weights(sta_lst, cx, cy)
     # the distance weights
-    lw = l_weights(sta_lst, cx, cy, zw, **kargs)
+    lw, d_coef = l_weights(sta_lst, cx, cy, zw, **kargs)
     assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
     # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
     # a column vector
@@ -218,8 +231,3 @@ def ls_matrices(sta_lst, cx, cy, **kargs):
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
     return A, b
-
-if __name__ == "__main__":
-    g = Grid(23.123, 39.2432, 3, 20.123, 47.123, 5)
-    for f,l in g:
-        print f,l
