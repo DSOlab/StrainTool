@@ -106,10 +106,19 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[n-2]['az'] - azimouths[0]['az'], 'nr':azimouths[n-1]['nr']})
+    if debug_mode:
+        print '[DEBUG] Here are the theta angles:'
+        for t in thetas:
+            print '\t{:} -> theta = {:}'.format(sta_lst[t['nr']].name, degrees(t['w']))
     #  Double-check !! All theta angles must be in the range [0, 2*π)
     for angle in thetas:
         assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(sta_lst[angle['nr']].name)
     #  Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
+    if debug_mode:
+        print '[DEBUG] Here are the final weights:'
+        tmp_lst = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+        for idx, val in enumerate(tmp_lst):
+            print '\t{:} -> z = {:}'.format(sta_lst[idx].name, val)
     return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 def l_weights(sta_lst, cx, cy, z_weights, **kargs):
@@ -124,6 +133,10 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
         W = Σ{i=0, i=len(sta_lst)*2}G(i)
         where Σ denotes the sum and G(i) = L(i) * Z(i); this is why we also need
         (as function input) the Z weights.
+
+        Note that the coordinates (both in sta_lst and in cx, cy), must be given
+        in meters. Also, cx is matched to sta_lst[i].lon and cy is matched to
+        sta_lst[i].lat.
 
         The parameters dmin, dmax and dstep must be given in km. Wt must be an
         integer.
@@ -146,16 +159,22 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
                        D value.
 
         Returns:
-            a list of weights (i.e. L(i) values) for each station.
+            tuple: (list, float)
+            list is a list of weights (i.e. L(i) values) for each station, in the
+            order they are passed in.
+            float: is the D value used to compute the weights.
 
         Raises:
             RuntimeError if dmin > dmax, or if we cannot find an optimal D.
     """
-    if not 'ltype' in kargs : kargs['ltype'] = 'gaussian'
-    if not 'Wt'    in kargs : kargs['Wt']    = 24
-    if not 'dmin'  in kargs : kargs['dmin']  = 1
-    if not 'dmax'  in kargs : kargs['dmax']  = 1000
-    if not 'dstep' in kargs : kargs['dstep'] = 10
+    if 'ltype' not in kargs : kargs['ltype'] = 'gaussian'
+    if 'Wt'    not in kargs : kargs['Wt']    = 24
+    if 'dmin'  not in kargs : kargs['dmin']  = 1
+    if 'dmax'  not in kargs : kargs['dmax']  = 1000
+    if 'dstep' not in kargs : kargs['dstep'] = 10
+
+    debug_mode = False
+    if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
 
     def gaussian(dri, d):  return exp(-pow(dri/d,2))
     def quadratic(dri, d): return 1.0/(1.0+pow(dri/d,2))
@@ -176,7 +195,11 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     #  If 'd' is given (at input), just compute and return the weights
     if 'd' in kargs:
         d = float(kargs['d'])
-        print '[DEBUG] Using passedin \'d\' coef = {}'.format(d)
+        print '[DEBUG] Using passed in \'d\' coef = {}'.format(d)
+        if debug_mode:
+            print '[DEBUG] Here are the l weights: (D={:})'.format(d)
+            for i,s in enumerate(sta_lst):
+                print '\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l_i(dr[i],d))
         return [ l_i(dri,d) for dri in dr ], d
     #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
     #+ return the weights.
@@ -185,6 +208,10 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
         if int(round(w)) >= kargs['Wt']:
             print '[DEBUG] Found optimal \'d\' coef = {}'.format(d)
+            if debug_mode:
+                print '[DEBUG] Here are the l weights: (D={:})'.format(d)
+                for i,s in enumerate(sta_lst):
+                    print '\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l[i])
             return l, d
         #else:
         #    print '[DEBUG] Checking d {}, w={}, Wt={}'.format(d,w,kargs['Wt'])
