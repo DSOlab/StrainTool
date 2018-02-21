@@ -156,11 +156,12 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
                 Wt:    value for optimal Wt; default is 24
                 dmin:  Minimum value of tested D's; default is 1
                 dmax:  Maximum value of tested D's; defult is 500
-                dstep: Step for searching for optimal D, from dmin to dmax untill
+                dstep: Step for searching for optimal D, from dmin to dmax until
                     we hit Wt; default is 2
                 d:     Value D for computing the weights; if given, then
                        it is used and no effort is made to find an 'optimal'
                        D value.
+                debug_mode: Sets debuging mode on.
 
         Returns:
             tuple: (list, float)
@@ -174,14 +175,14 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     if 'ltype' not in kargs : kargs['ltype'] = 'gaussian'
     if 'Wt'    not in kargs : kargs['Wt']    = 24
     if 'dmin'  not in kargs : kargs['dmin']  = 1
-    if 'dmax'  not in kargs : kargs['dmax']  = 1000
-    if 'dstep' not in kargs : kargs['dstep'] = 10
+    if 'dmax'  not in kargs : kargs['dmax']  = 500
+    if 'dstep' not in kargs : kargs['dstep'] = 2
 
     debug_mode = False
     if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
 
     def gaussian(dri, d):  return exp(-pow(dri/d,2))
-    def quadratic(dri, d): return 1.0/(1.0+pow(dri/d,2))
+    def quadratic(dri, d): return 1e0/(1e0+pow(dri/d,2))
 
     if kargs['dmin'] >= kargs['dmax'] or kargs['dstep'] < 0:
         raise RuntimeError
@@ -194,16 +195,16 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
         raise RuntimeError
 
     #  Distances for each point from center in km.
-    dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000 for x in sta_lst ]
+    dr = [ sqrt((x.lon-cx)*(x.lon-cx)+(x.lat-cy)*(x.lat-cy))/1000e0 for x in sta_lst ]
 
     #  If 'd' is given (at input), just compute and return the weights
     if 'd' in kargs:
         d = float(kargs['d'])
         print('[DEBUG] Using passed in \'d\' coef = {:}'.format(d))
         if debug_mode:
-            print('[DEBUG] Here are the l weights: (D={:})'.format(d))
+            print('[DEBUG] Here are the l weights: (D={:8.5f})'.format(d))
             for i,s in enumerate(sta_lst):
-                print('\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l_i(dr[i],d)))
+                print('\t{:} Distance: {:5.2f}km., L = {:8.5f}'.format(s.name, dr[i], l_i(dr[i],d)))
         return [ l_i(dri,d) for dri in dr ], d
     #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
     #+ return the weights.
@@ -215,10 +216,8 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
             if debug_mode:
                 print('[DEBUG] Here are the l weights: (D={:})'.format(d))
                 for i,s in enumerate(sta_lst):
-                    print('\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l[i]))
+                    print('\t{:} Distance: {:5.2f}km., L = {:8.5f}'.format(s.name, dr[i], l[i]))
             return l, d
-        #else:
-        #    print '[DEBUG] Checking d {}, w={}, Wt={}'.format(d,w,kargs['Wt'])
     # Fuck! cannot find optimal D
     print('[ERROR] Cannot compute optimal D in weighting scheme')
     raise RuntimeError

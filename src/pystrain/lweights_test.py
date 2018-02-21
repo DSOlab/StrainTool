@@ -1,17 +1,14 @@
 #! /usr/bin/python2.7
 
-############################################## standard libs
+from __future__ import print_function
 import sys
 from copy import deepcopy
 from math import degrees, radians, floor, ceil
-##############################################  numpy & argparse
 import numpy
 import argparse
-##############################################  pystrain
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
-############################################## ploting
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 
@@ -36,27 +33,33 @@ parser.add_argument('-t', '--weighting-function',
     dest='weighting_func',
     choices=['gaussian', 'quadratic'],
     required=False)
+parser.add_argument('-D', '--optimal-D',
+    default=None,
+    type=float,
+    metavar='OPTIMAL_D',
+    dest='optimal_d',
+    required=False)
 
 ##  Parse command line arguments.
 args = parser.parse_args()
 
 ##  Parse stations from input file
 sta_list_ell = parse_ascii_input(args.gps_file)
-print '[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
+print('[DEBUG] Number of stations parsed: {:}'.format(len(sta_list_ell)))
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
 mean_lon = degrees(sum([ x.lon for x in sta_list_ell ])/len(sta_list_ell))
 utm_zone = floor(mean_lon/6)+31
 utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
-print '[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone)
+print('[DEBUG] Mean longtitude is {:8.4f} deg.; using Zone = {:} for UTM'.format(mean_lon, utm_zone))
 sta_list_utm = deepcopy(sta_list_ell)
 for idx, sta in enumerate(sta_list_utm):
     N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), utm_zone)
     sta_list_utm[idx].lon = E
     sta_list_utm[idx].lat = N
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
-print '[DEBUG] Station list transformed to UTM.'
+print('[DEBUG] Station list transformed to UTM.')
 
 ##  Get the barycenter of the points (in UTM and geodetic)
 clon = degrees(sum([ x.lon for x in sta_list_ell ])/len(sta_list_ell))
@@ -65,8 +68,14 @@ cN, cE, Zone, _ = ell2utm(radians(clat), radians(clon), Ellipsoid("wgs84"), utm_
 assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
 
 ##  Call the z-weights function
-zweights = z_weights(sta_list_utm, cE, cN, False)
-lweights = l_weights(sta_list_utm, cE, cN, zweights, ltype=args.weighting_func, debug_mode=True)
+lkargs={'ltype':args.weighting_func, 'debug_mode':True}
+if not args.optimal_d:
+    zweights = z_weights(sta_list_utm, cE, cN, False)
+else:
+    zweights = []
+    lkargs['d'] = args.optimal_d
+#lweights = l_weights(sta_list_utm, cE, cN, zweights, ltype=args.weighting_func, debug_mode=True)
+lweights = l_weights(sta_list_utm, cE, cN, zweights, **lkargs)
 
 ##  Plot
 lat0    = degrees(sum([ x.lat for x in sta_list_ell ])/len(sta_list_ell))
