@@ -14,3 +14,5 @@ L~i~ = 1/(1+ΔR^2^~i~/D^2^)
 in which a spatial smoothing parameter `D` is introduced. Both
 functions allow reduced weight of the data as distance in-
 creases.
+32^nd^
+H~2~O
