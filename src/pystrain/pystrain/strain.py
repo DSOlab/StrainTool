@@ -1,6 +1,7 @@
 #! /usr/bin/python
 #-*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 import numpy
 import operator
@@ -26,7 +27,7 @@ def make_grid(sta_lst, x_step, y_step):
         extracted from the station coordinates; if needed, they are adjusted
         so that (xmax-xmin) is divisible (without remainder) with xstep.
     """
-    print "[DEBUG] Constructing grid in UTM"
+    print("[DEBUG] Constructing grid in UTM")
     y_min = sys.float_info.max
     y_max = sys.float_info.min
     x_min = sys.float_info.max
@@ -41,17 +42,17 @@ def make_grid(sta_lst, x_step, y_step):
         elif s.lat < y_min:
            y_min = s.lat
     # adjust max and min to step
-    print "\t[DEBUG] Region: Easting: {}/{} Northing: {}/{}".format(x_min, x_max, y_min, y_max)
+    print("\t[DEBUG] Region: Easting: {:}/{:} Northing: {:}/{:}".format(x_min, x_max, y_min, y_max))
     s      = float((floor((y_max-y_min)/y_step)+1)*y_step)
     r      = s-(y_max-y_min)
     y_min -= r/2
     y_max += r/2
-    print "\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step)
+    print("\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step))
     s      = float((floor((x_max-x_min)/x_step)+1)*x_step)
     r      = s-(x_max-x_min)
     x_min -= r/2
     x_max += r/2
-    print "\t[DEBUG] Adjusted Easting: from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step)
+    print("\t[DEBUG] Adjusted Easting: from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step))
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
@@ -88,17 +89,20 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
     azimouths = []
     thetas    = []
     #  Get the azimouth of each line from central point (cx,cy) to each point in
-    #+ the list.
+    #+ the list. The computed azimouths are stored in a sorted list
+    #+ (aka azimouths). This list is made up of dictionary elements, where each
+    #+ dictionary contains 1. the azimouth value (in radians) as 'az' and 2. the
+    #+ index of the station in the sta_lst, as 'nr'.
     for idx, sta in enumerate(sta_lst):
         az = atan2(sta.lon-cx, sta.lat-cy)
         azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
-        #print '[DEBUG] New entry: {:} with azimouth {:} and nr {:}'.format(sta.name, az, idx)
     azimouths = sorted(azimouths, key=operator.itemgetter('az'))
+    #  Confirm that all azimouths are in the range [0,2*pi)
     for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
     if debug_mode:
-        print '[DEBUG] Here are the azimouths:'
+        print('[DEBUG] Here are the azimouths:')
         for o in azimouths:
-            print '\t{:} -> az = {:}'.format(sta_lst[o['nr']].name,degrees(o['az']))
+            print('\t{:4s} -> az = {:+8.4f}'.format(sta_lst[o['nr']].name, degrees(o['az'])))
     #  Make a list of the 'theta' angles; for each point, the theta angle is an
     #+ azimouth difference, of the previous minus the next point.
     #  Special care for the first and last elements (theta angles)
@@ -107,19 +111,19 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
     thetas.append({'w':azimouths[n-2]['az'] - azimouths[0]['az'], 'nr':azimouths[n-1]['nr']})
     if debug_mode:
-        print '[DEBUG] Here are the theta angles:'
+        print('[DEBUG] Here are the theta angles:')
         for t in thetas:
-            print '\t{:} -> theta = {:}'.format(sta_lst[t['nr']].name, degrees(t['w']))
+            print('\t{:4s} -> theta = {:+8.4f}'.format(sta_lst[t['nr']].name, degrees(t['w'])))
     #  Double-check !! All theta angles must be in the range [0, 2*π)
     for angle in thetas:
         assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(sta_lst[angle['nr']].name)
     #  Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
     if debug_mode:
-        print '[DEBUG] Here are the final weights:'
+        print('[DEBUG] Here are the final weights:')
         tmp_lst = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
         for idx, val in enumerate(tmp_lst):
-            print '\t{:} -> z = {:}'.format(sta_lst[idx].name, val)
-    return [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+            print('\t{:4s} -> z = {:+8.4f}'.format(sta_lst[idx].name, val))
+    return [ x['w']*float(n)/(4e0*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
 def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     """ Compute L(i) for each of the points in the station list sta_lst, where
@@ -195,11 +199,11 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     #  If 'd' is given (at input), just compute and return the weights
     if 'd' in kargs:
         d = float(kargs['d'])
-        print '[DEBUG] Using passed in \'d\' coef = {}'.format(d)
+        print('[DEBUG] Using passed in \'d\' coef = {:}'.format(d))
         if debug_mode:
-            print '[DEBUG] Here are the l weights: (D={:})'.format(d)
+            print('[DEBUG] Here are the l weights: (D={:})'.format(d))
             for i,s in enumerate(sta_lst):
-                print '\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l_i(dr[i],d))
+                print('\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l_i(dr[i],d)))
         return [ l_i(dri,d) for dri in dr ], d
     #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
     #+ return the weights.
@@ -207,16 +211,16 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
         l    = [ l_i(dri,d) for dri in dr ]
         w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
         if int(round(w)) >= kargs['Wt']:
-            print '[DEBUG] Found optimal \'d\' coef = {}'.format(d)
+            print('[DEBUG] Found optimal \'d\' coef = {:}'.format(d))
             if debug_mode:
-                print '[DEBUG] Here are the l weights: (D={:})'.format(d)
+                print('[DEBUG] Here are the l weights: (D={:})'.format(d))
                 for i,s in enumerate(sta_lst):
-                    print '\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l[i])
+                    print('\t{:} Distance: {:}, L = {:}'.format(s.name, dr[i], l[i]))
             return l, d
         #else:
         #    print '[DEBUG] Checking d {}, w={}, Wt={}'.format(d,w,kargs['Wt'])
     # Fuck! cannot find optimal D
-    print '[ERROR] Cannot compute optimal D in weighting scheme'
+    print('[ERROR] Cannot compute optimal D in weighting scheme')
     raise RuntimeError
 
 def ls_matrices(sta_lst, cx, cy, **kargs):
