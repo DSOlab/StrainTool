@@ -10,11 +10,11 @@ G<sub>i</sub>=L<sub>i</sub>×Z<sub>i</sub>, in which L<sub>i</sub> and Z<sub>i</
 and spatial coverage dependent, respectively. For distance-
 dependent weighting, L<sub>i</sub> is assumed to be in the form of
 
-L<sub>i</sub> = exp(−ΔR<sup>2</sup><sub>i</sub>/D^2^)
+L<sub>i</sub> = exp(−ΔR<sup>2</sup><sub>i</sub>/D<sup>2</sup>)
 
 or
 
-L<sub>i</sub> = 1/(1+ΔR<sup>2</sup><sub>i</sub>/D^2^)
+L<sub>i</sub> = 1/(1+ΔR<sup>2</sup><sub>i</sub>/D<sup>2</sup>)
 
 in which a spatial smoothing parameter `D` is introduced. Both
 functions allow reduced weight of the data as distance in creases.
