@@ -11,6 +11,7 @@ import argparse
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
+import pystrain.grid
 ############################################## ploting
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
@@ -97,7 +98,7 @@ for idx, sta in enumerate(sta_list_utm):
 print '[DEBUG] Station list transformed to UTM.'
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
-grd = make_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
+grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
 print '[DEBUG] Constructed the grid. Limits are:'
 print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
 print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)

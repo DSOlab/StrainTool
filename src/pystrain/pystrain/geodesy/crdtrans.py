@@ -5,7 +5,7 @@ def top2daz(north, east, up):
     """ Compute azimouth, zenith and distance from a topocentric vector.
     """
     distance = math.sqrt(north*north + east*east + up*up)
-    a        = math.atan2(east, north) % (math.pi*2) # normalized [0, 2pi]
+    a        = math.atan2(east, north) % (math.pi*2e0) # normalized [0, 2pi]
     zenith   = math.acos(up/distance);
     return distance, a, zenith
 
