@@ -109,14 +109,20 @@ strain_list = []
 prev_x = 0
 prev_y = 0
 node_nr = 0
+sstr = ShenStrain(0e0, 0e0, sta_list_utm)
 for x, y in grd:
     clat, clon = utm2ell(x, y, utm_zone)
+    sstr.set_xy(x, y)
+    sstr.compute_z_weights()
+    sstr.compute_l_weights()
+    estim2 = sstr.estimate()
     #print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
     #print '\t[DEBUG] x_step={}, y_step={}'.format(x-prev_x, y-prev_y)
     ##  Construct the LS matrices, A and b
-    A, b = ls_matrices(sta_list_utm, x, y)
+    # A, b = ls_matrices(sta_list_utm, x, y)
     ##  Solve LS
-    estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+    # estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+    # assert numpy.array_equal(estim2,estim)
     ## print result
     # print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
     node_nr += 1

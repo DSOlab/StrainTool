@@ -233,6 +233,16 @@ class ShenStrain:
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
+        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2}
+        self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+
+    def ex(self): return self.__parameters__['taux']
+    
+    def ey(self): return self.__parameters__['taux']
+
+    def set_xy(self, x, y):
+        self.__xcmp__ = x
+        self.__ycmp__ = y
 
     def set_to_barycenter(self):
         self.__ycmp__, self.__xcmp__ = barycenter(self.__stalst__)
@@ -240,5 +250,20 @@ class ShenStrain:
     def compute_z_weights(self):
         self.__zweights__ = z_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, debug_mode=False)
 
-    def compute_l_weights(self, **kwargs):
-        self.__lweights__ = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, z_weights, **kargs)
+    def compute_l_weights(self, **kargs):
+        self.__lweights__ = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, self.__zweights__, **self.__parameters__)
+
+    def estimate(self, **kargs):
+        if not self.__zweights__:
+            self.compute_z_weights()
+        if not self.__lweights__:
+            self.compute_l_weights()
+        A, b = ls_matrices(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+        self.__parameters__['Ux']    = estim[0]
+        self.__parameters__['Uy']    = estim[1]
+        self.__parameters__['omega'] = estim[2]
+        self.__parameters__['taux']  = estim[3]
+        self.__parameters__['tauxy'] = estim[4]
+        self.__parameters__['tauy']  = estim[5]
+        return estim
