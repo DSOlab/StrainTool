@@ -69,10 +69,11 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
     #  Make a list of the 'theta' angles; for each point, the theta angle is an
     #+ azimouth difference, of the previous minus the next point.
     #  Special care for the first and last elements (theta angles)
-    thetas.append({'w': azimouths[n-1]['az'] - azimouths[1]['az'], 'nr':azimouths[0]['nr']})
+    #thetas.append({'w': azimouths[n-1]['az'] - azimouths[1]['az'], 'nr':azimouths[0]['nr']})
+    thetas.append({'w': 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']), 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
-    thetas.append({'w':azimouths[n-2]['az'] - azimouths[0]['az'], 'nr':azimouths[n-1]['nr']})
+    thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']), 'nr':azimouths[n-1]['nr']})
     if debug_mode:
         print('[DEBUG] Here are the theta angles:')
         for t in thetas:
@@ -224,3 +225,20 @@ def ls_matrices(sta_lst, cx, cy, **kargs):
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
     return A, b
+
+class ShenStrain:
+    def __init__(self, x=0e0, y=0e0, station_list=[]):
+        self.__stalst__ = station_list
+        self.__xcmp__   = x
+        self.__ycmp__   = y
+        self.__zweights__ = None
+        self.__lweights__ = None
+
+    def set_to_barycenter(self):
+        self.__ycmp__, self.__xcmp__ = barycenter(self.__stalst__)
+
+    def compute_z_weights(self):
+        self.__zweights__ = z_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, debug_mode=False)
+
+    def compute_l_weights(self, **kwargs):
+        self.__lweights__ = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, z_weights, **kargs)
