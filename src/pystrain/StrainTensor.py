@@ -76,6 +76,17 @@ parser.add_argument('--y-grid-step',
     type=float,
     required=False)
 
+parser.add_argument('-m', '--method',
+    default='shen',
+    metavar='METHOD',
+    dest='method',
+    choices=['shen', 'veis'],
+    required=False)
+
+parser.add_argument('-b', '--barycenter',
+    dest='one_tensor',
+    action='store_true')
+
 ##  Parse command line arguments.
 args = parser.parse_args()
 
@@ -97,38 +108,42 @@ for idx, sta in enumerate(sta_list_utm):
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
 print '[DEBUG] Station list transformed to UTM.'
 
-##  Construct the grid, based on station coordinates (Ref. UTM)
-grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
-print '[DEBUG] Constructed the grid. Limits are:'
-print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
-print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
+##  Compute only one Strain Tensor, at the region's barycenter
+if args.one_tensor:
+    if args.method == 'shen':
+        sstr = ShenStrain(0e0, 0e0, sta_list_utm)
+    else:
+        sstr = VeisStrain(0e0, 0e0, sta_list_utm)
+    sstr.set_to_barycenter()
+    sstr.estimate()
+    sys.exit(0)
 
-print '[DEBUG] Estimating strain tensor for each cell center'
-##  Iterate through the grid (on each cell center)
-strain_list = []
-prev_x = 0
-prev_y = 0
-node_nr = 0
-sstr = ShenStrain(0e0, 0e0, sta_list_utm)
-for x, y in grd:
-    clat, clon = utm2ell(x, y, utm_zone)
-    sstr.set_xy(x, y)
-    sstr.compute_z_weights()
-    sstr.compute_l_weights()
-    estim2 = sstr.estimate()
-    #print '\t[DEBUG] Strain at E={}, N={} (lat={}, lon={})'.format(x, y, degrees(clat), degrees(clon))
-    #print '\t[DEBUG] x_step={}, y_step={}'.format(x-prev_x, y-prev_y)
-    ##  Construct the LS matrices, A and b
-    # A, b = ls_matrices(sta_list_utm, x, y)
-    ##  Solve LS
-    # estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
-    # assert numpy.array_equal(estim2,estim)
-    ## print result
-    # print '\tUx={}\n\tUy={}\n\tomega={}\n\tTx={}\n\tTxy={}\n\tTy={}'.format(x[0], x[1], x[2], x[3], x[4], x[5])
-    node_nr += 1
-    print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
-    strain_list.append(Station(lat=clat, lon=clon))
-    prev_x = x
-    prev_y = y
+##  Construct the grid, based on station coordinates (Ref. UTM)
+if args.method == 'shen':
+    grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
+    print '[DEBUG] Constructed the grid. Limits are:'
+    print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
+    print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
+    print '[DEBUG] Estimating strain tensor for each cell center'
+    ##  Iterate through the grid (on each cell center)
+    strain_list = []
+    prev_x = 0
+    prev_y = 0
+    node_nr = 0
+    sstr = ShenStrain(0e0, 0e0, sta_list_utm)
+    for x, y in grd:
+        clat, clon = utm2ell(x, y, utm_zone)
+        sstr.set_xy(x, y)
+        sstr.compute_z_weights()
+        sstr.compute_l_weights()
+        estim2 = sstr.estimate()
+        node_nr += 1
+        print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
+        strain_list.append(Station(lat=clat, lon=clon))
+        prev_x = x
+        prev_y = y
+else:
+    points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
+    tri = Delaunay(points)
 
 plot_map(sta_list_ell, strain_list)

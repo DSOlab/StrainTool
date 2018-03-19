@@ -12,11 +12,11 @@ def barycenter(sta_list):
     ''' Compute the barycenter from a list of stations. The function will use
         each station's self.x and self.y components.
     '''
-    y_mean = sta_list[0].y
-    x_mean = sta_list[0].x
+    y_mean = sta_list[0].lat
+    x_mean = sta_list[0].lon
     for i in range(1, len(sta_list)):
-        y_mean = (sta_list[i].y + (i-1)*y_mean) / float(i)
-        x_mean = (sta_list[i].x + (i-1)*x_mean) / float(i)
+        y_mean = (sta_list[i].lat + (i-1)*y_mean) / float(i)
+        x_mean = (sta_list[i].lon + (i-1)*x_mean) / float(i)
     return y_mean, x_mean
 
 def z_weights(sta_lst, cx, cy, debug_mode=False):
@@ -186,11 +186,66 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     print('[ERROR] Cannot compute optimal D in weighting scheme')
     raise RuntimeError
 
-def ls_matrices(sta_lst, cx, cy, **kargs):
+def ls_matrices_veis4(sta_lst, cx, cy):
+    """  4-parameter deformation
+         Dx = dx      + y rotation + x scale
+         Dy =      dy - x rotation + y scale
+    """
+    # numper of rows (observations)
+    N = len(sta_lst)*2
+    # number of columns (parameters)
+    M = 4
+    cc  = Station(lon=cx, lat=cy)
+    xyr = [ x.distance_from(cc) for x in sta_lst ]
+    ## design matrix A, observation matrix b
+    A = numpy.zeros(shape=(N,M))
+    b = numpy.zeros(shape=(N,1))
+    i = 0
+    for idx,sta in enumerate(sta_lst):
+        dy, dx, dr = xyr[idx]
+        A[i]   = [ 1e0, 0e0,  dx, dy ]
+        A[i+1] = [ 0e0, 1e0, -dx, dy ]
+        b[i]   = (sta.ve/1000) * Wx
+        b[i+1] = (sta.vn/1000) * Wy
+        i+=2
+    assert i is N, "[DEBUG] Failed to construct ls matrices"
+    # we can solve this as:
+    # numpy.linalg.lstsq(A,b)
+    return A, b
+
+def ls_matrices_veis6(sta_lst, cx, cy):
+    """  6-parameter deformation
+         Dx = tx +      x exx + y exy
+         Dy =      ty +                 x eyx + y eyy
+    """
+    # numper of rows (observations)
+    N = len(sta_lst)*2
+    # number of columns (parameters)
+    M = 6
+    cc  = Station(lon=cx, lat=cy)
+    xyr = [ x.distance_from(cc) for x in sta_lst ]
+    ## design matrix A, observation matrix b
+    A = numpy.zeros(shape=(N,M))
+    b = numpy.zeros(shape=(N,1))
+    i = 0
+    for idx,sta in enumerate(sta_lst):
+        dy, dx, dr = xyr[idx]
+        A[i]   = [ 1e0, 0e0,  dx, 0e0, dy,  dy ]
+        A[i+1] = [ 0e0, 1e0, 0e0,  dy, dx, -dx ]
+        b[i]   = sta.ve/1000
+        b[i+1] = sta.vn/1000
+        i+=2
+    assert i is N, "[DEBUG] Failed to construct ls matrices"
+    # we can solve this as:
+    # numpy.linalg.lstsq(A,b)
+    return A, b
+
+def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     """ Construct Least Squares Matrices (A and b) to be solved for. The function
         will first evaluate the covariance matrix C, where:
         W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
-        of each obervable.
+        of each observable.
+        Note that we have two observables (x and y) for each station.
     """
     # numper of rows (observations)
     N = len(sta_lst)*2
@@ -213,7 +268,7 @@ def ls_matrices(sta_lst, cx, cy, **kargs):
     b = numpy.zeros(shape=(N,1))
     i = 0
     for idx,sta in enumerate(sta_lst):
-        dx, dy, dr = xyr[idx]
+        dy, dx, dr = xyr[idx]
         Wx     = (1.0/sta.ve)*zw[idx]*lw[idx]
         Wy     = (1.0/sta.vn)*zw[idx]*lw[idx]
         A[i]   = [ Wx*j for j in [1, 0,  dy,  dx, dy,  0] ]
@@ -236,10 +291,27 @@ class ShenStrain:
         self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
 
-    def ex(self): return self.__parameters__['taux']
-    
-    def ey(self): return self.__parameters__['taux']
+    def set_options(self, **kargs):
+        for opt in kargs:
+            if opt not in self.__options__:
+                print('[DEBUG] Option {:} not relevant for ShenStrain. Ommiting')
+            else:
+                self.__options__[opt] = kargs[opt]
 
+    def value_of(self, key):
+        if key == 'x':
+            return self.__xcmp__
+        if key == 'y':
+            return self.__ycmp__
+        if key in self.__parameters__:
+            return self.__parameters__[key]
+        if key in self.__options__:
+            return self.__options__[key]
+        if key == 'epsilonx': return self.__parameters__['taux']
+        if key == 'epsilony': return self.__parameters__['tauy']
+        if key == 'epsilon0': return self.__parameters__['tauxy']
+        raise RuntimeError
+    
     def set_xy(self, x, y):
         self.__xcmp__ = x
         self.__ycmp__ = y
@@ -254,11 +326,13 @@ class ShenStrain:
         self.__lweights__ = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, self.__zweights__, **self.__parameters__)
 
     def estimate(self, **kargs):
+        """ TODO this is wrong! ls_matrices_shen will re-compute all weights!
+        """
         if not self.__zweights__:
             self.compute_z_weights()
         if not self.__lweights__:
             self.compute_l_weights()
-        A, b = ls_matrices(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         self.__parameters__['Ux']    = estim[0]
         self.__parameters__['Uy']    = estim[1]
@@ -266,4 +340,45 @@ class ShenStrain:
         self.__parameters__['taux']  = estim[3]
         self.__parameters__['tauxy'] = estim[4]
         self.__parameters__['tauy']  = estim[5]
+        return estim
+
+class VeisStrain:
+    def __init__(self, x=0e0, y=0e0, station_list=[]):
+        self.__stalst__ = station_list
+        self.__xcmp__   = x
+        self.__ycmp__   = y
+        self.__options__  = {}
+        self.__parameters__ = {'dx':0e0, 'dy':0e0, 'omega':0e0, 'epsilonx':0e0, 'epsilon0':0e0, 'epsilony':0e0}
+
+    def value_of(self, key):
+        if key == 'x':
+            return self.__xcmp__
+        if key == 'y':
+            return self.__ycmp__
+        if key in self.__parameters__:
+            return self.__parameters__[key]
+        raise RuntimeError
+
+    def set_xy(self, x, y):
+        self.__xcmp__ = x
+        self.__ycmp__ = y
+
+    def set_to_barycenter(self):
+        self.__ycmp__, self.__xcmp__ = barycenter(self.__stalst__)
+
+    def estimate(self,parameters=6):
+        if parameters == 4:
+            A, b = ls_matrices_veis4(self.__stalst__, self.__xcmp__, self.__ycmp__)
+        elif parameters == 6:
+            A, b = ls_matrices_veis6(self.__stalst__, self.__xcmp__, self.__ycmp__)
+        else:
+            raise RuntimeError
+        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+        self.__parameters__['dx']    = estim[0]
+        self.__parameters__['dy']    = estim[1]
+        self.__parameters__['epsilonx'] = estim[2]
+        self.__parameters__['epsilony']  = estim[3]
+        if parameters == 6:
+            self.__parameters__['epsilon0'] = estim[4]
+            self.__parameters__['omega']  = estim[5]
         return estim
