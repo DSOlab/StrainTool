@@ -15,6 +15,7 @@ import pystrain.grid
 ############################################## ploting
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
+from scipy.spatial import Delaunay
 
 def plot_map(sta_list, stensor_list):
     lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
@@ -119,6 +120,7 @@ if args.one_tensor:
     sys.exit(0)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
+strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
     print '[DEBUG] Constructed the grid. Limits are:'
@@ -126,7 +128,6 @@ if args.method == 'shen':
     print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
     print '[DEBUG] Estimating strain tensor for each cell center'
     ##  Iterate through the grid (on each cell center)
-    strain_list = []
     prev_x = 0
     prev_y = 0
     node_nr = 0
@@ -134,8 +135,8 @@ if args.method == 'shen':
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
         sstr.set_xy(x, y)
-        sstr.compute_z_weights()
-        sstr.compute_l_weights()
+        #sstr.compute_z_weights()
+        #sstr.compute_l_weights()
         estim2 = sstr.estimate()
         node_nr += 1
         print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
@@ -145,5 +146,12 @@ if args.method == 'shen':
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
+    for idx, trng in enumerate(tri.simplices):
+        cx = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
+        cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
+        sstr = VeisStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]])
+        estim2 = sstr.estimate()
+        clat, clon = utm2ell(cx, cy, utm_zone)
+        strain_list.append(Station(lat=clat, lon=clon))
 
 plot_map(sta_list_ell, strain_list)
