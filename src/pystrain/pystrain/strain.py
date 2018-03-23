@@ -215,8 +215,6 @@ def ls_matrices_veis4(sta_lst, cx, cy):
 
 def ls_matrices_veis6(sta_lst, cx, cy):
     """  6-parameter deformation
-         Dx = tx +      x exx + y exy
-         Dy =      ty +                 x eyx + y eyy
     """
     # numper of rows (observations)
     N = len(sta_lst)*2
@@ -230,8 +228,10 @@ def ls_matrices_veis6(sta_lst, cx, cy):
     i = 0
     for idx,sta in enumerate(sta_lst):
         dy, dx, dr = xyr[idx]
-        A[i]   = [ 1e0, 0e0,  dx, 0e0, dy,  dy ]
-        A[i+1] = [ 0e0, 1e0, 0e0,  dy, dx, -dx ]
+        A[i]   = [ 1e0, 0e0,  dy,  dx, dy,  0e0]
+        A[i+1] = [ 0e0, 1e0, -dx, 0e0, dx,   dy]
+        #A[i]    = [ 1e0, 0e0,  dx,  dy, 0e0, 0e0]
+        #A[i+1]  = [ 0e0, 1e0, 0e0, 0e0, -dx, dy ]
         b[i]   = sta.ve/1000
         b[i+1] = sta.vn/1000
         i+=2
@@ -307,9 +307,9 @@ class ShenStrain:
             return self.__parameters__[key]
         if key in self.__options__:
             return self.__options__[key]
-        if key == 'epsilonx': return self.__parameters__['taux']
-        if key == 'epsilony': return self.__parameters__['tauy']
-        if key == 'epsilon0': return self.__parameters__['tauxy']
+        #if key == 'epsilonx': return self.__parameters__['taux']
+        #if key == 'epsilony': return self.__parameters__['tauy']
+        #if key == 'epsilon0': return self.__parameters__['tauxy']
         raise RuntimeError
     
     def set_xy(self, x, y):
@@ -348,7 +348,8 @@ class VeisStrain:
         self.__xcmp__   = x
         self.__ycmp__   = y
         self.__options__  = {}
-        self.__parameters__ = {'dx':0e0, 'dy':0e0, 'omega':0e0, 'epsilonx':0e0, 'epsilon0':0e0, 'epsilony':0e0}
+        self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+        # self.__parameters__ = {'tx':0e0, 'ty':0e0, 'exx':0e0, 'exy':0e0, 'eyx':0e0, 'eyy':0e0}
 
     def value_of(self, key):
         if key == 'x':
@@ -374,11 +375,23 @@ class VeisStrain:
         else:
             raise RuntimeError
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
-        self.__parameters__['dx']    = estim[0]
-        self.__parameters__['dy']    = estim[1]
-        self.__parameters__['epsilonx'] = estim[2]
-        self.__parameters__['epsilony']  = estim[3]
         if parameters == 6:
-            self.__parameters__['epsilon0'] = estim[4]
-            self.__parameters__['omega']  = estim[5]
+            self.__parameters__['Ux']    = estim[0]
+            self.__parameters__['Uy']    = estim[1]
+            self.__parameters__['omega'] = estim[2]
+            self.__parameters__['taux']  = estim[3]
+            self.__parameters__['tauxy'] = estim[4]
+            self.__parameters__['tauy']  = estim[5]
+        else:
+            raise RuntimeError
         return estim
+
+    def info(self):
+        info_dict = {}
+        info_dict['e'] = (self.value_of('exy') - self.value_of('eyx'))/2e0
+        info_dict['k'] = (self.value_of('exx') + self.value_of('eyy')) * 1000000. / 2e0
+        info_dict['strain'] = scipy.sqrt((self.value_of('exx') - self.value_of('eyy')) * (self.value_of('exx') - self.value_of('eyy')) + (self.value_of('exy') + self.value_of('eyx')) * (self.value_of('exy') + self.value_of('eyx'))) * 1000000. 
+        info_dict['kmax'] = info_dict['k'] + info_dict['strain'] / 2e0
+        info_dict['kmin'] = info_dict['k'] - info_dict['strain'] / 2e0
+        info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(self.value_of('exy') + self.value_of('eyx'), self.value_of('eyy') - self.value_of('exx')))
+        return info_dict
