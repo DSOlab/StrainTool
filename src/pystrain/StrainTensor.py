@@ -128,8 +128,8 @@ if args.method == 'shen':
     print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
     print '[DEBUG] Estimating strain tensor for each cell center'
     ##  Iterate through the grid (on each cell center)
-    prev_x = 0
-    prev_y = 0
+    #prev_x = 0
+    #prev_y = 0
     node_nr = 0
     sstr = ShenStrain(0e0, 0e0, sta_list_utm)
     for x, y in grd:
@@ -141,8 +141,8 @@ if args.method == 'shen':
         node_nr += 1
         print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
         strain_list.append(Station(lat=clat, lon=clon))
-        prev_x = x
-        prev_y = y
+        #prev_x = x
+        #prev_y = y
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)

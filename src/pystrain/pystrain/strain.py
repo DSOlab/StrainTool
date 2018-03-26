@@ -281,6 +281,22 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     # numpy.linalg.lstsq(A,b)
     return A, b
 
+def __strain_info__(str_params):
+    info_dict = {}
+    tx  = str_params['Ux']
+    ty  = str_params['Uy']
+    exx = str_params['taux']
+    exy = str_params['tauxy'] + str_params['omega']
+    eyx = str_params['tauxy'] - str_params['omega']
+    eyy = str_params['tauy']
+    info_dict['e'] = (exy - eyx) / 2e0
+    info_dict['k'] = (exx + eyy) * 1000000. / 2e0
+    info_dict['strain'] = scipy.sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
+    info_dict['k_max'] = info_dict['k'] + info_dict['strain'] / 2e0
+    info_dict['k_min'] = info_dict['k'] - info_dict['strain'] / 2e0
+    info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(exy + eyx, eyy - exx))
+    return info_dict
+
 class ShenStrain:
     def __init__(self, x=0e0, y=0e0, station_list=[]):
         self.__stalst__ = station_list
@@ -290,6 +306,9 @@ class ShenStrain:
         self.__lweights__ = None
         self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+
+    def info(self):
+        return __strain_info__(self.__parameters__)
 
     def set_options(self, **kargs):
         for opt in kargs:
@@ -307,9 +326,6 @@ class ShenStrain:
             return self.__parameters__[key]
         if key in self.__options__:
             return self.__options__[key]
-        #if key == 'epsilonx': return self.__parameters__['taux']
-        #if key == 'epsilony': return self.__parameters__['tauy']
-        #if key == 'epsilon0': return self.__parameters__['tauxy']
         raise RuntimeError
     
     def set_xy(self, x, y):
@@ -359,6 +375,9 @@ class VeisStrain:
         if key in self.__parameters__:
             return self.__parameters__[key]
         raise RuntimeError
+    
+    def info(self):
+        return __strain_info__(self.__parameters__)
 
     def set_xy(self, x, y):
         self.__xcmp__ = x
@@ -388,10 +407,16 @@ class VeisStrain:
 
     def info(self):
         info_dict = {}
-        info_dict['e'] = (self.value_of('exy') - self.value_of('eyx'))/2e0
-        info_dict['k'] = (self.value_of('exx') + self.value_of('eyy')) * 1000000. / 2e0
-        info_dict['strain'] = scipy.sqrt((self.value_of('exx') - self.value_of('eyy')) * (self.value_of('exx') - self.value_of('eyy')) + (self.value_of('exy') + self.value_of('eyx')) * (self.value_of('exy') + self.value_of('eyx'))) * 1000000. 
-        info_dict['kmax'] = info_dict['k'] + info_dict['strain'] / 2e0
-        info_dict['kmin'] = info_dict['k'] - info_dict['strain'] / 2e0
-        info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(self.value_of('exy') + self.value_of('eyx'), self.value_of('eyy') - self.value_of('exx')))
+        tx  = self.__parameters__['Ux']
+        ty  = self.__parameters__['Uy']
+        exx = self.__parameters__['taux']
+        exy = self.__parameters__['tauxy'] + self.__parameters__['omega']
+        eyx = self.__parameters__['tauxy'] - self.__parameters__['omega']
+        eyy = self.__parameters__['tauy']
+        info_dict['e'] = (exy - eyx) / 2e0
+        info_dict['k'] = (exx + eyy) * 1000000. / 2e0
+        info_dict['strain'] = scipy.sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
+        info_dict['k_max'] = info_dict['k'] + info_dict['strain'] / 2e0
+        info_dict['k_min'] = info_dict['k'] - info_dict['strain'] / 2e0
+        info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(exy + eyx, eyy - exx))
         return info_dict
