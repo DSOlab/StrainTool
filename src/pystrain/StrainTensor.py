@@ -17,6 +17,29 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
+def gmt_script(sta_lst, tensor_lst, outfile='gmt_script'):
+    lons    = [ degrees(x.lon) for x in sta_list ]
+    lats    = [ degrees(x.lat) for x in sta_list ]
+    west    = min(lons)
+    east    = max(lons)
+    south   = min(lats)
+    north   = max(lats)
+    gmt_range=('-R{:5.2f}/{:5.2f}/{:5.2f}/{:5.2f}'.format(west, east, south, north)) 
+    gmt_scale=('-Lf20/33.5/36:24/100+l+jr')
+    gmt_proj=('-Jm24/37/1:$projscale')
+    with open(outfile, 'w') as fout:
+        print('gmt gmtset MAP_FRAME_TYPE fancy')
+        print('gmt gmtset PS_PAGE_ORIENTATION portrait')
+        print('gmt gmtset FONT_ANNOT_PRIMARY 10')
+        print('gmt gmtset FONT_LABEL 10')
+        print('gmt gmtset MAP_FRAME_WIDTH 0.12c')
+        print('gmt gmtset FONT_TITLE 18p,Palatino-BoldItalic')
+        print('gmt gmtset PS_MEDIA 22cx22c')
+        # print('scale=\"-Lf20/33.5/36:24/100+l+jr\"')
+        # print('range=\"-R{:5.2f}/{:5.2f}/{:5.2f}/{:5.2f}\"'.format(west, east, south, north))
+        # print('proj=\"-Jm24/37/1:$projscale\")
+        print('gmt psbasemap $range $proj $scale -B$frame:."Tensors": -P -K > $outfile')
+
 def plot_map(sta_list, stensor_list):
     lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
     lon0    = degrees(sum([ x.lon for x in sta_list ])/len(sta_list))
