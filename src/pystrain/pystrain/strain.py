@@ -291,10 +291,10 @@ def __strain_info__(str_params):
     eyy = str_params['tauy']
     info_dict['e'] = (exy - eyx) / 2e0
     info_dict['k'] = (exx + eyy) * 1000000. / 2e0
-    info_dict['strain'] = scipy.sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
+    info_dict['strain'] = sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
     info_dict['k_max'] = info_dict['k'] + info_dict['strain'] / 2e0
     info_dict['k_min'] = info_dict['k'] - info_dict['strain'] / 2e0
-    info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(exy + eyx, eyy - exx))
+    info_dict['az'] = degrees(2e0 * atan2(exy + eyx, eyy - exx))
     return info_dict
 
 class ShenStrain:
@@ -350,12 +350,12 @@ class ShenStrain:
             self.compute_l_weights()
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
-        self.__parameters__['Ux']    = estim[0]
-        self.__parameters__['Uy']    = estim[1]
-        self.__parameters__['omega'] = estim[2]
-        self.__parameters__['taux']  = estim[3]
-        self.__parameters__['tauxy'] = estim[4]
-        self.__parameters__['tauy']  = estim[5]
+        self.__parameters__['Ux']    = float(estim[0])
+        self.__parameters__['Uy']    = float(estim[1])
+        self.__parameters__['omega'] = float(estim[2])
+        self.__parameters__['taux']  = float(estim[3])
+        self.__parameters__['tauxy'] = float(estim[4])
+        self.__parameters__['tauy']  = float(estim[5])
         return estim
 
 class VeisStrain:
@@ -395,12 +395,12 @@ class VeisStrain:
             raise RuntimeError
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         if parameters == 6:
-            self.__parameters__['Ux']    = estim[0]
-            self.__parameters__['Uy']    = estim[1]
-            self.__parameters__['omega'] = estim[2]
-            self.__parameters__['taux']  = estim[3]
-            self.__parameters__['tauxy'] = estim[4]
-            self.__parameters__['tauy']  = estim[5]
+            self.__parameters__['Ux']    = float(estim[0])
+            self.__parameters__['Uy']    = float(estim[1])
+            self.__parameters__['omega'] = float(estim[2])
+            self.__parameters__['taux']  = float(estim[3])
+            self.__parameters__['tauxy'] = float(estim[4])
+            self.__parameters__['tauy']  = float(estim[5])
         else:
             raise RuntimeError
         return estim
@@ -415,8 +415,8 @@ class VeisStrain:
         eyy = self.__parameters__['tauy']
         info_dict['e'] = (exy - eyx) / 2e0
         info_dict['k'] = (exx + eyy) * 1000000. / 2e0
-        info_dict['strain'] = scipy.sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
+        info_dict['strain'] = sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
         info_dict['k_max'] = info_dict['k'] + info_dict['strain'] / 2e0
         info_dict['k_min'] = info_dict['k'] - info_dict['strain'] / 2e0
-        info_dict['az'] = scipy.degrees(2e0 * scipy.arctan2(exy + eyx, eyy - exx))
+        info_dict['az'] = degrees(2e0 * atan2(exy + eyx, eyy - exx))
         return info_dict

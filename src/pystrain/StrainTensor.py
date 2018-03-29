@@ -1,5 +1,6 @@
 #! /usr/bin/python2.7
 
+from __future__ import print_function
 ############################################## standard libs
 import sys
 from copy import deepcopy
@@ -17,28 +18,44 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
-def gmt_script(sta_lst, tensor_lst, outfile='gmt_script'):
-    lons    = [ degrees(x.lon) for x in sta_list ]
-    lats    = [ degrees(x.lat) for x in sta_list ]
+def gmt_script(sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=6000000, strsc=50, frame=2):
+    lons    = [ degrees(x.lon) for x in sta_lst ]
+    lats    = [ degrees(x.lat) for x in sta_lst ]
     west    = min(lons)
     east    = max(lons)
     south   = min(lats)
     north   = max(lats)
     gmt_range=('-R{:5.2f}/{:5.2f}/{:5.2f}/{:5.2f}'.format(west, east, south, north)) 
     gmt_scale=('-Lf20/33.5/36:24/100+l+jr')
-    gmt_proj=('-Jm24/37/1:$projscale')
+    gmt_proj=('-Jm24/37/1:{:}'.format(projscale))
     with open(outfile, 'w') as fout:
-        print('gmt gmtset MAP_FRAME_TYPE fancy')
-        print('gmt gmtset PS_PAGE_ORIENTATION portrait')
-        print('gmt gmtset FONT_ANNOT_PRIMARY 10')
-        print('gmt gmtset FONT_LABEL 10')
-        print('gmt gmtset MAP_FRAME_WIDTH 0.12c')
-        print('gmt gmtset FONT_TITLE 18p,Palatino-BoldItalic')
-        print('gmt gmtset PS_MEDIA 22cx22c')
-        # print('scale=\"-Lf20/33.5/36:24/100+l+jr\"')
-        # print('range=\"-R{:5.2f}/{:5.2f}/{:5.2f}/{:5.2f}\"'.format(west, east, south, north))
-        # print('proj=\"-Jm24/37/1:$projscale\")
-        print('gmt psbasemap $range $proj $scale -B$frame:."Tensors": -P -K > $outfile')
+        print('#!/bin/bash', file=fout)
+        print('outfile=strain_rates.ps', file=fout)
+        print('GMTVRB=2', file=fout)
+        print('gmt gmtset MAP_FRAME_TYPE fancy', file=fout)
+        print('gmt gmtset PS_PAGE_ORIENTATION portrait', file=fout)
+        print('gmt gmtset FONT_ANNOT_PRIMARY 10', file=fout)
+        print('gmt gmtset FONT_LABEL 10', file=fout)
+        print('gmt gmtset MAP_FRAME_WIDTH 0.12c', file=fout)
+        print('gmt gmtset FONT_TITLE 18p,Palatino-BoldItalic', file=fout)
+        print('gmt gmtset PS_MEDIA 22cx22c', file=fout)
+        print('gmt psbasemap {:} {:} {:} -B{:}:."Tensors": -P -K > $outfile'.format(gmt_range, gmt_proj, gmt_scale, frame), file=fout)
+        print('gmt pscoast -R -J -O -K -W0.25 -G195 -Df -Na >> $outfile', file=fout)
+        print('awk \'{{print $3,$2}}\' .station.info.dat | gmt psxy -Jm -O -R -Sc0.10c -W0.005c -Ggreen -K >>$outfile', file=fout)
+        print("awk \'{{print $3,$2,0,$6,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gblue -W2p,blue -V${{GMTVRB}} -K -O>> $outfile".format(gmt_range, strsc), file=fout)
+        print('awk \'{{print $3,$2,$4,0,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gred -W2p,red -V${{GMTVRB}} -K -O>> $outfile'.format(gmt_range, strsc), file=fout)
+        print('echo "9999 9999" | gmt psxy -J -R -O >> $outfile', file=fout)
+    with open('.strain.info.dat', 'w') as fout:
+        for idx, stn in enumerate(tensor_lst):
+            dct = stn.info()
+            clat, clon = utm2ell(stn.value_of('x'), stn.value_of('y'), utm_zone)
+            # code lat lon Kmax sKmax Kmin sKmin Az sAz E sE gtot sgtot
+            sigma = 1e-3
+            print('{:} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f}'.format(idx, degrees(clat), degrees(clon), dct['k_max'], sigma, dct['k_min'], sigma, dct['az'], sigma, dct['e'], sigma, dct['strain'], sigma), file=fout)
+    with open('.station.info.dat', 'w') as fout:
+        for idx, sta in enumerate(sta_lst):
+            print('{:} {:} {:}'.format(sta.name, degrees(sta.lat), degrees(sta.lon)), file=fout)
+    return
 
 def plot_map(sta_list, stensor_list):
     lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
@@ -66,7 +83,7 @@ def plot_map(sta_list, stensor_list):
         my_map.plot(x, y, 'r+', markersize=8)
         #print 'Tensor at {}, {}'.format(degrees(tnr.lon), degrees(tnr.lat))
 
-    print '[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats))
+    print('[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats)))
     plt.show()
     return
 
@@ -116,21 +133,21 @@ args = parser.parse_args()
 
 ##  Parse stations from input file
 sta_list_ell = parse_ascii_input(args.gps_file)
-print '[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell))
+print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
 mean_lon = degrees(sum([ x.lon for x in sta_list_ell ])/len(sta_list_ell))
 utm_zone = floor(mean_lon/6)+31
 utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
-print '[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone)
+print('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
 sta_list_utm = deepcopy(sta_list_ell)
 for idx, sta in enumerate(sta_list_utm):
     N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), utm_zone)
     sta_list_utm[idx].lon = E
     sta_list_utm[idx].lat = N
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
-print '[DEBUG] Station list transformed to UTM.'
+print('[DEBUG] Station list transformed to UTM.')
 
 ##  Compute only one Strain Tensor, at the region's barycenter
 if args.one_tensor:
@@ -146,10 +163,10 @@ if args.one_tensor:
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
-    print '[DEBUG] Constructed the grid. Limits are:'
-    print '\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step)
-    print '\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step)
-    print '[DEBUG] Estimating strain tensor for each cell center'
+    print('[DEBUG] Constructed the grid. Limits are:')
+    print('\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
+    print('\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
+    print('[DEBUG] Estimating strain tensor for each cell center')
     ##  Iterate through the grid (on each cell center)
     #prev_x = 0
     #prev_y = 0
@@ -162,8 +179,8 @@ if args.method == 'shen':
         #sstr.compute_l_weights()
         estim2 = sstr.estimate()
         node_nr += 1
-        print '[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts)
-        strain_list.append(Station(lat=clat, lon=clon))
+        print('[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts))
+        strain_list.append(sstr)
         #prev_x = x
         #prev_y = y
 else:
@@ -175,6 +192,7 @@ else:
         sstr = VeisStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]])
         estim2 = sstr.estimate()
         clat, clon = utm2ell(cx, cy, utm_zone)
-        strain_list.append(Station(lat=clat, lon=clon))
+        strain_list.append(sstr)
 
-plot_map(sta_list_ell, strain_list)
+gmt_script(sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
+#plot_map(sta_list_ell, strain_list)
