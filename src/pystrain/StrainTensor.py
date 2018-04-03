@@ -171,10 +171,10 @@ if args.method == 'shen':
     #prev_x = 0
     #prev_y = 0
     node_nr = 0
-    sstr = ShenStrain(0e0, 0e0, sta_list_utm)
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
-        sstr.set_xy(x, y)
+        sstr = ShenStrain(x, y, sta_list_utm)
+        #sstr.set_xy(x, y)
         #sstr.compute_z_weights()
         #sstr.compute_l_weights()
         estim2 = sstr.estimate()
