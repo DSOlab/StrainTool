@@ -157,6 +157,7 @@ if args.one_tensor:
         sstr = VeisStrain(0e0, 0e0, sta_list_utm)
     sstr.set_to_barycenter()
     sstr.estimate()
+    gmt_script(sta_list_ell, [sstr], utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
     sys.exit(0)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)

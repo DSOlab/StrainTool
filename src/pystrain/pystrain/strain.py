@@ -276,7 +276,7 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
         b[i]   = (sta.ve/1000) * Wx
         b[i+1] = (sta.vn/1000) * Wy
         i+=2
-    assert i is N, "[DEBUG] Failed to construct ls matrices"
+    assert i == N, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
     return A, b
