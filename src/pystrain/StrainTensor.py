@@ -18,6 +18,13 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
+def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst):
+    new_sta_lst = []
+    for sta in sta_lst:
+        if sta.lon >= xmin and sta.lon <= xmax and sta.lat >= ymin and sta.lat <= ymax:
+            new_sta_lst.append(sta)
+    return new_sta_lst
+
 def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=6000000, strsc=50, frame=2):
     lons    = [ degrees(x.lon) for x in sta_lst ]
     lats    = [ degrees(x.lat) for x in sta_lst ]
@@ -136,6 +143,11 @@ parser.add_argument('-m', '--method',
     choices=['shen', 'veis'],
     required=False)
 
+parser.add_argument('-r', '--region',
+    metavar='REGION',
+    dest='region',
+    required=False)
+
 parser.add_argument('-b', '--barycenter',
     dest='one_tensor',
     action='store_true')
@@ -146,6 +158,18 @@ args = parser.parse_args()
 ##  Parse stations from input file
 sta_list_ell = parse_ascii_input(args.gps_file)
 print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
+
+##  If a region is passed in, then only keep the stations that fall within
+if args.region:
+    try:
+        Napr = len(sta_list_ell)
+        lonmin, lonmax, latmin, latmax = [ radians(float(i)) for i in args.region.split('/') ]
+        sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell)
+        Npst = len(sta_list_ell)
+        print('[DEBUG] Station filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
+        print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
+    except:
+        print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region))
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
