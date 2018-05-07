@@ -146,6 +146,7 @@ parser.add_argument('-m', '--method',
 parser.add_argument('-r', '--region',
     metavar='REGION',
     dest='region',
+    help='Specify a region; any station falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. \"[...] --region=21.0/23.5/36.0/38.5 [...]\"',
     required=False)
 
 parser.add_argument('-b', '--barycenter',
