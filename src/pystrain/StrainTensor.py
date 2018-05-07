@@ -18,7 +18,7 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
-def gmt_script(sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=6000000, strsc=50, frame=2):
+def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=6000000, strsc=50, frame=2):
     lons    = [ degrees(x.lon) for x in sta_lst ]
     lats    = [ degrees(x.lat) for x in sta_lst ]
     west    = min(lons)
@@ -32,6 +32,14 @@ def gmt_script(sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=60
         print('#!/bin/bash', file=fout)
         print('outfile=strain_rates.ps', file=fout)
         print('GMTVRB=2', file=fout)
+        print('VSC=\"0.05\"', file=fout)
+        print('VHORIZONTAL=0', file=fout)
+        print('LABELS=0', file=fout)
+        print('while [ $# -gt 0 ] ; do case \"$1\" in', file=fout)
+        print('-a)\n  VHORIZONTAL=1\n  shift\n  ;;', file=fout)
+        print('-l)\n  LABELS=1\n  shift\n  ;;', file=fout)
+        print('*)\n  shift\n  ;;', file=fout)
+        print('esac\ndone', file=fout)
         print('gmt gmtset MAP_FRAME_TYPE fancy', file=fout)
         print('gmt gmtset PS_PAGE_ORIENTATION portrait', file=fout)
         print('gmt gmtset FONT_ANNOT_PRIMARY 10', file=fout)
@@ -44,6 +52,12 @@ def gmt_script(sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=60
         print('awk \'{{print $3,$2}}\' .station.info.dat | gmt psxy -Jm -O -R -Sc0.10c -W0.005c -Ggreen -K >>$outfile', file=fout)
         print("awk \'{{print $3,$2,0,$6,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gblue -W2p,blue -V${{GMTVRB}} -K -O>> $outfile".format(gmt_range, strsc), file=fout)
         print('awk \'{{print $3,$2,$4,0,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gred -W2p,red -V${{GMTVRB}} -K -O>> $outfile'.format(gmt_range, strsc), file=fout)
+        print('if test \"$VHORIZONTAL\" -eq 1 ; then', file=fout)
+        print('awk \'{{print $2,$3,$4,$5,$6,$7,$8,$1}}\' {:} | gmt psvelo -R -J -Se${{VSC}}/0.95/0 -W.3p,100 -A10p+e -V${{GMTVRB}} -Ggreen -O -K -L >> $outfile'.format(input_file), file=fout)
+        print('fi', file=fout)
+        print('if test \"$LABELS\" -eq 1 ; then', file=fout)
+        print('awk \'{{print $2,$3,9,0,1,"RB",$1}}\' {:} | gmt pstext -Jm -R -Dj0.2c/0.2c -O -K -V${{GMTVRB}} >> $outfile'.format(input_file), file=fout)
+        print('fi', file=fout)
         print('echo "9999 9999" | gmt psxy -J -R -O >> $outfile', file=fout)
     with open('.strain.info.dat', 'w') as fout:
         for idx, stn in enumerate(tensor_lst):
@@ -76,12 +90,10 @@ def plot_map(sta_list, stensor_list):
         x, y = my_map(degrees(sta.lon), degrees(sta.lat))
         my_map.plot(x, y, 'bo', markersize=10)
         plt.text(x, y, sta.name)
-        #print 'Point at {}, {}'.format(degrees(sta.lon), degrees(sta.lat))
 
     for tnr in stensor_list:
         x, y = my_map(degrees(tnr.lon), degrees(tnr.lat))
         my_map.plot(x, y, 'r+', markersize=8)
-        #print 'Tensor at {}, {}'.format(degrees(tnr.lon), degrees(tnr.lat))
 
     print('[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats)))
     plt.show()
@@ -194,5 +206,5 @@ else:
         clat, clon = utm2ell(cx, cy, utm_zone)
         strain_list.append(sstr)
 
-gmt_script(sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
+gmt_script(args.gps_file, sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
 #plot_map(sta_list_ell, strain_list)
