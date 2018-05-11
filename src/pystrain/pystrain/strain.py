@@ -11,6 +11,7 @@ from station import Station
 def barycenter(sta_list):
     ''' Compute the barycenter from a list of stations. The function will use
         each station's self.x and self.y components.
+        Barycenter's coordinates will have the same units as the input ones.
     '''
     y_mean = sta_list[0].lat
     x_mean = sta_list[0].lon
@@ -145,6 +146,7 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     debug_mode = False
     if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
 
+    #  Note: d and dri must be in the same units (here km).
     def gaussian(dri, d):  return exp(-pow(dri/d,2))
     def quadratic(dri, d): return 1e0/(1e0+pow(dri/d,2))
 
@@ -202,7 +204,7 @@ def ls_matrices_veis4(sta_lst, cx, cy):
     b = numpy.zeros(shape=(N,1))
     i = 0
     for idx,sta in enumerate(sta_lst):
-        dy, dx, dr = xyr[idx]
+        dx, dy, dr = xyr[idx]
         A[i]   = [ 1e0, 0e0,  dx, dy ]
         A[i+1] = [ 0e0, 1e0, -dx, dy ]
         b[i]   = (sta.ve/1000) * Wx
@@ -227,7 +229,7 @@ def ls_matrices_veis6(sta_lst, cx, cy):
     b = numpy.zeros(shape=(N,1))
     i = 0
     for idx,sta in enumerate(sta_lst):
-        dy, dx, dr = xyr[idx]
+        dx, dy, dr = xyr[idx]
         A[i]   = [ 1e0, 0e0,  dy,  dx, dy,  0e0]
         A[i+1] = [ 0e0, 1e0, -dx, 0e0, dx,   dy]
         #A[i]    = [ 1e0, 0e0,  dx,  dy, 0e0, 0e0]
@@ -268,13 +270,13 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     b = numpy.zeros(shape=(N,1))
     i = 0
     for idx,sta in enumerate(sta_lst):
-        dy, dx, dr = xyr[idx]
-        Wx     = (1.0/sta.ve)*zw[idx]*lw[idx]
-        Wy     = (1.0/sta.vn)*zw[idx]*lw[idx]
-        A[i]   = [ Wx*j for j in [1, 0,  dy,  dx, dy,  0] ]
-        A[i+1] = [ Wy*j for j in [0, 1, -dx,   0, dx, dy] ]
-        b[i]   = (sta.ve/1000) * Wx
-        b[i+1] = (sta.vn/1000) * Wy
+        dx, dy, dr = xyr[idx]
+        Wx     = (1e0/sta.se)*zw[idx]*lw[idx]
+        Wy     = (1e0/sta.sn)*zw[idx]*lw[idx]
+        A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
+        A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+        b[i]   = sta.ve * Wx
+        b[i+1] = sta.vn * Wy
         i+=2
     assert i == N, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
@@ -297,6 +299,35 @@ def __strain_info__(str_params):
     info_dict['az'] = degrees(2e0 * atan2(exy + eyx, eyy - exx))
     return info_dict
 
+def __cmp_strain__(str_params, str_params_cov=None):
+    info_dict = {}
+    x1  = str_params['taux']
+    x2  = str_params['tauxy']
+    x3  = str_params['tauy']
+    print('{:9.1f} {:9.1f} {:9.1f}'.format(x1, x2, x3))
+    cov = pi / 180.0e0
+    ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
+    ##+ and dextral tau_max azimuth
+    emean = (x1+x3) / 2.0e0
+    ediff = (x1-x3) / 2.0e0
+    taumax= sqrt(x2**2 + ediff**2)
+    emax  = emean+taumax
+    emin  = emean-taumax
+    azim  = -atan2(x2, ediff) / cov / 2.0e0
+    azim  = 90.0e0+azim
+    dexazim = azim+45.0e0-180.0e0
+    dilat = x1+x3
+    return emean, ediff, taumax, emax, emin, dexazim, dilat
+
+"""
+def __write_strain__(strain, fout=None):
+    print('longitude latitude      vx+dvx       vy+dvy    cxy         w+dw         exx+dexx         exy+dexy         eyy+deyy         emax+demax       emin+demin        shr+dshr         azi+dazi        dilat+ddilat     dis.    weight    chisq   nsite')
+    print('  deg       deg          mm/a         mm/a      /      nano-rad/a     nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a        degree       nano-strain/a      km        /         /       /')
+
+print(''.format(strain.x, strain.y, strain.Ux, 0e0, strain.Uy, 0e0, 0e0,
+     strain.tauy, 0e0, strain.omega, 0e0, strain.taux, 0e0, strain.tauxy, 0e0,
+     emax, 0e0, emin, 0e0, taumax, 0e0, dexazim, 0e0, dilat, 0e0)
+"""
 class ShenStrain:
     def __init__(self, x=0e0, y=0e0, station_list=[]):
         self.__stalst__ = station_list
@@ -309,6 +340,10 @@ class ShenStrain:
 
     def info(self):
         return __strain_info__(self.__parameters__)
+
+    def print_details(self, fout):
+        emean, ediff, taumax, emax, emin, dexazim, dilat =  [ i*1000.0e0 for i in __cmp_strain__(self.__parameters__) ]
+        print('{:8.3f},{:9.3f},{:7.1f},{:6.1f},{:7.1f},{:6.1f},{:7.2f},{:8.1f},{:7.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f}'.format(self.__xcmp__, self.__ycmp__, self.value_of('Ux'), 0e0, self.value_of('Uy'), 0e0, 0e0, self.value_of('tauy'), 0e0, self.value_of('omega'), 0e0, self.value_of('taux'), 0e0, self.value_of('tauxy'), 0e0, emax, 0e0, emin, 0e0, taumax, 0e0, dexazim, 0e0, dilat, 0e0), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
@@ -356,6 +391,7 @@ class ShenStrain:
         self.__parameters__['taux']  = float(estim[3])
         self.__parameters__['tauxy'] = float(estim[4])
         self.__parameters__['tauy']  = float(estim[5])
+        print('{:9.3f}{:9.3f}{:9.5f}{:9.5f}{:9.5f}{:9.5f}'.format(float(estim[0])*1000e0, float(estim[1])*1000e0, float(estim[2])*1000e0, float(estim[3])*1000e0, float(estim[4])*1000e0,  float(estim[5])*1000e0))
         return estim
 
 class VeisStrain:

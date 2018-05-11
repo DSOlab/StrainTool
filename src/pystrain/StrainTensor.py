@@ -156,11 +156,15 @@ parser.add_argument('-b', '--barycenter',
 ##  Parse command line arguments.
 args = parser.parse_args()
 
-##  Parse stations from input file
+##  Parse stations from input file; at input, station coordinates are in decimal
+##+ degrees and velocities are in mm/yr.
+##+ After reading, station coordinates are in radians and velocities are in
+##+ m/yr.
 sta_list_ell = parse_ascii_input(args.gps_file)
 print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 
-##  If a region is passed in, then only keep the stations that fall within
+##  If a region is passed in, then only keep the stations that fall within it.
+##  The region coordinates (min/max pairs) should be given in decimal degrees.
 if args.region:
     try:
         Napr = len(sta_list_ell)
@@ -170,11 +174,14 @@ if args.region:
         print('[DEBUG] Station filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
         print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     except:
+        ## TODO we should exit with error here
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region))
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
-mean_lon = degrees(sum([ x.lon for x in sta_list_ell ])/len(sta_list_ell))
+##  Note that station ellipsoidal coordinates are in radians while the cartesian
+##+ coordinates are in meters.
+mean_lon = degrees(sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell))
 utm_zone = floor(mean_lon/6)+31
 utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
 print('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
@@ -186,7 +193,7 @@ for idx, sta in enumerate(sta_list_utm):
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
 print('[DEBUG] Station list transformed to UTM.')
 
-##  Compute only one Strain Tensor, at the region's barycenter
+##  Compute only one Strain Tensor, at the region's barycenter; then exit.
 if args.one_tensor:
     if args.method == 'shen':
         sstr = ShenStrain(0e0, 0e0, sta_list_utm)
@@ -198,6 +205,7 @@ if args.one_tensor:
     sys.exit(0)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
+fout = open('strain_info.dat', 'w')
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
@@ -206,21 +214,15 @@ if args.method == 'shen':
     print('\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
     print('[DEBUG] Estimating strain tensor for each cell center')
     ##  Iterate through the grid (on each cell center)
-    #prev_x = 0
-    #prev_y = 0
     node_nr = 0
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
         sstr = ShenStrain(x, y, sta_list_utm)
-        #sstr.set_xy(x, y)
-        #sstr.compute_z_weights()
-        #sstr.compute_l_weights()
         estim2 = sstr.estimate()
         node_nr += 1
         print('[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts))
+        sstr.print_details(fout)
         strain_list.append(sstr)
-        #prev_x = x
-        #prev_y = y
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
@@ -232,5 +234,6 @@ else:
         clat, clon = utm2ell(cx, cy, utm_zone)
         strain_list.append(sstr)
 
+fout.close()
 gmt_script(args.gps_file, sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
 #plot_map(sta_list_ell, strain_list)

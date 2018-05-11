@@ -18,6 +18,8 @@ class Station:
         """ Station constructor; construction can be performed:
             1 from an input string of type:
                 "name lon lat Ve Vn Se Sn RHO T"
+                where lon and lat are in decimal degrees and velocity components
+                are in mm/year.
             2 given any of the (above mentioned) instance members/attributes.
 
             e.g. s = Station("akyr +24.91260690 +34.98083160 0.00871244 -0.0151236 0.00136367 0.000278371 0.5  2.5")
@@ -40,10 +42,10 @@ class Station:
             self.name = l[0]
             self.lon  = radians(float(l[1]))
             self.lat  = radians(float(l[2]))
-            self.ve   = float(l[3])
-            self.vn   = float(l[4])
-            self.se   = float(l[5])
-            self.sn   = float(l[6])
+            self.ve   = float(l[3]) / 1000e0
+            self.vn   = float(l[4]) / 1000e0
+            self.se   = float(l[5]) / 1000e0
+            self.sn   = float(l[6]) / 1000e0
             self.rho  = float(l[7])
             self.t    = float(l[8])
         except:
@@ -65,4 +67,4 @@ class Station:
     def distance_from(self, sta):
         dlon = sta.lon - self.lon
         dlat = sta.lat - self.lat
-        return dlat, dlon, sqrt(dlat*dlat + dlon*dlon)
+        return dlon, dlat, sqrt(dlat*dlat + dlon*dlon)
