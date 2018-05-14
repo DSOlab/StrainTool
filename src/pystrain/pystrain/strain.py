@@ -304,7 +304,6 @@ def __cmp_strain__(str_params, str_params_cov=None):
     x1  = str_params['taux']
     x2  = str_params['tauxy']
     x3  = str_params['tauy']
-    print('{:9.1f} {:9.1f} {:9.1f}'.format(x1, x2, x3))
     cov = pi / 180.0e0
     ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
     ##+ and dextral tau_max azimuth
@@ -342,8 +341,8 @@ class ShenStrain:
         return __strain_info__(self.__parameters__)
 
     def print_details(self, fout):
-        emean, ediff, taumax, emax, emin, dexazim, dilat =  [ i*1000.0e0 for i in __cmp_strain__(self.__parameters__) ]
-        print('{:8.3f},{:9.3f},{:7.1f},{:6.1f},{:7.1f},{:6.1f},{:7.2f},{:8.1f},{:7.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f},{:9.1f},{:8.1f}'.format(self.__xcmp__, self.__ycmp__, self.value_of('Ux'), 0e0, self.value_of('Uy'), 0e0, 0e0, self.value_of('tauy'), 0e0, self.value_of('omega'), 0e0, self.value_of('taux'), 0e0, self.value_of('tauxy'), 0e0, emax, 0e0, emin, 0e0, taumax, 0e0, dexazim, 0e0, dilat, 0e0), file=fout)
+        emean, ediff, taumax, emax, emin, dexazim, dilat =  __cmp_strain__(self.__parameters__)
+        print('{:9.3f} {:9.3f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f}'.format(self.__xcmp__, self.__ycmp__, self.value_of('Ux'), self.value_of('Uy'), self.value_of('tauy'), self.value_of('omega'), self.value_of('taux'), self.value_of('tauxy'), emax, emin, taumax, dexazim, dilat), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
@@ -391,7 +390,6 @@ class ShenStrain:
         self.__parameters__['taux']  = float(estim[3])
         self.__parameters__['tauxy'] = float(estim[4])
         self.__parameters__['tauy']  = float(estim[5])
-        print('{:9.3f}{:9.3f}{:9.5f}{:9.5f}{:9.5f}{:9.5f}'.format(float(estim[0])*1000e0, float(estim[1])*1000e0, float(estim[2])*1000e0, float(estim[3])*1000e0, float(estim[4])*1000e0,  float(estim[5])*1000e0))
         return estim
 
 class VeisStrain:

@@ -206,6 +206,7 @@ if args.one_tensor:
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 fout = open('strain_info.dat', 'w')
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('X (m)', 'Y (m)', 'Ux', 'Uy', 'tauy', 'omega', 'taux', 'tauxy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
