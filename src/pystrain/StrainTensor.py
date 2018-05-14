@@ -25,7 +25,7 @@ def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst):
             new_sta_lst.append(sta)
     return new_sta_lst
 
-def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=6000000, strsc=50, frame=2):
+def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=9000000, strsc=50, frame=2):
     lons    = [ degrees(x.lon) for x in sta_lst ]
     lats    = [ degrees(x.lat) for x in sta_lst ]
     west    = min(lons)

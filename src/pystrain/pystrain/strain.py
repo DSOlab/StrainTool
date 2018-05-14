@@ -7,6 +7,12 @@ import numpy
 import operator
 from math import atan2, exp, sqrt, floor, pi, degrees
 from station import Station
+##############################################  pystrain
+from pystrain.strain import *
+from pystrain.geodesy.utm import *
+from pystrain.iotools.iparser import *
+import pystrain.grid
+
 
 def barycenter(sta_list):
     ''' Compute the barycenter from a list of stations. The function will use
@@ -341,8 +347,10 @@ class ShenStrain:
         return __strain_info__(self.__parameters__)
 
     def print_details(self, fout):
+	utm_zone = 34
+	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone)
         emean, ediff, taumax, emax, emin, dexazim, dilat =  __cmp_strain__(self.__parameters__)
-        print('{:9.3f} {:9.3f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f} {:+10.6f}'.format(self.__xcmp__, self.__ycmp__, self.value_of('Ux'), self.value_of('Uy'), self.value_of('tauy'), self.value_of('omega'), self.value_of('taux'), self.value_of('tauxy'), emax, emin, taumax, dexazim, dilat), file=fout)
+        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('tauy')*1e9, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, emax*1e9, emin*1e9, taumax*1e9, dexazim, dilat*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
