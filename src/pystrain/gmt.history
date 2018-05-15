@@ -1,0 +1,8 @@
+# GMT 5 Session common arguments shelf
+BEGIN GMT 5.2.1
+B	2:.Tensors:
+J	m
+Jm	m24/37/1:5000000
+R	19/29/34/42
+L	7
+END

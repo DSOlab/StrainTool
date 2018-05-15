@@ -144,10 +144,10 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
             RuntimeError if dmin > dmax, or if we cannot find an optimal D.
     """
     if 'ltype' not in kargs : kargs['ltype'] = 'gaussian'
-    if 'Wt'    not in kargs : kargs['Wt']    = 24
+    if 'Wt'    not in kargs : kargs['Wt']    = 6
     if 'dmin'  not in kargs : kargs['dmin']  = 1
     if 'dmax'  not in kargs : kargs['dmax']  = 500
-    if 'dstep' not in kargs : kargs['dstep'] = 2
+    if 'dstep' not in kargs : kargs['dstep'] = 1
 
     debug_mode = False
     if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
@@ -279,11 +279,12 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
         dx, dy, dr = xyr[idx]
         Wx     = (1e0/sta.se)*zw[idx]*lw[idx]
         Wy     = (1e0/sta.sn)*zw[idx]*lw[idx]
-        A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
-        A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
-        b[i]   = sta.ve * Wx
-        b[i+1] = sta.vn * Wy
-        i+=2
+        if Wx > 0e0 and Wy > 0e0:
+	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
+	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+	    b[i]   = sta.ve * Wx
+	    b[i+1] = sta.vn * Wy
+	i+=2
     assert i == N, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
@@ -319,10 +320,10 @@ def __cmp_strain__(str_params, str_params_cov=None):
     emax  = emean+taumax
     emin  = emean-taumax
     azim  = -atan2(x2, ediff) / cov / 2.0e0
-    azim  = 90.0e0+azim
+    #azim  = 90.0e0+azim
     dexazim = azim+45.0e0-180.0e0
     dilat = x1+x3
-    return emean, ediff, taumax, emax, emin, dexazim, dilat
+    return emean, ediff, taumax, emax, emin, azim, dilat
 
 """
 def __write_strain__(strain, fout=None):
@@ -347,10 +348,10 @@ class ShenStrain:
         return __strain_info__(self.__parameters__)
 
     def print_details(self, fout):
-	utm_zone = 34
-	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone)
-        emean, ediff, taumax, emax, emin, dexazim, dilat =  __cmp_strain__(self.__parameters__)
-        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('tauy')*1e9, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, emax*1e9, emin*1e9, taumax*1e9, dexazim, dilat*1e9), file=fout)
+	utm_zone = 34 #added to convert utm 2 latlon
+	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) #added to conv utm 2 latlon
+        emean, ediff, taumax, emax, emin, azim, dilat =  __cmp_strain__(self.__parameters__)
+        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('tauy')*1e9, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, emax*1e9, emin*1e9, taumax*1e9, azim, dilat*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
