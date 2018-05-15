@@ -145,7 +145,7 @@ def l_weights(sta_lst, cx, cy, z_weights, **kargs):
     """
     if 'ltype' not in kargs : kargs['ltype'] = 'gaussian'
     if 'Wt'    not in kargs : kargs['Wt']    = 6
-    if 'dmin'  not in kargs : kargs['dmin']  = 1
+    if 'dmin'  not in kargs : kargs['dmin']  = 1 	
     if 'dmax'  not in kargs : kargs['dmax']  = 500
     if 'dstep' not in kargs : kargs['dstep'] = 1
 
@@ -279,7 +279,8 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
         dx, dy, dr = xyr[idx]
         Wx     = (1e0/sta.se)*zw[idx]*lw[idx]
         Wy     = (1e0/sta.sn)*zw[idx]*lw[idx]
-        if Wx > 0e0 and Wy > 0e0:
+        print('[DEBUG] Wx = {:} , Wy = {:}'.format(Wx,Wy))
+        if Wx > .5e1 and Wy > .5e1:
 	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
 	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
 	    b[i]   = sta.ve * Wx
