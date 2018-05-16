@@ -280,7 +280,14 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
         Wx     = (1e0/sta.se)*zw[idx]*lw[idx]
         Wy     = (1e0/sta.sn)*zw[idx]*lw[idx]
         print('[DEBUG] Wx = {:} , Wy = {:}'.format(Wx,Wy))
-        if Wx > .5e1 and Wy > .5e1:
+        if Wx > .5e0 and Wy > .5e0:
+	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
+	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+	    b[i]   = sta.ve * Wx
+	    b[i+1] = sta.vn * Wy
+	else:
+	    Wx = 1e-15
+	    Wy = 1e-15
 	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
 	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
 	    b[i]   = sta.ve * Wx
