@@ -40,35 +40,35 @@ function help {
 	echo " Usage   : gmtstrainplot.sh -r  |  | -o [output] | -jpg "
 	echo " Switches: "
 	echo "/*** Basic Plots & Background ***********************************/"
-	echo "           -r [:= region] region to plot west east south north projscale frame(default Greece)"
-	echo "                   use: -r west east south north projscale frame"
-# 	echo "           -faults [:= faults] plot NOA fault database"
-# 	echo "           -pcmt [:= plot cmt] plot HARVARD cmt and papazachos fm"
-# 	echo "           -topo [:= topography] plot topography"
+	echo "     -r [:= region] region to plot (default Greece)"
+	echo "        use: -r west east south north projscale frame"
+# 	echo "     -faults [:= faults] plot NOA fault database"
+# 	echo "     -pcmt [:= plot cmt] plot HARVARD cmt and papazachos fm"
+# 	echo "     -topo [:= topography] plot topography"
 	echo ""
 	echo "/*** PLOT STATIONS ***********************************************/"
-	echo "           -psta [:=stations] plot only stations from input file"
+	echo "     -psta [:=stations] plot only stations from input file"
 	echo ""
-# 	echo "/*** PLOT VELOCITIES ********************************************/"
-# 	echo "           -vhor (gmt_file)[:= horizontal velocities]  "
-# 	echo "           -vsc [:=velocity scale] change valocity scale default 0.05"
+	echo "/*** PLOT VELOCITIES ********************************************/"
+	echo "     -vhor (station_file)[:= horizontal velocities]  "
+	echo "     -vsc [:=velocity scale] change valocity scale default 0.05"
 # 	echo ""
 	echo "/*** PLOT STRAINS **********************************************/"
-	echo "           -str (strain file)[:= strains] Plot strain rates "
-	echo "           -rot (strain file)[:= rots] Plot rotational rates "
-	echo "           -gtot(strain file)[:=shear strain] plot total shear strain rate contours"
-	echo "           -gtotaxes (strain file) dextral and sinistral max shear strain rates"
-	echo "           -dil (strainfile)[:= dilatation] Plot dilatation and principal axes"
-	echo "           -strsc [:=strain scale]"
-	echo "           -rotsc [:=rotational scales]"
+	echo "     -str (strain file)[:= strains] Plot strain rates "
+	echo "     -rot (strain file)[:= rots] Plot rotational rates "
+	echo "     -gtot(strain file)[:=shear strain] plot total shear strain rate contours"
+	echo "     -gtotaxes (strain file) dextral and sinistral max shear strain rates"
+	echo "     -dil (strainfile)[:= dilatation] Plot dilatation and principal axes"
+	echo "     -strsc [:=strain scale]"
+	echo "     -rotsc [:=rotational scales]"
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
-	echo "           -o [:= output] name of output files"
-	echo "           -l [:=labels] plot labels"
-# 	echo "           -leg [:=legend] insert legends"
-	echo "           -logo [:=logo] plot logo"
-	echo "           -jpg : convert eps file to jpg"
-	echo "           -h [:= help] help menu"
+	echo "     -o [:= output] name of output files"
+	echo "     -l [:=labels] plot labels"
+# 	echo "     -leg [:=legend] insert legends"
+	echo "     -logo [:=logo] plot logo"
+	echo "     -jpg : convert eps file to jpg"
+	echo "     -h [:= help] help menu"
 	echo " Exit Status:    1 -> help message or error"
 	echo " Exit Status:  = 0 -> sucesseful exit"
 	echo " run scr: ./gmtplot.sh -topo -jpg"
@@ -165,7 +165,7 @@ do
 			shift
 			;;
 		-vhor)
-			pth2vhor=${pth2inptf}/$2
+			pth2stainfo=${pth2inptf}/$2
 			VHORIZONTAL=1
 			shift
 			shift
@@ -284,9 +284,9 @@ fi
 
 if [ "$VHORIZONTAL" -eq 1 ]
 then
-  if [ ! -f $pth2vhor ]
+  if [ ! -f $pth2stainfo ]
   then
-    echo "input file $pth2vhor does not exist"
+    echo "input file $pth2stainfo does not exist"
     echo "please download it and then use this switch"
     VHORIZONTAL=0
     exit 1
@@ -326,6 +326,17 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
 gmt	gmtset PS_MEDIA 22cx22c
+# tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
+
+tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
+sclat=$(echo print ${south} + ${tmp_scrate} | python)
+
+tmp_scrate=$(python -c "print((${projscale}/150000000.)*27.)")
+sclon=$(echo print ${east} - ${tmp_scrate} | python)
+
+tmp_msclat=$(python -c "print int((${south} + ${north})/2)")
+tmp_msclon=$(python -c "print int((${west} + ${east})/2)")
+export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 # scale="-Lf20/33.5/36:24/100+l+jr"
 range="-R$west/$east/$south/$north"
 proj="-Jm24/37/1:$projscale"
@@ -407,36 +418,58 @@ fi
 
 if [ "$VHORIZONTAL" -eq 1 ]
 then
-	awk -F, '{print $1, $2}' $pth2inptf/ionpvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
-	awk -F, '{print $1, $2}' $pth2inptf/ioncvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
+# plot stations
+  if [ "$PSTA" -eq 1 ]
+  then
 
-# 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2vhor | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
+    awk '{print $3,$2}' $pth2sta  \
+    | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
+    
+    if [ "$LABELS" -eq 1 ]
+    then
+      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
+    fi
+  fi
 
-	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W1.5p,red -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
 
-	if [ "$LABELS" -eq 1 ]
-	then
-# 		 awk '{print $1,$2,8,0,1,"LM",$8}' $pth2vhor | gmt pstext -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
- 	gmt pstext $pth2inptf/ionpvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-	gmt pstext $pth2inptf/ioncvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
+# 	awk -F, '{print $1, $2}' $pth2inptf/ionpvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
+# 	awk -F, '{print $1, $2}' $pth2inptf/ioncvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
 
-	fi
+  awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
+  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+
+  awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
+  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+#   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
+#   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63
+# 	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
+# 	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
+# 
+# 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
+# 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W1.5p,red -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
+# 
+# 	if [ "$LABELS" -eq 1 ]
+# 	then
+# # 		 awk '{print $1,$2,8,0,1,"LM",$8}' $pth2vhor | gmt pstext -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
+#  	gmt pstext $pth2inptf/ionpvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
+# 	gmt pstext $pth2inptf/ioncvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
+# 
+# 	fi
 
 ###scale
 # echo "$vsclon $vsclat $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
 # echo "$vsclon $vsclat $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
 # echo "$vsclon $vsclat 9 0 1 LB $vscmagn \261 1 mm/y" | gmt pstext -Jm -R -Dj-.3c/0.5c  -O -K -V>> $outfile
-echo "22.48 37.70 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
-echo "22.48 37.70 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
 
-echo "22.48 37.65 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
-echo "22.48 37.65 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,red -A10p+e -Gblue -O -K -L -V >> $outfile
-echo "22.45 37.69 8 0 1 LB $vscmagn \261 1 mm/y" | gmt pstext -Jm -R -Dj-.3c/0.5c  -O -K -V>> $outfile
-echo "22.48 37.70 8 0 1 RM Permanent Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
-echo "22.48 37.65 8 0 1 RM Campaign Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
+# echo "22.48 37.70 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
+# echo "22.48 37.70 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
+# 
+# echo "22.48 37.65 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
+# echo "22.48 37.65 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,red -A10p+e -Gblue -O -K -L -V >> $outfile
+# echo "22.45 37.69 8 0 1 LB $vscmagn \261 1 mm/y" | gmt pstext -Jm -R -Dj-.3c/0.5c  -O -K -V>> $outfile
+# echo "22.48 37.70 8 0 1 RM Permanent Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
+# echo "22.48 37.65 8 0 1 RM Campaign Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
 
 fi
 
@@ -452,13 +485,8 @@ then
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
   gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
-  
-#   gmt surface tmpgtot -R -I1 -Gdata.nc
+
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
-#   gmt psxy -R -J tmpgtot -Ss0.05i -Gblack -O -K >> $outfile
-#   gmt grdtrend data.nc -N9 -Ttrend.nc
-#   gmt grdcontour trend.nc -J -C25 -A50 -Glct/cb -S4 -O -K >> $outfile
-# psxy -R -J track -Wthick,. -O -K >> $ps
 
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
@@ -523,7 +551,12 @@ then
   awk '{if ($13 < 3000 && $13 > -3000) print $2,$1,$13}' $pth2strinfo >tmpgtot
   gmt makecpt -Cjet -T-300/300/5 > inx.cpt
 #   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
-  gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
+#   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
+  gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
+  gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
+
+#   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
@@ -666,7 +699,8 @@ fi
 # fi
 
 # clear all teporary files
-rm -rf tmp* gmt.conf gmt.history *.legend inx.cpt bath_topo.bin data.nc trend.nc
+echo "...remove temporary files..."
+rm -rf tmp* gmt.conf gmt.history *.legend inx.cpt
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"

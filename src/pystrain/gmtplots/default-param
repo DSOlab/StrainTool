@@ -86,7 +86,8 @@ north=42
 projscale=5000000
 frame=1
 # gmt	gmtset PS_MEDIA 26cx22c
-scale="-Lf22.4/37.6/36:24/30+l+jr"
+# scale="-Lf22.4/37.6/36:24/30+l+jr"
+sclength=100
 
 logo_pos="BL/.1c/.1c/DSO[at]ntua"
 logo_pos2="-C15.6c/15.9c"
