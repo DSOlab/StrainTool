@@ -345,8 +345,8 @@ proj="-Jm24/37/1:$projscale"
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
 	################## Plot coastlines only ######################	
-  gmt	psbasemap $range $proj $scale -B$frame:."$maptitle": -P -K > $outfile
-  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na -U$logo_pos >> $outfile
+  gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
+  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale -U$logo_pos >> $outfile
 # 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
@@ -432,30 +432,11 @@ then
     fi
   fi
 
-
-# 	awk -F, '{print $1, $2}' $pth2inptf/ionpvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
-# 	awk -F, '{print $1, $2}' $pth2inptf/ioncvel_vhor.sta | gmt psxy -Jm -O -R -Sc0.17c -W0.001c -G250 -K >> $outfile
-
   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
-#   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-#   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63
-# 	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-# 	awk 'NR != 1 {print $1,$2,$3,$4,$5,$6,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.75/0 -W.5p,50 -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
-# 
-# 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ionpvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-# 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2inptf/ioncvel_vhor.vel | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W1.5p,red -A8p+e -Gred -O -K -L -V >> $outfile  # 205/133/63.
-# 
-# 	if [ "$LABELS" -eq 1 ]
-# 	then
-# # 		 awk '{print $1,$2,8,0,1,"LM",$8}' $pth2vhor | gmt pstext -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-#  	gmt pstext $pth2inptf/ionpvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-# 	gmt pstext $pth2inptf/ioncvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-# 
-# 	fi
 
 ###scale
 # echo "$vsclon $vsclat $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
@@ -603,10 +584,14 @@ then
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
-  echo "$strsclon $strsclat 0 -.15 90" \
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
+  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  strsclon=$sclon
+
+  echo "$strsclon $strsclat 0 -150 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W1.5p,blue \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat .15 0 90" \
+  echo "$strsclon $strsclat 150 0 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
   echo "$strsclon $strsclat 9 0 1 CB 150 nstrain/y" \
@@ -639,7 +624,12 @@ then
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
+        
 # plot scale for rotational rates
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
+  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  strsclon=$sclon
+  
   echo "$strsclon $strsclat 0.00000005 0.00000001" \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
