@@ -267,7 +267,7 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     lw, d_coef = l_weights(sta_lst, cx, cy, zw, **kargs)
     assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
     # we are only going to use the observations above the minimum L weight threshold
-    Nl = sum(1 for l in lw if l >= min_l_weight)
+    Nl = sum(1 for l in lw if l >= min_l_weight) * 2
     assert Nl <= N
     # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
     # a column vector
@@ -430,6 +430,9 @@ class ShenStrain:
         assert len(self.__zweights__) == len(self.__lweights__)
         print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        m, n = A.shape
+        if m <= 3:
+            raise RuntimeError('Too few obs to perform LS.')
         #tasp = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         #for idx, sta in enumerate(self.__stalst__):
         #    dx, dy, dr = tasp.distance_from(sta)

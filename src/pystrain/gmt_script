@@ -25,15 +25,15 @@ gmt gmtset FONT_LABEL 10
 gmt gmtset MAP_FRAME_WIDTH 0.12c
 gmt gmtset FONT_TITLE 18p,Palatino-BoldItalic
 gmt gmtset PS_MEDIA 22cx22c
-gmt psbasemap -R19.92/24.42/36.27/39.92 -Jm24/37/1:2000000 -Lf20/33.5/36:24/100+l+jr -B2:."Tensors": -P -K > $outfile
+gmt psbasemap -R21.36/22.86/36.49/37.97 -Jm24/37/1:2000000 -Lf20/33.5/36:24/100+l+jr -B2:."Tensors": -P -K > $outfile
 gmt pscoast -R -J -O -K -W0.25 -G195 -Df -Na >> $outfile
 awk '{{print $3,$2}}' .station.info.dat | gmt psxy -Jm -O -R -Sc0.10c -W0.005c -Ggreen -K >>$outfile
-awk '{print $3,$2,0,$6,$8+90}' .strain.info.dat | gmt psvelo -Jm -R19.92/24.42/36.27/39.92 -Sx5 -L -A10p+e -Gblue -W2p,blue -V${GMTVRB} -K -O>> $outfile
-awk '{print $3,$2,$4,0,$8+90}' .strain.info.dat | gmt psvelo -Jm -R19.92/24.42/36.27/39.92 -Sx5 -L -A10p+e -Gred -W2p,red -V${GMTVRB} -K -O>> $outfile
+awk '{print $3,$2,0,$6,$8+90}' .strain.info.dat | gmt psvelo -Jm -R21.36/22.86/36.49/37.97 -Sx5 -L -A10p+e -Gblue -W2p,blue -V${GMTVRB} -K -O>> $outfile
+awk '{print $3,$2,$4,0,$8+90}' .strain.info.dat | gmt psvelo -Jm -R21.36/22.86/36.49/37.97 -Sx5 -L -A10p+e -Gred -W2p,red -V${GMTVRB} -K -O>> $outfile
 if test "$VHORIZONTAL" -eq 1 ; then
-awk '{print $2,$3,$4,$5,$6,$7,$8,$1}' ../tmp/input_cor.vel | gmt psvelo -R -J -Se${VSC}/0.95/0 -W.3p,100 -A10p+e -V${GMTVRB} -Ggreen -O -K -L >> $outfile
+awk '{print $2,$3,$4,$5,$6,$7,$8,$1}' ../tmp/input_all.vel | gmt psvelo -R -J -Se${VSC}/0.95/0 -W.3p,100 -A10p+e -V${GMTVRB} -Ggreen -O -K -L >> $outfile
 fi
 if test "$LABELS" -eq 1 ; then
-awk '{print $2,$3,9,0,1,"RB",$1}' ../tmp/input_cor.vel | gmt pstext -Jm -R -Dj0.2c/0.2c -O -K -V${GMTVRB} >> $outfile
+awk '{print $2,$3,9,0,1,"RB",$1}' ../tmp/input_all.vel | gmt pstext -Jm -R -Dj0.2c/0.2c -O -K -V${GMTVRB} >> $outfile
 fi
 echo "9999 9999" | gmt psxy -J -R -O >> $outfile
