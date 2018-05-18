@@ -39,9 +39,10 @@ function help {
 	echo " Purpose : Plot maps for gmtstrainplot"
 	echo " Usage   : gmtstrainplot.sh -r  |  | -o [output] | -jpg "
 	echo " Switches: "
+	echo ""
 	echo "/*** Basic Plots & Background ***********************************/"
-	echo "     -r [:= region] region to plot (default Greece)"
-	echo "        use: -r west east south north projscale frame"
+	echo "     -r | --region : region to plot (default Greece)"
+	echo "         usage: -r west east south north projscale frame"
 # 	echo "     -faults [:= faults] plot NOA fault database"
 # 	echo "     -pcmt [:= plot cmt] plot HARVARD cmt and papazachos fm"
 # 	echo "     -topo [:= topography] plot topography"
@@ -52,7 +53,7 @@ function help {
 	echo "/*** PLOT VELOCITIES ********************************************/"
 	echo "     -vhor (station_file)[:= horizontal velocities]  "
 	echo "     -vsc [:=velocity scale] change valocity scale default 0.05"
-# 	echo ""
+	echo ""
 	echo "/*** PLOT STRAINS **********************************************/"
 	echo "     -str (strain file)[:= strains] Plot strain rates "
 	echo "     -rot (strain file)[:= rots] Plot rotational rates "
@@ -63,12 +64,12 @@ function help {
 	echo "     -rotsc [:=rotational scales]"
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
-	echo "     -o [:= output] name of output files"
-	echo "     -l [:=labels] plot labels"
+	echo "     -o | --output : name of output files"
+	echo "     -l | --labels : plot labels"
 # 	echo "     -leg [:=legend] insert legends"
-	echo "     -logo [:=logo] plot logo"
+# 	echo "     -logo [:=logo] plot logo"
 	echo "     -jpg : convert eps file to jpg"
-	echo "     -h [:= help] help menu"
+	echo "     -h | --help : help menu"
 	echo " Exit Status:    1 -> help message or error"
 	echo " Exit Status:  = 0 -> sucesseful exit"
 	echo " run scr: ./gmtplot.sh -topo -jpg"
@@ -123,139 +124,147 @@ DILATATION=0
 # Check default parameters file
 if [ ! -f "default-param" ]
 then
-	echo "default-param file does not exist"
-	exit 1
+  echo "default-param file does not exist"
+  exit 1
 else
-	source default-param
+  echo "...load default parameters..."
+  source default-param
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # GET COMMAND LINE ARGUMENTS
 if [ "$#" == "0" ]
 then
-	help
+  help
 fi
 
 while [ $# -gt 0 ]
 do
-	case "$1" in
-		-r)
-			west=$2
-			east=$3
-			south=$4
-			north=$5
-			projscale=$6
-			frame=$7
-			shift
-			shift
-			shift
-			shift
-			shift
-			shift
-			shift
-			;;
-		-mt)
-			maptitle=$2
-			shift
-			shift
-			;;
-		-psta)
-			pth2sta=../.station.info.dat
-			PSTA=1
-			shift
-			;;
-		-vhor)
-			pth2stainfo=${pth2inptf}/$2
-			VHORIZONTAL=1
-			shift
-			shift
-			;;
-		-vsc)
-			VSC=$2
-			shift
-			shift
-			;;
-		-str)
-			pth2strinfo=${pth2inptf}/${2}
-			STRAIN=1
-			shift
-			shift
-			;;
-		-strsc)
-			STRSC=$2
-			shift
-			shift
-			;;
-		-rot)
-			pth2strinfo=${pth2inptf}/${2}
-			STRROT=1
-			shift
-			shift
-			;;
-		-rotsc)
-			ROTSC=${2}
-			shift
-			shift
-			;;
-		-gtot)
-			pth2strinfo=${pth2inptf}/${2}
-			GTOTAL=1
-			shift
-			shift
-			;;
-		-gtotaxes)
-			pth2strinfo=${pth2inptf}/${2}
-			GTOTALAXES=1
-			shift
-			shift
-			;;
-		-dil)
-			pth2strinfo=${pth2inptf}/${2}
-			DILATATION=1
-			shift
-			shift
-			;;
-		-topo)
-#                       switch topo not used in server!
-			TOPOGRAPHY=1
-			shift
-			;;
-		-faults)
-			FAULTS=1
-			shift
-			;;	
-		-pcmt)
-			PCMT=1
-			shift
-			;;
-		-o)
-			outfile=${2}.eps
-			out_jpg=${2}.jpg
-			shift
-			shift
-			;;
-		-l)
-			LABELS=1
-			shift
-			;;
-		-leg)
-			LEGEND=1
-			shift
-			;;
-		-logo)
-			LOGO=1
-			shift
-			;;
-		-jpg)
-			OUTJPG=1
-			shift
-			;;
-		-h)
-			help
-			;;
-	esac
+  case "$1" in
+    -r | --region)
+	west=$2
+	east=$3
+	south=$4
+	north=$5
+	projscale=$6
+	frame=$7
+	shift
+	shift
+	shift
+	shift
+	shift
+	shift
+	shift
+	;;
+    -mt)
+	maptitle=$2
+	shift
+	shift
+	;;
+    -psta)
+	pth2sta=../.station.info.dat
+	PSTA=1
+	shift
+	;;
+    -vhor)
+	pth2stainfo=${pth2inptf}/$2
+	VHORIZONTAL=1
+	shift
+	shift
+	;;
+    -vsc)
+	VSC=$2
+	shift
+	shift
+	;;
+    -str)
+	pth2strinfo=${pth2inptf}/${2}
+	STRAIN=1
+	shift
+	shift
+	;;
+    -strsc)
+	STRSC=$2
+	shift
+	shift
+	;;
+    -rot)
+	pth2strinfo=${pth2inptf}/${2}
+	STRROT=1
+	shift
+	shift
+	;;
+    -rotsc)
+	ROTSC=${2}
+	shift
+	shift
+	;;
+    -gtot)
+	pth2strinfo=${pth2inptf}/${2}
+	GTOTAL=1
+	shift
+	shift
+	;;
+    -gtotaxes)
+	pth2strinfo=${pth2inptf}/${2}
+	GTOTALAXES=1
+	shift
+	shift
+	;;
+    -dil)
+	pth2strinfo=${pth2inptf}/${2}
+	DILATATION=1
+	shift
+	shift
+	;;
+    -topo)
+  # switch topo not used in server!
+	TOPOGRAPHY=1
+	shift
+	;;
+    -faults)
+	FAULTS=1
+	shift
+	;;	
+    -pcmt)
+	PCMT=1
+	shift
+	;;
+    -o | --output)
+	outfile=${2}.eps
+	shift
+	shift
+	;;
+    -l | --labels)
+	LABELS=1
+	shift
+	;;
+    -leg)
+	LEGEND=1
+	shift
+	;;
+    -logo)
+	LOGO=1
+	shift
+	;;
+    -jpg)
+	OUTJPG=1
+	shift
+	;;
+    -h | --help)
+	help
+	;;
+    -v | --version)
+	echo "version: "$VERSION
+	exit 1
+	shift
+	;;
+    *)
+      echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
+      echo "[STATUS] Script Finished Unsuccesful! Exit Status 1"
+      exit 1
+  esac
 done
-
 
 # //////////////////////////////////////////////////////////////////////////////
 # check if files exist
@@ -265,7 +274,7 @@ if [ "$TOPOGRAPHY" -eq 1 ]
 then
   if [ ! -f $inputTopoB ]
   then
-    echo "grd file for topography toes not exist, var turn to coastline"
+    echo "[WARNING] grd file for topography toes not exist, var turn to coastline"
     TOPOGRAPHY=0
   fi
 fi
@@ -275,8 +284,8 @@ if [ "$PSTA" -eq 1 ]
 then
   if [ ! -f $pth2sta ]
   then
-    echo "input file $pth2sta does not exist"
-    echo "please download it and then use this switch"
+    echo "[WARNING] input file $pth2sta does not exist"
+    echo "          please download it and then use this switch"
     PSTA=0
     exit 1
   fi
@@ -286,8 +295,8 @@ if [ "$VHORIZONTAL" -eq 1 ]
 then
   if [ ! -f $pth2stainfo ]
   then
-    echo "input file $pth2stainfo does not exist"
-    echo "please download it and then use this switch"
+    echo "[WARNING] input file $pth2stainfo does not exist"
+    echo "          please download it and then use this switch"
     VHORIZONTAL=0
     exit 1
   fi
@@ -298,8 +307,8 @@ if [ "$STRAIN" -eq 1 ] || [ "$STRROT" -eq 1 ] || [ "$GTOTAL" -eq 1 ] || [ "$DILA
 then
   if [ ! -f $pth2strinfo ]
   then
-    echo "input file $pth2strinfo does not exist"
-    echo "please download it and then use this switch"
+    echo "[WARNING] input file $pth2strinfo does not exist"
+    echo "          please download it and then use this switch"
     STRAIN=0
     exit 1
   fi
@@ -310,8 +319,8 @@ if [ "$FAULTS" -eq 1 ]
 then
   if [ ! -f $pth2faults ]
   then
-    echo "NOA Faults database does not exist"
-    echo "please download it and then use this switch"
+    echo "[WARNING] NOA Faults database does not exist"
+    echo "          please download it and then use this switch"
     FAULTS=0
   fi
 fi
@@ -319,13 +328,13 @@ fi
 ###check LOGO file
 if [ ! -f "$pth2logos" ]
 then
-  echo "Logo file does not exist"
+  echo "[WARNING] Logo file does not exist"
   LOGO=0
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
-gmt	gmtset PS_MEDIA 22cx22c
+gmt gmtset PS_MEDIA 22cx22c
 # tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
 
 tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
@@ -344,7 +353,8 @@ proj="-Jm24/37/1:$projscale"
 # ####################### TOPOGRAPHY ###########################
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
-	################## Plot coastlines only ######################	
+  echo "...plot coatlines..."
+  ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale -U$logo_pos >> $outfile
 # 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
@@ -353,8 +363,9 @@ fi
 
 if [ "$TOPOGRAPHY" -eq 1 ]
 then
-	# ####################### TOPOGRAPHY ###########################
-	# bathymetry
+  echo "...plot topography dem..."
+  # ####################### TOPOGRAPHY ###########################
+  # bathymetry
   gmt makecpt -Cgebco.cpt -T-7000/0/50 -Z > $bathcpt
   gmt grdimage $inputTopoB $range $proj -C$bathcpt -K > $outfile
   gmt pscoast $proj -P $range -Df -Gc -K -O >> $outfile
@@ -371,7 +382,7 @@ fi
 #  PLOT NOA CATALOGUE FAULTS Ganas et.al, 2013
 if [ "$FAULTS" -eq 1 ]
 then
-  echo "plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
+  echo "...plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
   gmt psxy $pth2faults -R -J -O -K  -W.5,204/102/0  >> $outfile
 fi
 
@@ -418,6 +429,7 @@ fi
 
 if [ "$VHORIZONTAL" -eq 1 ]
 then
+  echo "...plot horizontal velocities..."
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
@@ -458,6 +470,7 @@ fi
 ### PLOT SHEAR STRAIN RATES parameters
 if [ "$GTOTAL" -eq 1 ]
 then
+  echo "...plot maximum shear strain rates..."
 # plot shear strain rates
   awk '{if ($11 < 300) print $2,$1,$11}' $pth2strinfo >tmpgtot
   gmt makecpt -Cjet -T0/300/1 > inx.cpt
@@ -493,6 +506,7 @@ fi
 ### PLOT DEXTRAL SINISTRAL AXES OF MAXIMUM SHEAR STRAIN RATES parameters
 if [ "$GTOTALAXES" -eq 1 ]
 then
+  echo "...plot dextral and sinistral maximum shear strain axes..."
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
@@ -513,21 +527,26 @@ then
   awk 'NR !=1 { if ($11 < 200) print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 -O -K -V${VRBLEVM} >> $outfile
 
-# # plot scale of strain rates
-#   echo "$strsclon $strsclat 0 -.15 90" \
-#   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W2p,blue \
-#         -O -K -V${VRBLEVM} >> $outfile
-#   echo "$strsclon $strsclat .15 0 90" \
-#   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W2p,red \
-#         -O -K -V${VRBLEVM} >> $outfile
-#   echo "$strsclon $strsclat 9 0 1 CB 150 nstrain/y" \
-#   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
+# plot scale of strain rates
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
+  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  strsclon=$sclon
+
+  echo "$strsclon $strsclat 0 -150 90" \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+        -O -K -V${VRBLEVM} >> $outfile
+  echo "$strsclon $strsclat 150 0 90" \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
+        -O -K -V${VRBLEVM} >> $outfile
+  echo "$strsclon $strsclat 9 0 1 CB 150 nstrain/y" \
+  | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT SHEAR STRAIN RATES parameters
 if [ "$DILATATION" -eq 1 ]
 then
+  echo "...plot dilatation..."
 # plot shear strain rates
   awk '{if ($13 < 3000 && $13 > -3000) print $2,$1,$13}' $pth2strinfo >tmpgtot
   gmt makecpt -Cjet -T-300/300/5 > inx.cpt
@@ -563,6 +582,7 @@ fi
 ### PLOT STRAIN RATES parameters
 if [ "$STRAIN" -eq 1 ]
 then
+  echo "...plot principal axes of strain rates..."
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
@@ -602,6 +622,7 @@ fi
 ### PLOT ROTATIONAL RATES parameters
 if [ "$STRROT" -eq 1 ]
 then
+  echo "...plot rotational rates..."
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
