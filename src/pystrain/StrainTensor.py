@@ -219,11 +219,15 @@ if args.method == 'shen':
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
         sstr = ShenStrain(x, y, sta_list_utm)
-        estim2 = sstr.estimate()
-        node_nr += 1
-        print('[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts))
-        sstr.print_details(fout)
-        strain_list.append(sstr)
+        az_coverage = sstr.azimouth_coverage()
+        if az_coverage >= 180.0e0:
+            estim2 = sstr.estimate()
+            node_nr += 1
+            print('[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts))
+            sstr.print_details(fout)
+            strain_list.append(sstr)
+        else:
+            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited azimouth coverage (max - min az = {:6.2f}deg.)'.format(degrees(clon), degrees(clat), az_coverage))
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)

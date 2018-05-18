@@ -37,3 +37,20 @@ velocity standard deviations are provided in *mm per years (mm/yr)*. `Sne` is th
 coefficient between East and North velocity components.
 
 **Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values**.
+
+### Weighting
+
+Let `C` be the covariance matrix of the velocity data. Reminder:
+*Cofactor Matrix Q* Q = C / σ<sub>0</sub><sup><2</sup>
+*Weight Matrix* P = σ<sub>0</sub><sup><2</sup> * C<sup>-1</sup>
+σ<sub>0</sub><sup><2</sup> is called variance factor or variance of unit weight or apriori variance factor
+We reconstruct the covariance matrix C by multiplying a weighting function to 
+each of its diagonal terms C<sub>i</sub> and the weighting is given as
+C<sub>i</sub> <- C<sub>i</sub> * G<sup>-1</sup>. The weighting function
+G<sub>i</sub> = L<sub>i</sub> * Z<sub>i</sub>, in which L<sub>i</sub> and 
+Z<sub>i</sub> are functions of distance and spatial ccoverage dependent, respectively.
+```
+Wx = (1e-3/sta.se)*zw[idx]*lw[idx]
+Wy = (1e-3/sta.sn)*zw[idx]*lw[idx]
+```
+

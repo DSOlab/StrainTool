@@ -255,6 +255,8 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
         of each observable.
         Note that we have two observables (x and y) for each station.
     """
+    # minimum weight for an observation to be included in the matrices
+    min_l_weight = 1e-6
     # numper of rows (observations)
     N = len(sta_lst)*2
     # number of columns (parameters)
@@ -264,6 +266,9 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     # the distance weights
     lw, d_coef = l_weights(sta_lst, cx, cy, zw, **kargs)
     assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
+    # we are only going to use the observations above the minimum L weight threshold
+    Nl = sum(1 for l in lw if l >= min_l_weight)
+    assert Nl <= N
     # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
     # a column vector
     # W = numpy.zeros(shape=(N,1))
@@ -272,30 +277,29 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     cc  = Station(lon=cx, lat=cy)
     xyr = [ x.distance_from(cc) for x in sta_lst ]
     ## design matrix A, observation matrix b
-    A = numpy.zeros(shape=(N,M))
-    b = numpy.zeros(shape=(N,1))
+    A = numpy.zeros(shape=(Nl,M))
+    b = numpy.zeros(shape=(Nl,1))
     i = 0
+    debug_list = []
     for idx,sta in enumerate(sta_lst):
+        sta_used = True
         dx, dy, dr = xyr[idx]
-        Wx     = (1e0/sta.se)*zw[idx]*lw[idx]
-        Wy     = (1e0/sta.sn)*zw[idx]*lw[idx]
-        print('[DEBUG] Wx = {:} , Wy = {:}'.format(Wx,Wy))
-        if Wx > .5e0 and Wy > .5e0:
-	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
-	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
-	    b[i]   = sta.ve * Wx
-	    b[i+1] = sta.vn * Wy
-	else:
-	    Wx = 1e-15
-	    Wy = 1e-15
-	    A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
-	    A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
-	    b[i]   = sta.ve * Wx
-	    b[i+1] = sta.vn * Wy
-	i+=2
-    assert i == N, "[DEBUG] Failed to construct ls matrices"
+        Wx     = (1e-3/sta.se)*zw[idx]*lw[idx]
+        Wy     = (1e-3/sta.sn)*zw[idx]*lw[idx]
+        if lw[idx] >= min_l_weight:
+            A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
+            A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+            b[i]   = sta.ve * Wx
+            b[i+1] = sta.vn * Wy
+	    i += 2
+        else:
+            sta_used = False
+        debug_list.append({'name':sta.name, 'x':sta.lon, 'y':sta.lat, 'dr':dr/1000e0, 'zw':zw[idx], 'lw':lw[idx], 'wx':Wx, 'wy':Wy, 'used':sta_used})
+    assert i == Nl, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
+    for db in sorted(debug_list, key=lambda k: k['dr']):
+        print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:10.5f} l={:10.5f} wx={:10.5f} wy={:10.5f} used for strain: {:}'.format(db['name'], db['x'], db['y'], db['dr'],db['zw'],db['lw'],db['wx'],db['wy'],db['used']))
     return A, b
 
 def __strain_info__(str_params):
@@ -351,6 +355,30 @@ class ShenStrain:
         self.__lweights__ = None
         self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+    
+    def azimouths(self):
+        n         = len(self.__stalst__)
+        azimouths = []
+        #  Get the azimouth of each line from central point (cx,cy) to each point in
+        #+ the list. The computed azimouths are stored in a sorted list
+        #+ (aka azimouths). This list is made up of dictionary elements, where each
+        #+ dictionary contains 1. the azimouth value (in radians) as 'az' and 2. the
+        #+ index of the station in the sta_lst, as 'nr'.
+        for idx, sta in enumerate(self.__stalst__):
+            az = atan2(sta.lon-self.__xcmp__, sta.lat-self.__ycmp__)
+            azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
+        azimouths = sorted(azimouths, key=operator.itemgetter('az'))
+        #  Confirm that all azimouths are in the range [0,2*pi)
+        for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+        return azimouths
+
+    def azimouth_coverage(self):
+        # compute the azimouth to each station; this is a sorted list! azimouth
+        # values are in radians.
+        azs = self.azimouths()
+        n   = len(azs)
+        max_angle = degrees(abs(azs[0]['az'] - azs[n-1]['az']))
+        return max_angle
 
     def info(self):
         return __strain_info__(self.__parameters__)
@@ -390,7 +418,7 @@ class ShenStrain:
         self.__zweights__ = z_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, debug_mode=False)
 
     def compute_l_weights(self, **kargs):
-        self.__lweights__ = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, self.__zweights__, **self.__parameters__)
+        self.__lweights__, d_coef = l_weights(self.__stalst__, self.__xcmp__, self.__ycmp__, self.__zweights__, **self.__parameters__)
 
     def estimate(self, **kargs):
         """ TODO this is wrong! ls_matrices_shen will re-compute all weights!
@@ -399,7 +427,13 @@ class ShenStrain:
             self.compute_z_weights()
         if not self.__lweights__:
             self.compute_l_weights()
+        assert len(self.__zweights__) == len(self.__lweights__)
+        print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        #tasp = Station(lon=self.__xcmp__, lat=self.__ycmp__)
+        #for idx, sta in enumerate(self.__stalst__):
+        #    dx, dy, dr = tasp.distance_from(sta)
+        #    print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:} l={:}'.format(sta.name, sta.lon, sta.lat, dr/1000.0, self.__zweights__[idx], self.__lweights__[idx]))
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
