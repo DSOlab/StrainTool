@@ -76,7 +76,6 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
     #  Make a list of the 'theta' angles; for each point, the theta angle is an
     #+ azimouth difference, of the previous minus the next point.
     #  Special care for the first and last elements (theta angles)
-    #thetas.append({'w': azimouths[n-1]['az'] - azimouths[1]['az'], 'nr':azimouths[0]['nr']})
     thetas.append({'w': 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']), 'nr':azimouths[0]['nr']})
     for j in range(1, n-1):
         thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
@@ -298,8 +297,8 @@ def ls_matrices_shen(sta_lst, cx, cy, **kargs):
     assert i == Nl, "[DEBUG] Failed to construct ls matrices"
     # we can solve this as:
     # numpy.linalg.lstsq(A,b)
-    for db in sorted(debug_list, key=lambda k: k['dr']):
-        print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:10.5f} l={:10.5f} wx={:10.5f} wy={:10.5f} used for strain: {:}'.format(db['name'], db['x'], db['y'], db['dr'],db['zw'],db['lw'],db['wx'],db['wy'],db['used']))
+    #for db in sorted(debug_list, key=lambda k: k['dr']):
+    #    print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:10.5f} l={:10.5f} wx={:10.5f} wy={:10.5f} used for strain: {:}'.format(db['name'], db['x'], db['y'], db['dr'],db['zw'],db['lw'],db['wx'],db['wy'],db['used']))
     return A, b
 
 def __strain_info__(str_params):
@@ -368,17 +367,41 @@ class ShenStrain:
             az = atan2(sta.lon-self.__xcmp__, sta.lat-self.__ycmp__)
             azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
         azimouths = sorted(azimouths, key=operator.itemgetter('az'))
+        #for idx, a in enumerate(azimouths):
+        #    print('Azimouth: {}, x={}, y={}, cx={}, cy={}'.format(a['az'], self.__xcmp__, self.__ycmp__, self.__stalst__[idx].lon, self.__stalst__[idx].lat))
         #  Confirm that all azimouths are in the range [0,2*pi)
         for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+        #print('Max and min az is {} and {}'.format(degrees(azimouths[0]['az']), degrees(azimouths[len(azimouths)-1]['az'])))
         return azimouths
+    
+    def thetas(self):
+        azimouths = self.azimouths()
+        n         = len(azimouths)
+        thetas    = []
+        #  Make a list of the 'theta' angles; for each point, the theta angle is an
+        #+ azimouth difference, of the previous minus the next point.
+        #  Special care for the first and last elements (theta angles)
+        thetas.append({'w': 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']), 'nr':azimouths[0]['nr']})
+        for j in range(1, n-1):
+            thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
+        thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']), 'nr':azimouths[n-1]['nr']})
+        #  Double-check !! All theta angles must be in the range [0, 2*π)
+        for angle in thetas:
+            assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing theta angles. Station is \"{}\".'.format(self.__stalst__[angle['nr']].name)
+        return thetas
 
-    def azimouth_coverage(self):
-        # compute the azimouth to each station; this is a sorted list! azimouth
-        # values are in radians.
-        azs = self.azimouths()
-        n   = len(azs)
-        max_angle = degrees(abs(azs[0]['az'] - azs[n-1]['az']))
-        return max_angle
+    def max_theta(self):
+        thetas = self.thetas()
+        n = len(thetas)
+        return sorted(thetas, key=operator.itemgetter('w'))[n-1]['w']
+
+    #def azimouth_coverage(self):
+    #    # compute the azimouth to each station; this is a sorted list! azimouth
+    #    # values are in radians.
+    #    azs = self.azimouths()
+    #    n   = len(azs)
+    #    max_angle = degrees(abs(azs[0]['az'] - azs[n-1]['az']))
+    #    return max_angle
 
     def info(self):
         return __strain_info__(self.__parameters__)
@@ -428,15 +451,11 @@ class ShenStrain:
         if not self.__lweights__:
             self.compute_l_weights()
         assert len(self.__zweights__) == len(self.__lweights__)
-        print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
+        #print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
         m, n = A.shape
         if m <= 3:
             raise RuntimeError('Too few obs to perform LS.')
-        #tasp = Station(lon=self.__xcmp__, lat=self.__ycmp__)
-        #for idx, sta in enumerate(self.__stalst__):
-        #    dx, dy, dr = tasp.distance_from(sta)
-        #    print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:} l={:}'.format(sta.name, sta.lon, sta.lat, dr/1000.0, self.__zweights__[idx], self.__lweights__[idx]))
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])

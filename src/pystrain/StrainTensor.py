@@ -218,16 +218,21 @@ if args.method == 'shen':
     node_nr = 0
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
+        print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
         sstr = ShenStrain(x, y, sta_list_utm)
-        az_coverage = sstr.azimouth_coverage()
-        if az_coverage >= 180.0e0:
-            estim2 = sstr.estimate()
-            node_nr += 1
-            print('[DEBUG] Computed tensor for node {}/{}'.format(node_nr, grd.xpts*grd.ypts))
-            sstr.print_details(fout)
-            strain_list.append(sstr)
+        # az_coverage = sstr.azimouth_coverage() checking that is probably incorrect; check theta angles instead
+        max_theta = degrees(sstr.max_theta())
+        if max_theta <= 180.0e0:
+            try:
+                estim2 = sstr.estimate()
+                node_nr += 1
+                print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(degrees(clon), degrees(clat), node_nr, grd.xpts*grd.ypts))
+                sstr.print_details(fout)
+                strain_list.append(sstr)
+            except RuntimeError:
+                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}'.format(degrees(clon), degrees(clat)))
         else:
-            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited azimouth coverage (max - min az = {:6.2f}deg.)'.format(degrees(clon), degrees(clat), az_coverage))
+            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_theta= {:6.2f}deg.)'.format(degrees(clon), degrees(clat), max_theta))
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
