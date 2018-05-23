@@ -153,6 +153,13 @@ parser.add_argument('-b', '--barycenter',
     dest='one_tensor',
     action='store_true')
 
+parser.add_argument('--max-beta-angle',
+    default=180,
+    metavar='MAX_BETA_ANGLE',
+    dest='max_beta_angle',
+    type=float,
+    required=False)
+
 ##  Parse command line arguments.
 args = parser.parse_args()
 
@@ -220,9 +227,8 @@ if args.method == 'shen':
         clat, clon = utm2ell(x, y, utm_zone)
         print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
         sstr = ShenStrain(x, y, sta_list_utm)
-        # az_coverage = sstr.azimouth_coverage() checking that is probably incorrect; check theta angles instead
         max_theta = degrees(sstr.max_theta())
-        if max_theta <= 180.0e0:
+        if max_theta <= max(sstr.beta_angles()):
             try:
                 estim2 = sstr.estimate()
                 node_nr += 1

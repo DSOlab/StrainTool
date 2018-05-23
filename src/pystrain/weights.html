@@ -1,4 +1,5 @@
 <!doctype html>
+<meta charset="UTF-8"> 
 <html>
 
 <head>
@@ -6,36 +7,117 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
     <style>
         .container {
-            width: 80%;
             margin: 15px auto;
+            display: flex;
+        }
+        #chart_div {
+            width: 80%;
+        }
+        #dparam_div {
+            width: 20%;
+            vertical-align: middle;
         }
     </style>
 </head>
 
 <body>
+    <h2>Strain Weighting Functions - Demo</h2>
     <div class="container"> 
-        <h2>Strain Weighting Functions - Demo</h2>
-        <div>
+        <div id="chart_div">
             <canvas id="myChart"></canvas>
+        </div>
+        <div id="dparam_div">
+            Parameter D:
+            <form onsubmit="submit_data()">
+                <input id="inputd" type="number" name="d" >
+                <input type="submit" value="Submit">
+            </form>
         </div>
     </div>
 
     <script>
+        var datapoints = [];
+        for (i = 0; i < 500;  i++) { datapoints.push(i.toString()); }
+        var d_param    = 15;
+        var q_weights  = quadratic_weights(datapoints, d_param);
+        var g_weights  = gaussian_weights(datapoints, d_param);
         var ctx = document.getElementById('myChart').getContext('2d');
         var myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+                labels: datapoints,
                 datasets: [{
-                    label: 'apples',
-                    data: [12, 19, 3, 17, 6, 3, 7],
+                    label: 'Gaussian Weights',
+                    data: g_weights,
                     backgroundColor: "rgba(153,255,51,0.6)"
                 }, {
-                    label: 'oranges',
-                    data: [2, 29, 5, 5, 2, 3, 10],
+                    label: 'Quadratic Weights',
+                    data: q_weights,
                     backgroundColor: "rgba(255,153,0,0.6)"
                 }]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Weighting For Strain'
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: { 
+                            display: true,
+                            labelString: 'Distance (km)'
+                        },
+                        ticks: {
+                            maxTicksLimit: 10,
+                            stepSize: 10
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Value'
+                        },
+                        ticks: {
+                            suggestedMin: 0e0,
+                            suggestedMax: 1e0,
+                        }
+                    }]
+                }
             }
         });
+        function gaussian_weights(dr, d) {
+            n = dr.length;
+            l = [];
+            for (i = 0; i < n; i++) {
+                l.push(Math.exp(-dr[i]*dr[i] / (d*d)));
+            }
+            return l;
+        }
+        function quadratic_weights(dr, d) {
+            n = dr.length;
+            l = [];
+            for (i = 0; i < n; i++) {
+                l.push(1e0 / (1e0 + (dr[i]*dr[i] / (d*d))));
+            }
+            return l;
+        }
+        function update_chart(chart, g_weights, q_weights) {
+            console.log(chart.data.datasets[0].data);
+            chart.data.datasets[0].data = g_weights;
+            console.log(chart.data.datasets[0].data);
+            chart.data.datasets[1].data = q_weights;
+            chart.update();
+            console.log('[DEBUG] Chart updated!');
+        }
+        function submit_data() {
+            d_param = document.getElementById("inputd").value;
+            console.log('[DEBUG] Computing with d=', d_param);
+            gw = gaussian_weights(datapoints, d_param);
+            qw = quadratic_weights(datapoints, d_param);
+            update_chart(myChart, gw, qw);
+        }
     </script>
 </body>
