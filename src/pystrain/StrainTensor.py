@@ -227,7 +227,7 @@ if args.method == 'shen':
         clat, clon = utm2ell(x, y, utm_zone)
         print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
         sstr = ShenStrain(x, y, sta_list_utm)
-        if degrees(max(sstr.beta_angles())) >= args.max_beta_angle:
+        if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
                 estim2 = sstr.estimate()
                 node_nr += 1
