@@ -435,12 +435,11 @@ class ShenStrain:
     def estimate(self, **kargs):
         """ TODO this is wrong! ls_matrices_shen will re-compute all weights!
         """
-        if not self.__zweights__:
-            self.compute_z_weights()
-        if not self.__lweights__:
-            self.compute_l_weights()
-        assert len(self.__zweights__) == len(self.__lweights__)
-        #print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
+        #if not self.__zweights__:
+        #    self.compute_z_weights()
+        #if not self.__lweights__:
+        #    self.compute_l_weights()
+        #assert len(self.__zweights__) == len(self.__lweights__)
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
         VcV  = vcv_mod = numpy.dot(A.T, A)
         m, n = A.shape
@@ -449,11 +448,13 @@ class ShenStrain:
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
-        # A-posteriori variance
-        sigma0_post = numpy.var(res, ddof=m)
         # Parameter variance-covariance matrix
         try:
-            bvar = linalg.inv(VcV) * sigma0_post 
+            # A-posteriori variance
+            sigma0_post = float(res[0])
+            print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
+            bvar = linalg.inv(VcV) * sigma0_post
+            # print('{:}'.format(bvar))
         except:
             print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
         self.__parameters__['Ux']    = float(estim[0])
