@@ -4,6 +4,7 @@
 from __future__ import print_function
 import sys
 import numpy
+from scipy import linalg
 import operator
 from math import atan2, exp, sqrt, floor, pi, degrees
 from station import Station
@@ -441,10 +442,20 @@ class ShenStrain:
         assert len(self.__zweights__) == len(self.__lweights__)
         #print('[DEBUG] Info on strain estimation; point at {:10.3f}, {:10.3f}'.format(self.__xcmp__, self.__ycmp__))
         A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        VcV  = vcv_mod = numpy.dot(A.T, A)
         m, n = A.shape
         if m <= 3:
             raise RuntimeError('Too few obs to perform LS.')
+        ##  Note: To silence warning in versions > 1.14.0, use a third argument,
+        ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+        # A-posteriori variance
+        sigma0_post = numpy.var(res, ddof=m)
+        # Parameter variance-covariance matrix
+        try:
+            bvar = linalg.inv(VcV) * sigma0_post 
+        except:
+            print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
         self.__parameters__['omega'] = float(estim[2])

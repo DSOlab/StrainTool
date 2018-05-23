@@ -227,8 +227,7 @@ if args.method == 'shen':
         clat, clon = utm2ell(x, y, utm_zone)
         print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
         sstr = ShenStrain(x, y, sta_list_utm)
-        max_theta = degrees(sstr.max_theta())
-        if max_theta <= max(sstr.beta_angles()):
+        if degrees(max(sstr.beta_angles())) >= args.max_beta_angle:
             try:
                 estim2 = sstr.estimate()
                 node_nr += 1
@@ -238,7 +237,7 @@ if args.method == 'shen':
             except RuntimeError:
                 print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}'.format(degrees(clon), degrees(clat)))
         else:
-            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_theta= {:6.2f}deg.)'.format(degrees(clon), degrees(clat), max_theta))
+            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(degrees(clon), degrees(clat), degrees(max(sstr.beta_angles()))))
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
