@@ -28,10 +28,8 @@
         </div>
         <div id="dparam_div">
             Parameter D:
-            <form onsubmit="submit_data()">
-                <input id="inputd" type="number" name="d" >
-                <input type="submit" value="Submit">
-            </form>
+            <input type="number" id="dparam" value="15">
+            <button onclick="submit_data();">Try it</button>
         </div>
     </div>
 
@@ -105,16 +103,12 @@
             return l;
         }
         function update_chart(chart, g_weights, q_weights) {
-            console.log(chart.data.datasets[0].data);
             chart.data.datasets[0].data = g_weights;
-            console.log(chart.data.datasets[0].data);
             chart.data.datasets[1].data = q_weights;
             chart.update();
-            console.log('[DEBUG] Chart updated!');
         }
         function submit_data() {
-            d_param = document.getElementById("inputd").value;
-            console.log('[DEBUG] Computing with d=', d_param);
+            d_param = document.getElementById("dparam").value;
             gw = gaussian_weights(datapoints, d_param);
             qw = quadratic_weights(datapoints, d_param);
             update_chart(myChart, gw, qw);

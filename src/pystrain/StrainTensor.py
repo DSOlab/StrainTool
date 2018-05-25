@@ -130,7 +130,7 @@ parser.add_argument('--x-grid-step',
     dest='x_grid_step',
     type=float,
     required=False,
-    help='The x-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors.')
+    help='The x-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors. Default is 50000(m).')
 
 parser.add_argument('--y-grid-step',
     default=50000,
@@ -138,7 +138,7 @@ parser.add_argument('--y-grid-step',
     dest='y_grid_step',
     type=float,
     required=False,
-    help='The y-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors.')
+    help='The y-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors. Default is 50000(m)')
 
 parser.add_argument('-m', '--method',
     default='shen',
@@ -146,7 +146,7 @@ parser.add_argument('-m', '--method',
     dest='method',
     choices=['shen', 'veis'],
     required=False,
-    help='Choose a method for strain estimation. If \'shen\' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If \'veis\' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter.')
+    help='Choose a method for strain estimation. If \'shen\' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If \'veis\' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter. Default is \'shen\'.')
 
 parser.add_argument('-r', '--region',
     metavar='REGION',
@@ -165,7 +165,7 @@ parser.add_argument('--max-beta-angle',
     dest='max_beta_angle',
     type=float,
     required=False,
-    help='Only relevant for \'--mehod=shen\'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid).')
+    help='Only relevant for \'--mehod=shen\'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid). Default is 180 deg.')
 
 parser.add_argument('-t', '--weighting-function',
     default='gaussian',
@@ -173,7 +173,7 @@ parser.add_argument('-t', '--weighting-function',
     dest='ltype',
     choices=['gaussian', 'quadratic'],
     required=False,
-    help='Only relevant for \'--mehod=shen\'. Choose between a \'gaussian\' or a \'quadratic\' spatial weighting function.')
+    help='Only relevant for \'--mehod=shen\'. Choose between a \'gaussian\' or a \'quadratic\' spatial weighting function. Default is \'gaussian\'.')
 
 parser.add_argument('--Wt',
     default=24,
@@ -181,7 +181,7 @@ parser.add_argument('--Wt',
     dest='Wt',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa. Default is Wt=24.')
 
 parser.add_argument('--dmin',
     default=1,
@@ -189,7 +189,7 @@ parser.add_argument('--dmin',
     dest='dmin',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km. Default is dmin=1km.')
 
 parser.add_argument('--dmax',
     default=500,
@@ -197,7 +197,7 @@ parser.add_argument('--dmax',
     dest='dmax',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.')
 
 parser.add_argument('--dstep',
     default=2,
@@ -205,7 +205,7 @@ parser.add_argument('--dstep',
     dest='dstep',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.')
 
 parser.add_argument('--min-spatial-weight',
     default=1e-6,
@@ -213,7 +213,7 @@ parser.add_argument('--min-spatial-weight',
     dest='min_l_weight',
     type=float,
     required=False,
-    help='Only relevant for \'--mehod=shen\'. Any station with a spatial weight smaller than this limit, will be excluded from the strain estimation (for a given point).')
+    help='Only relevant for \'--mehod=shen\'. Any station with a spatial weight smaller than this limit, will be excluded from the strain estimation (for a given point). Default is 1e-6.')
 
 parser.add_argument('--d-param',
     default=None,
