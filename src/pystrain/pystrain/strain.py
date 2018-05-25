@@ -353,8 +353,231 @@ class ShenStrain:
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
-        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2}
+        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2, 'min_l_weight': 1e-6}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+
+    def ls_matrices_shen(self, **kargs):
+        """ Construct Least Squares Matrices (A and b) to be solved for. The function
+            will first evaluate the covariance matrix C, where:
+            W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
+            of each observable.
+            Note that we have two observables (x and y) for each station.
+        """
+        # minimum weight for an observation to be included in the matrices
+        min_l_weight = self.__options__['min_l_weight']
+        # numper of rows (observations)
+        N = len(self.__stalst__)*2
+        # number of columns (parameters)
+        M = 6
+        # the (spatial) weights, i.e. Z(i)
+        zw = self.z_weights() #z_weights(sta_lst, cx, cy)
+        # the distance weights
+        lw, d_coef = self.l_weights(zw, **kargs)
+        assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
+        # we are only going to use the observations above the minimum L weight threshold
+        Nl = sum(1 for l in lw if l >= min_l_weight) * 2
+        assert Nl <= N
+        # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
+        # a column vector
+        # W = numpy.zeros(shape=(N,1))
+        # distances, dx and dy for each station from (cx, cy). Each element of the
+        # array is [ ... (dx, dy, dr) ... ]
+        cc  = Station(self.__xcmp__, self.__ycmp__)
+        xyr = [ x.distance_from(cc) for x in self.__stalst__ ]
+        ## design matrix A, observation matrix b
+        A = numpy.zeros(shape=(Nl,M))
+        b = numpy.zeros(shape=(Nl,1))
+        i = 0
+        debug_list = []
+        for idx, sta in enumerate(self.__stalst__):
+            sta_used = True
+            dx, dy, dr = xyr[idx]
+            Wx     = (1e-3/sta.se)*zw[idx]*lw[idx]
+            Wy     = (1e-3/sta.sn)*zw[idx]*lw[idx]
+            if lw[idx] >= min_l_weight:
+                A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
+                A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+                b[i]   = sta.ve * Wx
+                b[i+1] = sta.vn * Wy
+                i += 2
+            else:
+                sta_used = False
+            debug_list.append({'name':sta.name, 'x':sta.lon, 'y':sta.lat, 'dr':dr/1000e0, 'zw':zw[idx], 'lw':lw[idx], 'wx':Wx, 'wy':Wy, 'used':sta_used})
+        assert i == Nl, "[DEBUG] Failed to construct ls matrices"
+        # we can solve this as:
+        # numpy.linalg.lstsq(A,b)
+        #for db in sorted(debug_list, key=lambda k: k['dr']):
+        #    print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:10.5f} l={:10.5f} wx={:10.5f} wy={:10.5f} used for strain: {:}'.format(db['name'], db['x'], db['y'], db['dr'],db['zw'],db['lw'],db['wx'],db['wy'],db['used']))
+        return A, b
+
+    def z_weights(self, debug_mode=False):
+        """ Given a list of Stations and the coordinates of a central point (i.e.
+            cx, cy), compute and return the function:
+            Z(i) = n*θ(i) / 4π
+            which is used as a weighting function fom strain estimation in Shen 
+            et al, 2015, see Equation (5a).
+            The individual station weights are returned in a list, in the order they
+            were passed in in the sta_lst list.
+            It is assumed, that the coordinates of every point in the list and the
+            cx,cy coordinates, are given in meters.
+            Note that, Easting is considered as 'x' or longtitude.
+            Northing is considered as 'y' or latitude.
+
+            Parameters:
+            -----------
+            sta_lst: list
+                    A list of Station instances. For each one a weight will be
+                    computed and returned.
+            cx:      float
+                    The x-component of the central point
+            cy:      float
+                    The y-component of the central point
+
+            Returns:
+            --------
+            list
+                Each element in the list is the weight of the respective station in
+                the input station list.
+        """
+        n         = len(self.__stalst__)
+        azimouths = []
+        thetas    = []
+        #  Get the azimouth of each line from central point (cx,cy) to each point in
+        #+ the list. The computed azimouths are stored in a sorted list
+        #+ (aka azimouths). This list is made up of dictionary elements, where each
+        #+ dictionary contains 1. the azimouth value (in radians) as 'az' and 2. the
+        #+ index of the station in the sta_lst, as 'nr'.
+        for idx, sta in enumerate(self.__stalst__):
+            az = atan2(sta.lon-cx, sta.lat-cy)
+            azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
+        azimouths = sorted(azimouths, key=operator.itemgetter('az'))
+        #  Confirm that all azimouths are in the range [0,2*pi)
+        for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+        if debug_mode:
+            print('[DEBUG] Here are the azimouths:')
+            for a in azimouths:
+                print('\t{:4s} -> az = {:+8.4f}'.format(self.__stalst__[a['nr']].name, degrees(a['az'])))
+        #  Make a list of the 'theta' angles; for each point, the theta angle is an
+        #+ azimouth difference, of the previous minus the next point.
+        #  Special care for the first and last elements (theta angles)
+        thetas.append({'w': 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']), 'nr':azimouths[0]['nr']})
+        for j in range(1, n-1):
+            thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
+        thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']), 'nr':azimouths[n-1]['nr']})
+        if debug_mode:
+            print('[DEBUG] Here are the theta angles:')
+            for t in thetas:
+                print('\t{:4s} -> theta = {:+8.4f}'.format(self.__stalst__[t['nr']].name, degrees(t['w'])))
+        #  Double-check !! All theta angles must be in the range [0, 2*π)
+        for angle in thetas:
+            assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(self.__stalst__[angle['nr']].name)
+        #  Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
+        if debug_mode:
+            print('[DEBUG] Here are the final weights:')
+            tmp_lst = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+            for idx, val in enumerate(tmp_lst):
+                print('\t{:4s} -> z = {:+8.4f}'.format(self.__stalst__[idx].name, val))
+        return [ x['w']*float(n)/(4e0*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+
+    def l_weights(self, z_weights, **kargs):
+        """ Compute L(i) for each of the points in the station list sta_lst, where
+            L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
+            L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
+
+            To compute the function, the parameter D is needed; in this function the
+            approach is to try different D values (from dmin to dmax with step
+            dstep), untill the total re-weighting coefficient of the data approaches
+            the limit Wt. The re-weighting coefficient is:
+            W = Σ{i=0, i=len(sta_lst)*2}G(i)
+            where Σ denotes the sum and G(i) = L(i) * Z(i); this is why we also need
+            (as function input) the Z weights.
+
+            Note that the coordinates (both in sta_lst and in cx, cy), must be given
+            in meters. Also, cx is matched to sta_lst[i].lon and cy is matched to
+            sta_lst[i].lat.
+
+            The parameters dmin, dmax and dstep must be given in km. Wt must be an
+            integer.
+
+            Args:
+            sta_lst: A list of Station instances, i.e. the list of stations
+            cx: The x coordinate of the center point
+            cy: The y coordinate of the center point
+            z_weights: A list of weights (i.e. float values) for each station
+            **kwargs: Arbitrary keyword arguments; the following are relevant:
+            ltype: type of weighting function; can be either 'gaussian', or
+            'quadratic'.
+            Wt:    value for optimal Wt; default is 24
+            dmin:  Minimum value of tested D's; default is 1
+            dmax:  Maximum value of tested D's; defult is 500
+            dstep: Step for searching for optimal D, from dmin to dmax until
+            we hit Wt; default is 2
+            d:     Value D for computing the weights; if given, then
+            it is used and no effort is made to find an 'optimal'
+            D value.
+            debug_mode: Sets debuging mode on.
+
+            Returns:
+            tuple: (list, float)
+            list is a list of weights (i.e. L(i) values) for each station, in the
+            order they are passed in.
+            float: is the D value used to compute the weights.
+
+            Raises:
+            RuntimeError if dmin > dmax, or if we cannot find an optimal D.
+        """
+        #if 'ltype' not in kargs : kargs['ltype'] = 'gaussian'
+        #if 'Wt'    not in kargs : kargs['Wt']    = 6
+        #if 'dmin'  not in kargs : kargs['dmin']  = 1 	
+        #if 'dmax'  not in kargs : kargs['dmax']  = 500
+        #if 'dstep' not in kargs : kargs['dstep'] = 1
+
+        debug_mode = False
+        if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
+
+        #  Note: d and dri must be in the same units (here km).
+        def gaussian(dri, d):  return exp(-pow(dri/d,2))
+        def quadratic(dri, d): return 1e0/(1e0+pow(dri/d,2))
+
+        if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
+            raise RuntimeError
+
+        if self.__options__['ltype'] == 'gaussian':
+            l_i = gaussian
+        elif self.__options__['ltype'] == 'quadratic':
+            l_i = quadratic
+        else:
+            raise RuntimeError
+
+        #  Distances for each point from center in km.
+        dr = [ sqrt((x.lon-self.__xcmp__)*(x.lon-self.__xcmp__)+(x.lat-self.__ycmp__)*(x.lat-self.__ycmp__))/1000e0 for x in self.__stalst__ ]
+
+        #  If 'd' is given (at input), just compute and return the weights
+        if 'd' in self.__options__ and self.__options__['d'] is not None:
+            d = float(self.__options__['d'])
+            print('[DEBUG] Using passed in \'d\' coef = {:}'.format(d))
+            if debug_mode:
+                print('[DEBUG] Here are the l weights: (D={:8.5f})'.format(d))
+                for i,s in enumerate(self.__stalst__):
+                    print('\t{:} Distance: {:5.2f}km., L = {:8.5f}'.format(s.name, dr[i], l_i(dr[i],d)))
+            return [ l_i(dri,d) for dri in dr ], d
+        #  Else, iterate through [dmin, dmax] to find optimal d; then compute and
+        #+ return the weights.
+        for d in numpy.arange(self.__options__['dmin'], self.__options__['dmax'], self.__options__['dstep']):
+            l    = [ l_i(dri,d) for dri in dr ]
+            w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
+            if int(round(w)) >= self.__options__['Wt']:
+                self.__options__['d'] = d
+                print('[DEBUG] Found optimal \'d\' coef = {:}'.format(d))
+                if debug_mode:
+                    print('[DEBUG] Here are the l weights: (D={:})'.format(d))
+                    for i,s in enumerate(self.stalst):
+                        print('\t{:} Distance: {:5.2f}km., L = {:8.5f}'.format(s.name, dr[i], l[i]))
+                return l, d
+        # Fuck! cannot find optimal D
+        print('[ERROR] Cannot compute optimal D in weighting scheme')
+        raise RuntimeError
+
     
     def azimouths(self):
         n         = len(self.__stalst__)
