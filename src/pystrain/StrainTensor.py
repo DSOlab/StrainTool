@@ -1,4 +1,5 @@
 #! /usr/bin/python2.7
+#-*- coding: utf-8 -*-
 
 from __future__ import print_function
 ############################################## standard libs
@@ -120,48 +121,112 @@ parser.add_argument('-i', '--input-file',
     default=None,
     metavar='INPUT_FILE',
     dest='gps_file',
-    required=True)
+    required=True,
+    help='The input file. This must be an ascii file containing the columns: \'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span\'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.')
 
 parser.add_argument('--x-grid-step',
     default=50000,
     metavar='X_GRID_STEP',
     dest='x_grid_step',
     type=float,
-    required=False)
+    required=False,
+    help='The x-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors.')
 
 parser.add_argument('--y-grid-step',
     default=50000,
     metavar='Y_GRID_STEP',
     dest='y_grid_step',
     type=float,
-    required=False)
+    required=False,
+    help='The y-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors.')
 
 parser.add_argument('-m', '--method',
     default='shen',
     metavar='METHOD',
     dest='method',
     choices=['shen', 'veis'],
-    required=False)
+    required=False,
+    help='Choose a method for strain estimation. If \'shen\' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If \'veis\' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter.')
 
 parser.add_argument('-r', '--region',
     metavar='REGION',
     dest='region',
-    help='Specify a region; any station falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. \"[...] --region=21.0/23.5/36.0/38.5 [...]\"',
+    help='Specify a region; any station (in the input file) falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. \"[...] --region=21.0/23.5/36.0/38.5 [...]\"',
     required=False)
 
 parser.add_argument('-b', '--barycenter',
     dest='one_tensor',
-    action='store_true')
+    action='store_true',
+    help='Only estimate one strain tensor, at the region\'s barycentre.')
 
 parser.add_argument('--max-beta-angle',
     default=180,
     metavar='MAX_BETA_ANGLE',
     dest='max_beta_angle',
     type=float,
-    required=False)
+    required=False,
+    help='Only relevant for \'--mehod=shen\'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid).')
+
+parser.add_argument('-t', '--weighting-function',
+    default='gaussian',
+    metavar='WEIGHTING_FUNCTION',
+    dest='ltype',
+    choices=['gaussian', 'quadratic'],
+    required=False,
+    help='Only relevant for \'--mehod=shen\'. Choose between a \'gaussian\' or a \'quadratic\' spatial weighting function.')
+
+parser.add_argument('--Wt',
+    default=24,
+    metavar='Wt',
+    dest='Wt',
+    type=int,
+    required=False,
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa.')
+
+parser.add_argument('--dmin',
+    default=1,
+    metavar='D_MIN',
+    dest='dmin',
+    type=int,
+    required=False,
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km.')
+
+parser.add_argument('--dmax',
+    default=500,
+    metavar='D_MAX',
+    dest='dmax',
+    type=int,
+    required=False,
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km.')
+
+parser.add_argument('--dstep',
+    default=2,
+    metavar='D_STEP',
+    dest='dstep',
+    type=int,
+    required=False,
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km.')
+
+parser.add_argument('--min-spatial-weight',
+    default=1e-6,
+    metavar='MIN_SPATIAL_WEIGHT',
+    dest='min_l_weight',
+    type=float,
+    required=False,
+    help='Only relevant for \'--mehod=shen\'. Any station with a spatial weight smaller than this limit, will be excluded from the strain estimation (for a given point).')
+
+parser.add_argument('--d-param',
+    default=None,
+    metavar='D_PARAMETER',
+    dest='d_coef',
+    type=float,
+    required=False,
+    help='Only relevant for \'--mehod=shen\'. This is the \'D\' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.')
 
 ##  Parse command line arguments.
 args = parser.parse_args()
+##  Collect args into a dictionary
+dargs = vars(args)
 
 ##  Parse stations from input file; at input, station coordinates are in decimal
 ##+ degrees and velocities are in mm/yr.
@@ -203,7 +268,7 @@ print('[DEBUG] Station list transformed to UTM.')
 ##  Compute only one Strain Tensor, at the region's barycenter; then exit.
 if args.one_tensor:
     if args.method == 'shen':
-        sstr = ShenStrain(0e0, 0e0, sta_list_utm)
+        sstr = ShenStrain(0e0, 0e0, sta_list_utm, **dargs)
     else:
         sstr = VeisStrain(0e0, 0e0, sta_list_utm)
     sstr.set_to_barycenter()
@@ -226,7 +291,7 @@ if args.method == 'shen':
     for x, y in grd:
         clat, clon = utm2ell(x, y, utm_zone)
         print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
-        sstr = ShenStrain(x, y, sta_list_utm)
+        sstr = ShenStrain(x, y, sta_list_utm, **dargs)
         if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
                 estim2 = sstr.estimate()

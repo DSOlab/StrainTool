@@ -27,7 +27,7 @@ def barycenter(sta_list):
         x_mean = (sta_list[i].lon + (i-1)*x_mean) / float(i)
     return y_mean, x_mean
 
-def z_weights(sta_lst, cx, cy, debug_mode=False):
+def OBSOLETE_z_weights(sta_lst, cx, cy, debug_mode=False):
     """ Given a list of Stations and the coordinates of a central point (i.e.
         cx, cy), compute and return the function:
         Z(i) = n*θ(i) / 4π
@@ -96,7 +96,7 @@ def z_weights(sta_lst, cx, cy, debug_mode=False):
             print('\t{:4s} -> z = {:+8.4f}'.format(sta_lst[idx].name, val))
     return [ x['w']*float(n)/(4e0*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
 
-def l_weights(sta_lst, cx, cy, z_weights, **kargs):
+def OBSOLETE_l_weights(sta_lst, cx, cy, z_weights, **kargs):
     """ Compute L(i) for each of the points in the station list sta_lst, where
         L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
         L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
@@ -248,7 +248,7 @@ def ls_matrices_veis6(sta_lst, cx, cy):
     # numpy.linalg.lstsq(A,b)
     return A, b
 
-def ls_matrices_shen(sta_lst, cx, cy, **kargs):
+def OBSOLETE_ls_matrices_shen(sta_lst, cx, cy, **kargs):
     """ Construct Least Squares Matrices (A and b) to be solved for. The function
         will first evaluate the covariance matrix C, where:
         W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
@@ -337,26 +337,26 @@ def __cmp_strain__(str_params, str_params_cov=None):
     dilat = x1+x3
     return emean, ediff, taumax, emax, emin, azim, dilat
 
-"""
-def __write_strain__(strain, fout=None):
-    print('longitude latitude      vx+dvx       vy+dvy    cxy         w+dw         exx+dexx         exy+dexy         eyy+deyy         emax+demax       emin+demin        shr+dshr         azi+dazi        dilat+ddilat     dis.    weight    chisq   nsite')
-    print('  deg       deg          mm/a         mm/a      /      nano-rad/a     nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a    nano-strain/a        degree       nano-strain/a      km        /         /       /')
-
-print(''.format(strain.x, strain.y, strain.Ux, 0e0, strain.Uy, 0e0, 0e0,
-     strain.tauy, 0e0, strain.omega, 0e0, strain.taux, 0e0, strain.tauxy, 0e0,
-     emax, 0e0, emin, 0e0, taumax, 0e0, dexazim, 0e0, dilat, 0e0)
-"""
 class ShenStrain:
-    def __init__(self, x=0e0, y=0e0, station_list=[]):
+    def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
         self.__stalst__ = station_list
         self.__xcmp__   = x
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
-        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2, 'min_l_weight': 1e-6}
+        self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2, 'min_l_weight': 1e-6, 'd_coef': None}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+        for key in kwargs:
+            if key in self.__options__:
+                self.__options__[key] = kwargs[key]
+            else:
+                print('[DEBUG] Irrelevant key in Strain constructor: {:}; skipped'.format(key))
 
-    def ls_matrices_shen(self, **kargs):
+    def clean_weight_matrices(self):
+        self.__zweights__ = None
+        self.__lweights__ = None
+
+    def ls_matrices(self, **kargs):
         """ Construct Least Squares Matrices (A and b) to be solved for. The function
             will first evaluate the covariance matrix C, where:
             W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
@@ -370,9 +370,16 @@ class ShenStrain:
         # number of columns (parameters)
         M = 6
         # the (spatial) weights, i.e. Z(i)
-        zw = self.z_weights() #z_weights(sta_lst, cx, cy)
+        if not self.__zweights__:
+            zw = self.z_weights()
+        else:
+            zw = self.__zweights__
         # the distance weights
-        lw, d_coef = self.l_weights(zw, **kargs)
+        if not self.__lweights__:
+            lw, d_coef = self.l_weights(zw, **kargs)
+        else:
+            lw = self.__lweights__
+            d_coef = self.__options__['d_coef']
         assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
         # we are only going to use the observations above the minimum L weight threshold
         Nl = sum(1 for l in lw if l >= min_l_weight) * 2
@@ -382,7 +389,7 @@ class ShenStrain:
         # W = numpy.zeros(shape=(N,1))
         # distances, dx and dy for each station from (cx, cy). Each element of the
         # array is [ ... (dx, dy, dr) ... ]
-        cc  = Station(self.__xcmp__, self.__ycmp__)
+        cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         xyr = [ x.distance_from(cc) for x in self.__stalst__ ]
         ## design matrix A, observation matrix b
         A = numpy.zeros(shape=(Nl,M))
@@ -448,7 +455,7 @@ class ShenStrain:
         #+ dictionary contains 1. the azimouth value (in radians) as 'az' and 2. the
         #+ index of the station in the sta_lst, as 'nr'.
         for idx, sta in enumerate(self.__stalst__):
-            az = atan2(sta.lon-cx, sta.lat-cy)
+            az = atan2(sta.lon-self.__xcmp__, sta.lat-self.__ycmp__)
             azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
         azimouths = sorted(azimouths, key=operator.itemgetter('az'))
         #  Confirm that all azimouths are in the range [0,2*pi)
@@ -553,8 +560,8 @@ class ShenStrain:
         dr = [ sqrt((x.lon-self.__xcmp__)*(x.lon-self.__xcmp__)+(x.lat-self.__ycmp__)*(x.lat-self.__ycmp__))/1000e0 for x in self.__stalst__ ]
 
         #  If 'd' is given (at input), just compute and return the weights
-        if 'd' in self.__options__ and self.__options__['d'] is not None:
-            d = float(self.__options__['d'])
+        if 'd_coef' in self.__options__ and self.__options__['d_coef'] is not None:
+            d = float(self.__options__['d_coef'])
             print('[DEBUG] Using passed in \'d\' coef = {:}'.format(d))
             if debug_mode:
                 print('[DEBUG] Here are the l weights: (D={:8.5f})'.format(d))
@@ -567,7 +574,7 @@ class ShenStrain:
             l    = [ l_i(dri,d) for dri in dr ]
             w    = sum([ x[0]*x[1] for x in zip(l,z_weights) ])*2 # w(i) = l(i)*z(i)
             if int(round(w)) >= self.__options__['Wt']:
-                self.__options__['d'] = d
+                self.__options__['d_coef'] = d
                 print('[DEBUG] Found optimal \'d\' coef = {:}'.format(d))
                 if debug_mode:
                     print('[DEBUG] Here are the l weights: (D={:})'.format(d))
@@ -578,7 +585,6 @@ class ShenStrain:
         print('[ERROR] Cannot compute optimal D in weighting scheme')
         raise RuntimeError
 
-    
     def azimouths(self):
         n         = len(self.__stalst__)
         azimouths = []
@@ -663,7 +669,7 @@ class ShenStrain:
         #if not self.__lweights__:
         #    self.compute_l_weights()
         #assert len(self.__zweights__) == len(self.__lweights__)
-        A, b = ls_matrices_shen(self.__stalst__, self.__xcmp__, self.__ycmp__, **kargs)
+        A, b = self.ls_matrices(**kargs)
         VcV  = vcv_mod = numpy.dot(A.T, A)
         m, n = A.shape
         if m <= 3:
