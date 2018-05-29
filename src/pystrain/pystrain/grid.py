@@ -6,8 +6,9 @@ from sys  import float_info
 from math import floor
 
 class Grid:
-    """
-        A very simple Grid class to be used within the StrainTensor project.
+    """A dead simple grid class.
+
+        A very simple grid class to be used within the StrainTensor project.
         A Grid instance has x- and y- axis limits and step sizes (i.e x_min,
         x_max, x_step, y_min, y_max, y_step).
         It is iterable; when iterating, the instance will return the center
@@ -22,8 +23,34 @@ class Grid:
         > [x0+xstep/2+xstep, y0+ystep/2+ystep]
         > [x0+xstep/2+xstep, y0+ystep/2+2*ystep]
 
+        Attributes:
+            x_min : minimum value in x-axis.
+            x_max : maximum value in x-axis.
+            x_step: x-axis step size.
+            y_min : minimum value in y-axis.
+            y_max : maximum value in y-axis.
+            y_step: y-axis step size.
+            cxi   : current x-axis tick / index
+            cyi   : current y-axis tick / index
+            xpts  : number of ticks on x-axis
+            ypts  : number of ticks on y-axis
     """
+
     def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
+        """Constructor via x- and y- axis limits.
+
+            The __init__ method will assign all of the instance's attributes. The
+            x- and y- tick indexes will be set to 0 (ready for iterating).
+
+            Args:
+                x_min : minimum value in x-axis.
+                x_max : maximum value in x-axis.
+                x_step: x-axis step size.
+                y_min : minimum value in y-axis.
+                y_max : maximum value in y-axis.
+                y_step: y-axis step size.
+
+        """
         self.x_min = x_min
         self.x_max = x_max
         self.x_step= x_step
@@ -34,8 +61,8 @@ class Grid:
         self.cyi    = 0      # current y-axis tick / index
         #  Watch out for the float-to-integer conversion! Python's int is basicaly
         #+ a floor() so, 7.99999999.... will became a '7' not an '8'.
-        self.xpts   = int((x_max-x_min) / x_step + .49)
-        self.ypts   = int((y_max-y_min) / y_step + .49)
+        self.xpts   = int((x_max-x_min) / x_step + .49e0)
+        self.ypts   = int((y_max-y_min) / y_step + .49e0)
         print('[DEGUB] Grid x-axis details: x_min {}, x_max {}, x_step {}, #pts {}, computed end at {}, diff {}'.format(self.x_min, self.x_max, self.x_step, self.xpts, x_min + self.xpts * x_step, abs(x_min + self.xpts * x_step - x_max)))
         assert x_min + self.xpts * x_step <= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
         print('[DEGUB] Grid y-ayis details: y_min {}, y_max {}, y_step {}, #pts {}, computed end at {}, diff {}'.format(self.y_min, self.y_max, self.y_step, self.ypts, y_min + self.ypts * y_step, abs(y_min + self.ypts * y_step - y_max)))
@@ -46,65 +73,81 @@ class Grid:
         return self
 
     def xidx2xval(self, idx):
-        """ Given an index (on x-axis), return the value at the centre of this
-            cell.
-            The index represents the number of a cell (starting from zero).
+        """Index to value for x-axis.
+         
+            Given an index (on x-axis), return the value at the centre of this
+            cell. The index represents the number of a cell (starting from
+            zero).
+
+            Args:
+                idx (int): the index; should be in range (0, self.xpts]
         """
         assert idx >= 0 and idx < self.xpts
-        return self.x_min + self.x_step/2e0 + self.x_step*idx
+        return self.x_min + self.x_step/2e0 + self.x_step*float(idx)
     
     def yidx2yval(self, idx):
-        """ Given an index (on y-axis), return the value at the centre of this
-            cell.
-            The index represents the number of a cell (starting from zero).
+        """Index to value for y-axis.
+         
+            Given an index (on y-axis), return the value at the centre of this
+            cell. The index represents the number of a cell (starting from
+            zero).
+
+            Args:
+                idx (int): the index; should be in range (0, self.ypts]
         """
         assert idx >= 0 and idx < self.ypts
-        return self.y_min + self.y_step/2e0 + self.y_step*idx
+        return self.y_min + self.y_step/2e0 + self.y_step*float(idx)
 
     def next(self):
-        """ Return the (centre of the) next cell (aka x,y coordinate pair).
+        """Return the centre od the next cell.
+
+            Return the (centre of the) next cell (aka x,y coordinate pair). Next
+            actually means the cell on the right (if there is one), or else the
+            leftmost cell in the above row.
+
+            Raises:
+                StopIteration: if there are not more cell we can get to.
         """
         if self.cxi >= self.xpts:
             if self.cyi+1 >= self.ypts:
                 raise StopIteration
             self.cxi  = 0
             self.cyi += 1
-            return self.x_max - self.x_step/2, self.yidx2yval(self.cyi)
+            return self.x_max - self.x_step/2e0, self.yidx2yval(self.cyi)
         else:
             self.cxi += 1
             return self.xidx2xval(self.cxi-1), self.yidx2yval(self.cyi)
 
 def generate_grid(sta_lst, x_step, y_step):
-    """ Given a list of Stations and x- and y-axis step sizes, compute and
+    """Grid generator.
+
+        Given a list of Stations and x- and y-axis step sizes, compute and
         return a Grid instance. The max/min x and y values (of the Grid) are
         extracted from the station coordinates; if needed, they are adjusted
         so that (xmax-xmin) is divisible (without remainder) with xstep.
-
         Obsviously, sta_lst coordinates (assesed by .lon and .lat) must match
         the x_step and y_step values respectively (same units and reference
         system).
 
-        Parameters:
-        -----------
-        sta_lst: (list) list of Station instances. Coordinates of the stations are
-                 used, using the 'lon' and 'lat' instance variables. Longtitude
-                 values are matched to 'x_step' and latitude values are matched
-                 to 'ystep'
-        x_step:  (float) value of step for the x-axis of the grid.
-        y_step:  (float) value of step for the y-axis of the grid.
+        Args:
+            sta_lst (list): list of Station instances. Coordinates of the stations are
+                     used, using the 'lon' and 'lat' instance variables. Longtitude
+                     values are matched to 'x_step' and latitude values are matched
+                     to 'ystep'
+            x_step  (float): value of step for the x-axis of the grid.
+            y_step  (float): value of step for the y-axis of the grid.
 
         Returns:
-        --------
-        A Grid instance; the min and max values of the Grid are computed from
-        the input coordinates (i.e. the sta_lst input list) and then adjusted
-        so that the range (xmax-xmin) is divisible with x_step (same goes for
-        the y-axis)
+            A Grid instance; the min and max values of the Grid are computed from
+            the input coordinates (i.e. the sta_lst input list) and then adjusted
+            so that the range (xmax-xmin) is divisible with x_step (same goes for
+            the y-axis)
 
-        TODO:
-        The lines 
-        assert divmod(y_max-y_min, y_step)[1] == 0e0 and
-        assert divmod(x_max-x_min, x_step)[1] == 0e0
-        may throw dues to rounding errors; how can i fix that?
+        Todo:
+            The lines 
+            assert divmod(y_max-y_min, y_step)[1] == 0e0 and
+            assert divmod(x_max-x_min, x_step)[1] == 0e0
+            may throw dues to rounding errors; how can i fix that?
     """
     # Get min/max values of the stations.
     y_min = float_info.max
