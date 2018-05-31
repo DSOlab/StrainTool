@@ -145,7 +145,7 @@ class Ellipsoid:
         if name == "b"   : return self.semi_minor()
         if name == "finv": return 1.0e0/self.f
         raise AttributeError
-
+"""
 if __name__ == "__main__":
     ell1 = Ellipsoid("grs80")
     ell2 = Ellipsoid("GRS80")
@@ -167,3 +167,4 @@ if __name__ == "__main__":
     print '\tFLattening           {:10.3f}'.format(ell1.f)
     print '\tInv. Flattening      {:10.3f}'.format(ell1.finv)
     print '\tEccentricity Squared {:10.3f}'.format(ell1.e2)
+"""

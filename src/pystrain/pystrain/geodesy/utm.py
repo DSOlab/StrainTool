@@ -6,16 +6,14 @@ from pystrain.geodesy.ellipsoid import Ellipsoid
 def dd2dms(dd):
     ''' Decimal degrees to hexicondal degrees.
         
-        Parameters:
-        -----------
-        dd: float (or something convertible to float).
+        Args:
+            dd (float): angle in decimal degrees
 
         Returns:
-        --------
-        tuple of 3 elements. The elements are:
-            # 0 -> integer degrees
-            # 1 -> integer minutes
-            # 2 -> float seconds
+            tuple (int, int, float): The elements are:
+                # 0 -> integer degrees
+                # 1 -> integer minutes
+                # 2 -> float seconds
     '''
     dd1  = abs(float(dd))
     cdeg = int(dd1)
@@ -26,22 +24,21 @@ def dd2dms(dd):
     return cdeg,cmin,csec
 
 def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
-    '''
-        Convert UTM coordinates (i.e. Easting and Northing) to ellipsoidal
-        coordinates.
+    '''UTM to ellipsoidal coordinates.
 
-        Parameters:
-        -----------
-        E: Easting (float)
-        N: Northing (float)
-        zone:
-        ell:
-        lcm:
+        Convert UTM coordinates (i.e. Easting and Northing) to ellipsoidal
+        coordinates (actualy latitude and longtitude).
+
+        Args:
+            E (float): Easting in meters
+            N (float): Northing in meters
+            zone (int):
+            ell (Ellipsoid): the ellipsoid of choice
+            lcm:
 
         Returns:
-        --------
-        A tuple of two floats; first is latitude and second is longtitude, both
-        in degrees.
+            tuple (float, float): first is latitude and second is longtitude,
+                                  both in degrees.
     '''
     if not lcm:
         lcm = radians(abs(zone)*6-183)
@@ -100,9 +97,24 @@ def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
     return lat, lon
 
 def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
-    """
-        All input arguments in radians.
-        zone should be given in degrees
+    """Ellipsoidal coordinates to UTM.
+
+        Convert ellipsoidal coordinates (actualy longtitude and latitude) to
+        UTM coordinates (aka easting and northing).
+        If zone is passed in, then it is used for the computation; else, zone
+        is computed within the function. The actual zone value used within the
+        function is returned in the returned tuple.
+
+        Args:
+            lat (float): latitude in radians
+            lon (float): longtitude in radians
+            ell (Ellipsoid): ellipsoid of choice
+            zone (int): zone in degrees
+            lcm :
+
+        Returns:
+            tuple (float, float, int, int): a tuple of type:
+                Northing, Easting, Zone, lcm
     """
     f  = ell.f
     a  = ell.a
@@ -171,7 +183,7 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
     N = No+ko*RN*(N1+N2+N3+N4+N5)
 
     return N, E, Zone, lcm
-
+"""
 if __name__ == "__main__":
     # lats = [39.010444, -12.0464, -37.8136, 38.7223]
     lats = [0.6808606982218858, -0.2102493430122449, -0.6599718220321278, 0.6758316289450003]
@@ -196,3 +208,4 @@ if __name__ == "__main__":
             print '\tdlat={} dlon={} in decimal degrees'.format(degrees(abs(clat-lats[i])), degrees(abs(clon-lons[i])))
             print '\tdLat={} dLon={} in seconds'.format(degrees(abs(clat-lats[i]))*3600e0, degrees(abs(clon-lons[i]))*3600e0)
             print '\tInput {}, {} output {}, {}'.format(degrees(lats[i]), degrees(lons[i]), degrees(clat), degrees(clon))
+"""

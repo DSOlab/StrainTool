@@ -99,7 +99,7 @@ class Grid:
         return self.y_min + self.y_step/2e0 + self.y_step*float(idx)
 
     def next(self):
-        """Return the centre od the next cell.
+        """Return the centre of the next cell.
 
             Return the (centre of the) next cell (aka x,y coordinate pair). Next
             actually means the cell on the right (if there is one), or else the
