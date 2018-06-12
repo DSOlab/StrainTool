@@ -445,10 +445,12 @@ then
   fi
 
   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
   awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
 ###scale
 # echo "$vsclon $vsclat $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
@@ -472,20 +474,22 @@ if [ "$GTOTAL" -eq 1 ]
 then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
-  awk '{if ($11 < 300) print $2,$1,$11}' $pth2strinfo >tmpgtot
+  awk '{print $2,$1,$11}' $pth2strinfo >tmpgtot
   gmt makecpt -Cjet -T0/300/1 > inx.cpt
 #   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
+  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+      -O -V -K -V${VRBLEVM}>> $outfile
 
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S -O -K >> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+      -O -K -V${VRBLEVM}>> $outfile
   
 # plot stations
   if [ "$PSTA" -eq 1 ]
@@ -522,10 +526,12 @@ then
   fi
 
 # plot strain rates
-  awk 'NR !=1 { if ($11 < 200) print $2,$1,0,$11,$12-45+90}' $pth2strinfo \
-  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR !=1 { if ($11 < 200) print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR !=1 {print $2,$1,0,$11,$12-45+90}' $pth2strinfo \
+  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
+        -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR !=1 {print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+        -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
   tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
@@ -548,19 +554,21 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk '{if ($13 < 3000 && $13 > -3000) print $2,$1,$13}' $pth2strinfo >tmpgtot
+  awk '{print $2,$1,$13}' $pth2strinfo >tmpgtot
   gmt makecpt -Cjet -T-300/300/5 > inx.cpt
 #   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
+  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+      -O -V${VRBLEVM} -K >> $outfile
 
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S -O -K >> $outfile
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+      -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
   if [ "$PSTA" -eq 1 ]
