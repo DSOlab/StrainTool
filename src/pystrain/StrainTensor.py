@@ -280,8 +280,8 @@ if args.one_tensor:
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 fout = open('strain_info.dat', 'w')
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Longtitude', 'Latitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Longtitude', 'Latitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat'), file=fout)
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat'), file=fout)
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)

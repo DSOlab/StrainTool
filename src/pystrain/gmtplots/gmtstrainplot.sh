@@ -63,6 +63,7 @@ function help {
 	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
 	echo "     -strsc [:=strain scale]"
 	echo "     -rotsc [:=rotational scales]"
+	echo "     -max_str_value (value) [:=exclude] exclude bigger strain values"
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
@@ -121,6 +122,7 @@ GTOTAL=0
 GTOTALAXES=0
 DILATATION=0
 SECINV=0
+MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
 # Check default parameters file
@@ -222,6 +224,11 @@ do
     -secinv)
 	pth2strinfo=${pth2inptf}/${2}
 	SECINV=1
+	shift
+	shift
+	;;
+    -max_str_value)
+	MAX_STR_VALUE=$2
 	shift
 	shift
 	;;
@@ -482,14 +489,16 @@ if [ "$GTOTAL" -eq 1 ]
 then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
-  awk 'NR > 2 {print $2,$1,$11}' $pth2strinfo >tmpgtot
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE')  print $2,$1,$11}' $pth2strinfo > tmpgtot
   gmt makecpt -Cjet -T0/200/1 > inx.cpt
 #   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
   gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -V -K -V${VRBLEVM}>> $outfile
+      -O -K -V${VRBLEVM}>> $outfile
 
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
@@ -534,10 +543,14 @@ then
   fi
 
 # plot strain rates
-  awk 'NR > 2 {print $2,$1,0,$11,$12-45+90}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE') print $2,$1,0,$11,$12-45+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE')  print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
@@ -562,7 +575,9 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk '{print $2,$1,$13}' $pth2strinfo >tmpdil
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE') print $2,$1,$13}' $pth2strinfo >tmpdil
   gmt makecpt -Cjet -T-300/300/5 > inx.cpt
 #   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
@@ -599,7 +614,9 @@ if [ "$SECINV" -eq 1 ]
 then
   echo "...plot 2nd invariant..."
 # plot shear strain rates
-  awk '{print $2,$1, ($6^2 + $7^2 + $8^2)^(1/2)}' $pth2strinfo >tmp2inv
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE')  print $2,$1, ($6^2 + $7^2 + $8^2)^(1/2)}' $pth2strinfo >tmp2inv
   gmt makecpt -Cjet -T0/150/1 > inx.cpt
 #   gmt pscontour tmp2inv -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmp2inv -R -J -I -Cinx.cpt -O -K >> $outfile
@@ -650,9 +667,13 @@ then
   fi
 
 # plot strain rates
-  awk 'NR > 2 {print $2,$1,0,$10,$12+90}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE') print $2  ,$1,0,$10,$12+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W1.5p,blue -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,$9,0,$12+90}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE')  print $2,$1,$9,0,$12+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
@@ -690,10 +711,14 @@ then
   fi
 
 # plot rotational rates
-  awk 'NR > 2 {if ($5>=0) print $2,$1,$5/1000000000,0.00000001}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE' && $5 >= 0) print $2,$1,$5/1000000000,0.00000001}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {if ($5<0) print $2,$1,$5/1000000000,0.00000001}' $pth2strinfo \
+  awk 'NR > 2; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($6) <= '$MAX_STR_VALUE' && abs($7) <= '$MAX_STR_VALUE' && \
+  abs($8) <= '$MAX_STR_VALUE' && $5 < 0) print $2,$1,$5/1000000000,0.00000001}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
