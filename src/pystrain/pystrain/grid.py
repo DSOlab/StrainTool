@@ -138,7 +138,7 @@ def generate_grid(sta_lst, x_step, y_step):
             y_step  (float): value of step for the y-axis of the grid.
 
         Returns:
-            A Grid instance; the min and max values of the Grid are computed from
+            A Grid instance: the min and max values of the Grid are computed from
             the input coordinates (i.e. the sta_lst input list) and then adjusted
             so that the range (xmax-xmin) is divisible with x_step (same goes for
             the y-axis)
@@ -148,6 +148,7 @@ def generate_grid(sta_lst, x_step, y_step):
             assert divmod(y_max-y_min, y_step)[1] == 0e0 and
             assert divmod(x_max-x_min, x_step)[1] == 0e0
             may throw dues to rounding errors; how can i fix that?
+
     """
     # Get min/max values of the stations.
     y_min = float_info.max

@@ -32,9 +32,9 @@ def utm2ell(E, N, zone, ell=Ellipsoid("wgs84"), lcm=None):
         Args:
             E (float): Easting in meters
             N (float): Northing in meters
-            zone (int):
+            zone (int): the zone in degrees (?)
             ell (Ellipsoid): the ellipsoid of choice
-            lcm:
+            lcm: central meridian (?)
 
         Returns:
             tuple (float, float): first is latitude and second is longtitude,

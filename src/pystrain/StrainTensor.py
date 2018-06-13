@@ -79,6 +79,7 @@ def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', 
             print('{:} {:} {:}'.format(sta.name, degrees(sta.lat), degrees(sta.lon)), file=fout)
     return
 
+"""
 def plot_map(sta_list, stensor_list):
     lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
     lon0    = degrees(sum([ x.lon for x in sta_list ])/len(sta_list))
@@ -106,6 +107,7 @@ def plot_map(sta_list, stensor_list):
     print('[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats)))
     plt.show()
     return
+"""
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,
@@ -278,7 +280,8 @@ if args.one_tensor:
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 fout = open('strain_info.dat', 'w')
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('X (m)', 'Y (m)', 'Ux', 'Uy', 'tauy', 'omega', 'taux', 'tauxy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Longtitude', 'Latitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Longtitude', 'Latitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat'), file=fout)
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
@@ -316,4 +319,3 @@ else:
 
 fout.close()
 gmt_script(args.gps_file, sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
-#plot_map(sta_list_ell, strain_list)
