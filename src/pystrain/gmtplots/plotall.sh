@@ -10,3 +10,6 @@ echo "[PLOTALL] ...plot maximum shear strain..."
 ./gmtstrainplot.sh -jpg -gtot strain_info.dat -psta -l -o output_gtot
 echo "[PLOTALL] ...plot dilatation..."
 ./gmtstrainplot.sh -jpg -dil strain_info.dat -psta -l -o output_dil  
+echo "[PLOTALL] ...plot second invariant..."
+./gmtstrainplot.sh -jpg -secinv strain_info.dat -psta -l -o output_2inv  
+
