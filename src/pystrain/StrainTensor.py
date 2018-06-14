@@ -32,91 +32,6 @@ def write_station_info(sta_lst, filename='station_info.dat'):
             print('{:} {:} {:} {:} {:}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve, sta.vn), file=fout)
     return
 
-"""OBSOLETE
-def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=9000000, strsc=50, frame=2):
-    lons    = [ degrees(x.lon) for x in sta_lst ]
-    lats    = [ degrees(x.lat) for x in sta_lst ]
-    west    = min(lons)
-    east    = max(lons)
-    south   = min(lats)
-    north   = max(lats)
-    gmt_range=('-R{:5.2f}/{:5.2f}/{:5.2f}/{:5.2f}'.format(west, east, south, north)) 
-    gmt_scale=('-Lf20/33.5/36:24/100+l+jr')
-    gmt_proj=('-Jm24/37/1:{:}'.format(projscale))
-    with open(outfile, 'w') as fout:
-        print('#!/bin/bash', file=fout)
-        print('outfile=strain_rates.ps', file=fout)
-        print('GMTVRB=2', file=fout)
-        print('VSC=\"0.05\"', file=fout)
-        print('VHORIZONTAL=0', file=fout)
-        print('LABELS=0', file=fout)
-        print('while [ $# -gt 0 ] ; do case \"$1\" in', file=fout)
-        print('-a)\n  VHORIZONTAL=1\n  shift\n  ;;', file=fout)
-        print('-l)\n  LABELS=1\n  shift\n  ;;', file=fout)
-        print('*)\n  shift\n  ;;', file=fout)
-        print('esac\ndone', file=fout)
-        print('gmt gmtset MAP_FRAME_TYPE fancy', file=fout)
-        print('gmt gmtset PS_PAGE_ORIENTATION portrait', file=fout)
-        print('gmt gmtset FONT_ANNOT_PRIMARY 10', file=fout)
-        print('gmt gmtset FONT_LABEL 10', file=fout)
-        print('gmt gmtset MAP_FRAME_WIDTH 0.12c', file=fout)
-        print('gmt gmtset FONT_TITLE 18p,Palatino-BoldItalic', file=fout)
-        print('gmt gmtset PS_MEDIA 22cx22c', file=fout)
-        print('gmt psbasemap {:} {:} {:} -B{:}:."Tensors": -P -K > $outfile'.format(gmt_range, gmt_proj, gmt_scale, frame), file=fout)
-        print('gmt pscoast -R -J -O -K -W0.25 -G195 -Df -Na >> $outfile', file=fout)
-        print('awk \'{{print $3,$2}}\' .station.info.dat | gmt psxy -Jm -O -R -Sc0.10c -W0.005c -Ggreen -K >>$outfile', file=fout)
-        print("awk \'{{print $3,$2,0,$6,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gblue -W2p,blue -V${{GMTVRB}} -K -O>> $outfile".format(gmt_range, strsc), file=fout)
-        print('awk \'{{print $3,$2,$4,0,$8+90}}\' .strain.info.dat | gmt psvelo -Jm {:} -Sx{:} -L -A10p+e -Gred -W2p,red -V${{GMTVRB}} -K -O>> $outfile'.format(gmt_range, strsc), file=fout)
-        print('if test \"$VHORIZONTAL\" -eq 1 ; then', file=fout)
-        print('awk \'{{print $2,$3,$4,$5,$6,$7,$8,$1}}\' {:} | gmt psvelo -R -J -Se${{VSC}}/0.95/0 -W.3p,100 -A10p+e -V${{GMTVRB}} -Ggreen -O -K -L >> $outfile'.format(input_file), file=fout)
-        print('fi', file=fout)
-        print('if test \"$LABELS\" -eq 1 ; then', file=fout)
-        print('awk \'{{print $2,$3,9,0,1,"RB",$1}}\' {:} | gmt pstext -Jm -R -Dj0.2c/0.2c -O -K -V${{GMTVRB}} >> $outfile'.format(input_file), file=fout)
-        print('fi', file=fout)
-        print('echo "9999 9999" | gmt psxy -J -R -O >> $outfile', file=fout)
-    with open('.strain.info.dat', 'w') as fout:
-        for idx, stn in enumerate(tensor_lst):
-            dct = stn.info()
-            clat, clon = utm2ell(stn.value_of('x'), stn.value_of('y'), utm_zone)
-            # code lat lon Kmax sKmax Kmin sKmin Az sAz E sE gtot sgtot
-            sigma = 1e-3
-            print('{:} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f} {:7.3f}'.format(idx, degrees(clat), degrees(clon), dct['k_max'], sigma, dct['k_min'], sigma, dct['az'], sigma, dct['e'], sigma, dct['strain'], sigma), file=fout)
-    with open('.station.info.dat', 'w') as fout:
-        for idx, sta in enumerate(sta_lst):
-            print('{:} {:} {:}'.format(sta.name, degrees(sta.lat), degrees(sta.lon)), file=fout)
-    return
-"""
-
-"""
-def plot_map(sta_list, stensor_list):
-    lat0    = degrees(sum([ x.lat for x in sta_list ])/len(sta_list))
-    lon0    = degrees(sum([ x.lon for x in sta_list ])/len(sta_list))
-    lons    = [ degrees(x.lon) for x in sta_list ]
-    lats    = [ degrees(x.lat) for x in sta_list ]
-    lon_off = (max(lons)-min(lons))/10
-    lat_off = (max(lats)-min(lats))/10
-    my_map = Basemap(projection='merc', lat_0 = lat0, lon_0 = lon0, resolution = 'c', llcrnrlon=min(lons)-lon_off, llcrnrlat=min(lats)-lat_off, urcrnrlon=max(lons)+lon_off, urcrnrlat=max(lats)+lat_off)
-    my_map.drawcoastlines()
-    my_map.drawcountries()
-    my_map.fillcontinents(color = 'coral')
-    my_map.drawmapboundary()
-    my_map.drawmeridians(numpy.arange(floor(min(lons)), ceil(max(lons)), 2), labels=[True,False,False,True])
-    my_map.drawparallels(numpy.arange(floor(min(lats)), ceil(max(lats)), 2), labels=[False,True,True,False], fontsize=10)
-
-    for sta in sta_list:
-        x, y = my_map(degrees(sta.lon), degrees(sta.lat))
-        my_map.plot(x, y, 'bo', markersize=10)
-        plt.text(x, y, sta.name)
-
-    for tnr in stensor_list:
-        x, y = my_map(degrees(tnr.lon), degrees(tnr.lat))
-        my_map.plot(x, y, 'r+', markersize=8)
-
-    print('[DEBUG] Area is {}/{}/{}/{}'.format(min(lons), max(lons), min(lats), max(lats)))
-    plt.show()
-    return
-"""
-
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,
     description='Estimate Strain Tensor(s) from GNSS derived velocities.',
@@ -312,7 +227,9 @@ if args.method == 'shen':
                 sstr.print_details(fout)
                 strain_list.append(sstr)
             except RuntimeError:
-                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}'.format(degrees(clon), degrees(clat)))
+                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(degrees(clon), degrees(clat)))
+            except ArithmeticError:
+                print('[DEBUG] Failed to compute parameter VcV matrix for strain at {:7.4f}, {:7.4f}. Point skipped'.format(degrees(clon), degrees(clat)))
         else:
             print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(degrees(clon), degrees(clat), degrees(max(sstr.beta_angles()))))
 else:

@@ -318,7 +318,7 @@ def __strain_info__(str_params):
     info_dict['az'] = degrees(2e0 * atan2(exy + eyx, eyy - exx))
     return info_dict
 
-def __cmp_strain__(str_params, str_params_cov=None):
+def __cmp_strain__(str_params, params_cov=None):
     info_dict = {}
     x1  = str_params['taux']
     x2  = str_params['tauxy']
@@ -336,7 +336,34 @@ def __cmp_strain__(str_params, str_params_cov=None):
     dexazim = azim+45.0e0-180.0e0
     dilat = x1+x3
     sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
-    return emean, ediff, taumax, emax, emin, azim, dilat, sec_inv
+    #if params_cov != None:
+    # cut the part of vcv that holds tau* info
+    vcv = params_cov[3:6, 3:6]
+    # estimate sigma of tau_max
+    v = numpy.zeros(shape=(3,1))
+    v[0,:] = (x1-x3)/4.0e0/taumax
+    v[1,:] = x2/taumax
+    v[2,:] = -v[0,:]
+    staumax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+    # estimate sigma of emax
+    v[0,:] = 0.5e0*(1+(x1-x3)/2.e0/taumax)
+    v[1,:] = x2/taumax
+    v[2,:] = 0.5e0*(1-(x1-x3)/2.e0/taumax)
+    semax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+    # estimate sigma of emin
+    v[0,:] = 0.5e0*(1-(x1-x3)/2.0e0/taumax)
+    v[1,:] = -x2/taumax
+    v[2,:] = 0.5e0*(1+(x1-x3)/2.0e0/taumax)
+    semin = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+    # estimate sigma of azimuth
+    cf = 1.0e0/((x1-x3)**2e0+4.0e0*x2**2e0)
+    v[0,:] = cf*x2
+    v[1,:] = -cf*(x1-x3)
+    v[2,:] = -v[0,:]
+    sazim = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+    # estimate sigma of dilatation
+    sdilat = sqrt(vcv[0,0]+vcv[2,2]+2e0*vcv[0,2])
+    return emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv
 
 class ShenStrain:
     def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
@@ -347,6 +374,7 @@ class ShenStrain:
         self.__lweights__ = None
         self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2, 'min_l_weight': 1e-6, 'd_coef': None}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+        self.__vcv__ = None
         for key in kwargs:
             if key in self.__options__:
                 self.__options__[key] = kwargs[key]
@@ -628,8 +656,8 @@ class ShenStrain:
     def print_details(self, fout):
 	utm_zone = 34 #added to convert utm 2 latlon
 	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) #added to conv utm 2 latlon
-        emean, ediff, taumax, emax, emin, azim, dilat, sec_inv =  __cmp_strain__(self.__parameters__)
-        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, self.value_of('tauy')*1e9, emax*1e9, emin*1e9, taumax*1e9, azim, dilat*1e9, sec_inv*1e9), file=fout)
+        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  __cmp_strain__(self.__parameters__, self.__vcv__)
+        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[4,4])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[5,5])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
@@ -671,7 +699,7 @@ class ShenStrain:
         #    self.compute_l_weights()
         #assert len(self.__zweights__) == len(self.__lweights__)
         A, b = self.ls_matrices(**kargs)
-        VcV  = vcv_mod = numpy.dot(A.T, A)
+        VcV  = numpy.dot(A.T, A)
         m, n = A.shape
         if m <= 3:
             raise RuntimeError('Too few obs to perform LS.')
@@ -684,15 +712,18 @@ class ShenStrain:
             sigma0_post = float(res[0])
             print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
             bvar = linalg.inv(VcV) * sigma0_post
-            # print('{:}'.format(bvar))
+            self.__vcv__ = bvar
         except:
             print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
+            self.__vcv__ = None
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
         self.__parameters__['omega'] = float(estim[2])
         self.__parameters__['taux']  = float(estim[3])
         self.__parameters__['tauxy'] = float(estim[4])
         self.__parameters__['tauy']  = float(estim[5])
+        if self.__vcv__ is None:
+            raise ArithmeticError('Failed to Compute var-covar matrix of parameters')
         return estim
 
 class VeisStrain:
