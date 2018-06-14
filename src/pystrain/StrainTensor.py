@@ -26,6 +26,13 @@ def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst):
             new_sta_lst.append(sta)
     return new_sta_lst
 
+def write_station_info(sta_lst, filename='station_info.dat'):
+    with open(filename, 'w') as fout:
+        for idx, sta in enumerate(sta_lst):
+            print('{:} {:} {:} {:} {:}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve, sta.vn), file=fout)
+    return
+
+"""OBSOLETE
 def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', projscale=9000000, strsc=50, frame=2):
     lons    = [ degrees(x.lon) for x in sta_lst ]
     lats    = [ degrees(x.lat) for x in sta_lst ]
@@ -78,6 +85,7 @@ def gmt_script(input_file, sta_lst, tensor_lst, utm_zone, outfile='gmt_script', 
         for idx, sta in enumerate(sta_lst):
             print('{:} {:} {:}'.format(sta.name, degrees(sta.lat), degrees(sta.lon)), file=fout)
     return
+"""
 
 """
 def plot_map(sta_list, stensor_list):
@@ -279,9 +287,10 @@ if args.one_tensor:
     sys.exit(0)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
+print('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
 fout = open('strain_info.dat', 'w')
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat'), file=fout)
+#print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
+print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
 strain_list = []
 if args.method == 'shen':
     grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
@@ -318,4 +327,5 @@ else:
         strain_list.append(sstr)
 
 fout.close()
-gmt_script(args.gps_file, sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
+write_station_info(sta_list_ell)
+#gmt_script(args.gps_file, sta_list_ell, strain_list, utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)

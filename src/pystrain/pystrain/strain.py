@@ -335,7 +335,8 @@ def __cmp_strain__(str_params, str_params_cov=None):
     #azim  = 90.0e0+azim
     dexazim = azim+45.0e0-180.0e0
     dilat = x1+x3
-    return emean, ediff, taumax, emax, emin, azim, dilat
+    sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
+    return emean, ediff, taumax, emax, emin, azim, dilat, sec_inv
 
 class ShenStrain:
     def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
@@ -627,9 +628,8 @@ class ShenStrain:
     def print_details(self, fout):
 	utm_zone = 34 #added to convert utm 2 latlon
 	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) #added to conv utm 2 latlon
-        emean, ediff, taumax, emax, emin, azim, dilat =  __cmp_strain__(self.__parameters__)
-        #print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('tauy')*1e9, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, emax*1e9, emin*1e9, taumax*1e9, azim, dilat*1e9), file=fout)
-        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, self.value_of('tauy')*1e9, emax*1e9, emin*1e9, taumax*1e9, azim, dilat*1e9), file=fout)
+        emean, ediff, taumax, emax, emin, azim, dilat, sec_inv =  __cmp_strain__(self.__parameters__)
+        print('{:9.5f} {:9.5f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f} {:+10.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, self.value_of('Uy')*1e3, self.value_of('omega')*1e9, self.value_of('taux')*1e9, self.value_of('tauxy')*1e9, self.value_of('tauy')*1e9, emax*1e9, emin*1e9, taumax*1e9, azim, dilat*1e9, sec_inv*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
