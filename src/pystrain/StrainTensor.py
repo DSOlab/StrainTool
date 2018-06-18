@@ -132,13 +132,13 @@ parser.add_argument('--dstep',
     required=False,
     help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.')
 
-parser.add_argument('--min-spatial-weight',
-    default=1e-6,
-    metavar='MIN_SPATIAL_WEIGHT',
-    dest='min_l_weight',
-    type=float,
-    required=False,
-    help='Only relevant for \'--mehod=shen\'. Any station with a spatial weight smaller than this limit, will be excluded from the strain estimation (for a given point). Default is 1e-6.')
+#parser.add_argument('--min-spatial-weight',
+#    default=1e-6,
+#    metavar='MIN_SPATIAL_WEIGHT',
+#    dest='min_l_weight',
+#    type=float,
+#    required=False,
+#    help='Only relevant for \'--mehod=shen\'. Any station with a spatial weight smaller than this limit, will be excluded from the strain estimation (for a given point). Default is 1e-6.')
 
 parser.add_argument('--d-param',
     default=None,
