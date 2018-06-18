@@ -428,8 +428,8 @@ class ShenStrain:
         for idx, sta in enumerate(self.__stalst__):
             sta_used = True
             dx, dy, dr = xyr[idx]
-            Wx     = (1e-3/sta.se)*zw[idx]*lw[idx]
-            Wy     = (1e-3/sta.sn)*zw[idx]*lw[idx]
+            Wx     = (1e-3/sta.se)*sqrt(zw[idx]*lw[idx])
+            Wy     = (1e-3/sta.sn)*sqrt(zw[idx]*lw[idx])
             if lw[idx] >= min_l_weight:
                 A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
                 A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
