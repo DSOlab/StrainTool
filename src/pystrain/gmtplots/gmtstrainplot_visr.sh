@@ -488,10 +488,9 @@ if [ "$GTOTAL" -eq 1 ]
 then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$19}' $pth2strinfo > tmpgtot
-  gmt makecpt -Cjet -T0/200/1 > inx.cpt
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 {print $1,$2,$20}' > tmpgtot
+  gmt makecpt -Cjet -T0/100/1 > inx.cpt
 #   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
@@ -542,14 +541,12 @@ then
   fi
 
 # plot strain rates
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE') print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 {print $1,$2,0,$20,$22}' \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 {print $1,$2,$20,0,$22}' \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
@@ -574,10 +571,9 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE') print $2,$1,$23}' $pth2strinfo >tmpdil
-  gmt makecpt -Cjet -T-300/300/5 > inx.cpt
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 {print $1,$2,$24}' >tmpdil
+  gmt makecpt -Cjet -T-200/200/5 > inx.cpt
 #   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
@@ -666,13 +662,11 @@ then
   fi
 
 # plot strain rates
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE') print $2,$1,0,$17,$21+90}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR>2 {print $1,$2,0,$18,$22+45}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A5p+e -Gblue -W1p,blue -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$15,0,$21+90}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR>2 {print $1,$2,$16,0,$22+45}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
   
 # plot scale of strain rates
@@ -717,14 +711,12 @@ then
   fi
 
 # plot rotational rates
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE' && $7 >= 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 { if ( $8 >= 0) print $1,$2,$8*1e-09,$9*1e-09}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
-  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
-  abs($13) <= '$MAX_STR_VALUE' && $7 < 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
+  grep -v index $pth2strinfo \
+  | awk 'NR > 2 { if ($8 < 0) print $1,$2,$8*1e-09,$8*1e-09}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
