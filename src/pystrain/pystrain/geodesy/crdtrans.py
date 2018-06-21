@@ -2,7 +2,20 @@ from math import sqrt, atan2, atan, pi
 from pystrain import ellipsoid
 
 def top2daz(north, east, up):
-    """ Compute azimouth, zenith and distance from a topocentric vector.
+    """Compute azimouth, zenith and distance from a topocentric vector.
+
+        Given a topocentric vector (aka north, east and up components), compute
+        the azimouth, zenith angle and distance between the two points.
+
+        Args:
+            north (float): the north component (in meters)
+            east (float) : the east component (in meters)
+            up (float)   : the up component (in meters)
+
+        Returns:
+            tuple (floats): a tuple of three floats is returned, as:
+                            [distance, azimouth, zenith], where distance is
+                            in meters, and azimouth and zenith are in radians.
     """
     distance = math.sqrt(north*north + east*east + up*up)
     a        = math.atan2(east, north) % (math.pi*2e0) # normalized [0, 2pi]
@@ -10,8 +23,26 @@ def top2daz(north, east, up):
     return distance, a, zenith
 
 def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
-    """ Transform a vector expressed in cartesian coordinates to the topocentric,
+    """Cartesian to topocentric vector.
+
+        Transform a vector expressed in cartesian coordinates to the topocentric,
         local system around point i (i.e. North(i), East(i), Up(i)).
+        To perform the conversion we will need an ellipsoid. The default is
+        'wgs84'.
+
+        Args:
+            xi (float): x-component of reference point (m).
+            yi (float): y-component of reference point (m).
+            zi (float): z-component of reference point (m).
+            xj (float): x-component of end point (m).
+            yj (float): y-component of end point (m).
+            zj (float): z-component of end point (m).
+
+        Returns:
+            tuple (float): a 3-element float tuple, as [north, east, up] in meters.
+
+        Note:
+            The vector transformed is [xj-xi, yj-yi, zj-zi]
     """
     # Cartesian to ellipsoidal for reference point.
     phi_i, lamda_i, h_i = car2ell(xi, yi, zi, ell)
@@ -35,7 +66,19 @@ def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
     return north, east, up
 
 def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
-    """ Ellipsoidal to cartesian coordinates.
+    """Ellipsoidal to cartesian coordinates.
+
+        Convert Ellipsoidal coordinates (aka longtitude, latitude, height) to
+        cartesian. Default ellipsoid is wgs84.
+
+        Args:
+            phi (float)    : the latitude (in radians).
+            lamda (float)  : the longtitude (in radians).
+            h (float)      : the height (in meters)
+            ell (Ellipsoid): the ellipsoid of choice.
+        
+        Returns: 
+            tuple (float): a 3-float tuple, as [x, y, z] in meters
     """
     # Eccentricity squared.
     e2 = ell.eccentricity_squared()
@@ -58,9 +101,24 @@ def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
     return x, y, z
 
 def car2elll(x, y, z, ell=Ellipsoid("wgs84")):
-    """ Cartesian to ellipsoidal coordinates. Reference: Fukushima, T., 
-        "Transformation from Cartesian to geodetic coordinates
-        accelerated by Halley's method", J. Geodesy (2006), 79(12): 689-693
+    """Cartesian to ellipsoidal coordinates.
+    
+        Cartesian to ellipsoidal coordinates (aka latitude, longtitude and
+        height). Reference: Fukushima, T., "Transformation from Cartesian to 
+        geodetic coordinates accelerated by Halley's method",
+        J. Geodesy (2006), 79(12): 689-693
+
+        Args:
+            x (float): cartesian x component (meters).
+            y (float): cartesian y component (meters).
+            z (float): cartesian z component (meters).
+            ell      : ellipsoid of choice.
+
+        Returns:
+            tuple (float): the ellipsoidal coordinates in a 3-element tuple, as
+                           [latitude, longtitude, height]. Longtitude and
+                           latitude are returned in radians, while height is in
+                           meters.
     """
     a = ell.a
     f = ell.f

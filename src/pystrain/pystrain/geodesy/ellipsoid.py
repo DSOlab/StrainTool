@@ -1,27 +1,54 @@
-#! /bin/python2.7
-
 from math import cos, sin, sqrt
 
 ##  A dictionary holding standard reference ellipsoids. The keys are the
 ##+ ellipsoid names, and the respective values are the defining geometric
 ##+ parameters, i.e. a (semi-major axis) and f (flattening).
 ref_ell_dict = {
-    "grs80": [6378137.0e0, 1.0e00/298.257222101e0],
-    "wgs84": [6378137.0e0, 1.0e00/298.257223563e0],
-    "pz90" : [6378135.0e0, 1.0e00/298.257839303e0]
+    "grs80": [6378137e0, 1e0/298.257222101e0],
+    "wgs84": [6378137e0, 1e0/298.257223563e0],
+    "pz90" : [6378135e0, 1e0/298.257839303e0]
 }
 
 class Ellipsoid:
+    """A class to represent reference ellipsoids.
+
+        This class constructs reference ellipsoids, see
+        https://en.wikipedia.org/wiki/Reference_ellipsoid
+
+        Attributes:
+            name (str): the name of the ellipsoid.
+            a (float) : the ellipsoid's semi-major axis (meters).
+            f (float) : the ellipsoid's flattening.
     """
-        A class to represent reference ellipsoids.
-    """
+
     def __init__(self, name, a=None, f=None):
-        """
+        """Ellipsoid constructor.
+
             Constructor for Ellipsoid. You can either pass in a standard name
             (i.e. included in the ref_ell_dict dictionary), or construct a
             custom one, using the 'a' and 'f' parameters.
             If you do use the 'a' and 'f' parameters, make sure that the 'name'
             is not a standard one.
+
+            Args:
+                name (str): the ellipsoid's name; if a and f are not passed in,
+                            then the function will try to match this parameter
+                            to a reference ellipsoid in the ref_ell_dict
+                            dictionary. If a and f are passed in, then a custom
+                            ellipsoid is constructed.
+                a (float) : The semimajor axis in meters; only use this parameter
+                            to construct a custom ellipsoid. If this parameter
+                            is used, then the user must also specify the f parameter.
+                b (float) :The flattening of the ellipsoid; only use this parameter
+                            to construct a custom ellipsoid. If this parameter
+                            is used, then the user must also specify the a parameter.
+
+            Raises:
+                LookupError: if the parameters a and f are not both specified, or
+                             both not specified.
+                RuntimeError: if the user has specified a name for the ellipsoid
+                              that is not in the ref_ell_dict dictionary (without
+                              providing the a and f parameters).
         """
         # a and f can be both None or both not None
         if bool(a) + bool(f) == 1:
@@ -40,18 +67,32 @@ class Ellipsoid:
             self.f = f
 
     def eccentricity_squared(self):
-        """ Computed and return the ellipsoid's squared eccentricity.
+        """Compute and return the ellipsoid's squared eccentricity.
+
+            Returns:
+                float: the squared eccentricity.
         """
-        return ( 2.0e0 - self.f ) * self.f;
+        return (2e0-self.f)*self.f;
 
     def semi_minor(self):
-        """ Computed and return the ellipsoid's semi-minor axis.
+        """Compute and return the ellipsoid's semi-minor axis.
+
+            Returns:
+                float: the ellipsoid's semi-minor axis (meters).
         """
-        return self.a * (1.0e0 - self.f)
+        return self.a*(1e0-self.f)
 
     def N(self, lat):
-        """  Compute the normal radius of curvature at a given latitude.
-            'lat' parameter should be in radians.
+        """Normal radius of curvature.
+        
+            Given a latitude on the ellipsoid, compute the normal radius of
+            curvature (on the parallel).
+
+            Args:
+                lat (float): the latitude in radians.
+
+            Returns:
+                float: normal radius of curvature at given latitude (meters).
         """
         cosf  = cos(lat)
         sinf  = sin(lat)
@@ -61,8 +102,17 @@ class Ellipsoid:
         return (self.a * self.a) / den;
 
     def M(self, lat):
-        """  Compute the meridional radii of curvature at a given latitude.
-            'lat' parameter should be in radians.
+        """Meridional radii of curvature.
+        
+            Compute the meridional radii of curvature at a given latitude
+            (on the parallel).
+
+            Args:
+                lat (float): the latitude in radians.
+
+            Returns:
+                float: the meridional radii of curvature at the given latitude
+                       (meters).
         """
         a     = self.a
         b     = self.semi_minor()
@@ -71,10 +121,12 @@ class Ellipsoid:
         acosf = a * cosf
         bsinf = b * sinf
         tmpd  = acosf*acosf + bsinf*bsinf
-        return ( (a*b)/tmpd ) * ( (a*b)/sqrt(tmpd) )
+        return ((a*b)/tmpd) * ((a*b)/sqrt(tmpd))
 
     def __getattr__(self, name):
-        """ For ease of use, the instances has the following attributes:
+        """(Attribute) getter.
+        
+            For ease of use, the instances has the following attributes:
                 * e2   -> eccentricity squared
                 * b    -> semi-minor axis
                 * finv -> inverse flattening
@@ -82,13 +134,18 @@ class Ellipsoid:
             ell1 = Ellipsoid("grs80")
             ell1.b
             Of course, these attributes cannot be assigned to.
+
+            Args:
+                name (str): any (valid) attribute we want to get.
+
+            Returns:
+                
         """
-        # print 'Attribute not found! Got in getattr().'
         if name == "e2"  : return self.eccentricity_squared()
         if name == "b"   : return self.semi_minor()
         if name == "finv": return 1.0e0/self.f
         raise AttributeError
-
+"""
 if __name__ == "__main__":
     ell1 = Ellipsoid("grs80")
     ell2 = Ellipsoid("GRS80")
@@ -110,3 +167,4 @@ if __name__ == "__main__":
     print '\tFLattening           {:10.3f}'.format(ell1.f)
     print '\tInv. Flattening      {:10.3f}'.format(ell1.finv)
     print '\tEccentricity Squared {:10.3f}'.format(ell1.e2)
+"""

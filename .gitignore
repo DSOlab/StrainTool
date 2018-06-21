@@ -35,4 +35,6 @@ gmt.*
 
 # output files
 .*.dat
+*.dat
 strain_info.dat
+station_info.dat

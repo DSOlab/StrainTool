@@ -60,8 +60,10 @@ function help {
 	echo "     -gtot(strain file)[:=shear strain] plot total shear strain rate contours"
 	echo "     -gtotaxes (strain file) dextral and sinistral max shear strain rates"
 	echo "     -dil (strainfile)[:= dilatation] Plot dilatation and principal axes"
+	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
 	echo "     -strsc [:=strain scale]"
 	echo "     -rotsc [:=rotational scales]"
+	echo "     -max_str_value (value) [:=exclude] exclude bigger strain values"
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
@@ -101,6 +103,7 @@ export VRBLEVM=n
 gmt gmtset MAP_FRAME_TYPE fancy
 gmt gmtset PS_PAGE_ORIENTATION portrait
 gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
+gmt gmtset PS_MEDIA 30cx30c
 
 # //////////////////////////////////////////////////////////////////////////////
 # Pre-defined parameters for bash script
@@ -119,6 +122,8 @@ STRROT=0
 GTOTAL=0
 GTOTALAXES=0
 DILATATION=0
+SECINV=0
+MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
 # Check default parameters file
@@ -162,7 +167,7 @@ do
 	shift
 	;;
     -psta)
-	pth2sta=../.station.info.dat
+	pth2sta=../station_info.dat
 	PSTA=1
 	shift
 	;;
@@ -214,6 +219,17 @@ do
     -dil)
 	pth2strinfo=${pth2inptf}/${2}
 	DILATATION=1
+	shift
+	shift
+	;;
+    -secinv)
+	pth2strinfo=${pth2inptf}/${2}
+	SECINV=1
+	shift
+	shift
+	;;
+    -max_str_value)
+	MAX_STR_VALUE=$2
 	shift
 	shift
 	;;
@@ -303,7 +319,7 @@ then
 fi
 
 if [ "$STRAIN" -eq 1 ] || [ "$STRROT" -eq 1 ] || [ "$GTOTAL" -eq 1 ] || [ "$DILATATION" -eq 1 ] \
-   || [ "$GTOTALAXES" -eq 1 ]
+   || [ "$GTOTALAXES" -eq 1 ] || [ "$SECINV" -eq 1 ]
 then
   if [ ! -f $pth2strinfo ]
   then
@@ -334,9 +350,7 @@ fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
-gmt gmtset PS_MEDIA 22cx22c
 # tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
-
 tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
 sclat=$(echo print ${south} + ${tmp_scrate} | python)
 
@@ -434,21 +448,23 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 
-  awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+  awk '{print $2,$3,$4*1e03,$5*1e03,$6*1e03,$7*1e03,0,$1}' $pth2stainfo \
+  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
-  awk 'NR != 1 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+  awk '{print $2,$3,$4*1e03,$5*1e03,$6*1e03,$7*1e03,0,$1}' $pth2stainfo \
+  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
 ###scale
 # echo "$vsclon $vsclat $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
@@ -472,31 +488,35 @@ if [ "$GTOTAL" -eq 1 ]
 then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
-  awk '{if ($11 < 300) print $2,$1,$11}' $pth2strinfo >tmpgtot
-  gmt makecpt -Cjet -T0/300/1 > inx.cpt
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$19}' $pth2strinfo > tmpgtot
+  gmt makecpt -Cjet -T0/200/1 > inx.cpt
 #   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
+  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+      -O -K -V${VRBLEVM}>> $outfile
 
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S -O -K >> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+      -O -K -V${VRBLEVM}>> $outfile
   
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -511,34 +531,40 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 
 # plot strain rates
-  awk 'NR !=1 { if ($11 < 200) print $2,$1,0,$11,$12-45+90}' $pth2strinfo \
-  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR !=1 { if ($11 < 200) print $2,$1,$11,0,$12-45+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE') print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
+  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
+        -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+        -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
   tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
   strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
   strsclon=$sclon
 
-  echo "$strsclon $strsclat 0 -150 90" \
+  echo "$strsclon $strsclat 0 -100 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 150 0 90" \
+  echo "$strsclon $strsclat 100 0 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9 0 1 CB 150 nstrain/y" \
+  echo "$strsclon $strsclat 9 0 1 CB 100 nstrain/y" \
   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
 fi
 
@@ -548,35 +574,77 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk '{if ($13 < 3000 && $13 > -3000) print $2,$1,$13}' $pth2strinfo >tmpgtot
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE') print $2,$1,$23}' $pth2strinfo >tmpdil
   gmt makecpt -Cjet -T-300/300/5 > inx.cpt
 #   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
 #   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
-  gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
-  gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -O -V -K >> $outfile
+  gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
+  gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+      -O -V${VRBLEVM} -K >> $outfile
 
-#   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
+#   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S -O -K >> $outfile
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+      -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 fi
 
+# //////////////////////////////////////////////////////////////////////////////
+### PLOT SHEAR STRAIN RATES parameters
+if [ "$SECINV" -eq 1 ]
+then
+  echo "...plot 2nd invariant..."
+# plot shear strain rates
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE')  print $2,$1, $25}' $pth2strinfo >tmp2inv
+  gmt makecpt -Cjet -T0/150/1 > inx.cpt
+#   gmt pscontour tmp2inv -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
+#   gmt pscontour tmp2inv -R -J -I -Cinx.cpt -O -K >> $outfile
+  gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
+  gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
+  gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+      -O -V${VRBLEVM} -K >> $outfile
+
+#   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
+
+  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+      -O -K -V${VRBLEVM}>> $outfile
+
+# plot stations
+  if [ "$PSTA" -eq 1 ]
+  then
+
+    awk '{print $2,$3}' $pth2sta  \
+    | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
+    
+    if [ "$LABELS" -eq 1 ]
+    then
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
+    fi
+  fi
+fi
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT STRAIN RATES parameters
@@ -587,36 +655,47 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 
 # plot strain rates
-  awk 'NR !=1 { if ($9 < 4000 && $10 >-4000) print $2,$1,0,$10,$12+90}' $pth2strinfo \
-  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W1.5p,blue -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR !=1 { if ($9 < 4000 && $10 >-4000) print $2,$1,$9,0,$12+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red -O -K -V${VRBLEVM} >> $outfile
-
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE') print $2,$1,0,$17,$21+90}' $pth2strinfo \
+  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A5p+e -Gblue -W1p,blue -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE')  print $2,$1,$15,0,$21+90}' $pth2strinfo \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
+  
 # plot scale of strain rates
   tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
   strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
   strsclon=$sclon
 
-  echo "$strsclon $strsclat 0 -150 90" \
+  echo "$strsclon $strsclat 0 -100 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W1.5p,blue \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 150 0 90" \
+  echo "$strsclon $strsclat 100 0 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9 0 1 CB 150 nstrain/y" \
+  echo "$strsclon $strsclat 9 0 1 CB 100 nstrain/y" \
   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
 fi
+
+
+# awk 'NR > 1 {print $1,$2,0,$5*1e09,$6}' principal-axes.txt \
+# | gmt psvelo  -Jm $range -Sx${STRSC} -L -A5p+e -Gblue -W1p,blue -O -K -V${VRBLEVM} >> $outfile
+# awk 'NR > 1 {print $1,$2,$3*1e09,0,$4+90}' principal-axes.txt \
+# | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
+
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT ROTATIONAL RATES parameters
@@ -627,21 +706,25 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $3,$2}' $pth2sta  \
+    awk '{print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $3,$2, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 
 # plot rotational rates
-  awk 'NR !=1 {if ($6>=0) print $2,$1,$6/1000000000,0.00000001}' $pth2strinfo \
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE' && $7 >= 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR !=1 {if ($6<0) print $2,$1,$6/1000000000,0.00000001}' $pth2strinfo \
+  awk 'NR != 1; function abs(x){return ((x < 0.0) ? -x : x)}; \
+  { if (abs($9) <= '$MAX_STR_VALUE' && abs($11) <= '$MAX_STR_VALUE' && \
+  abs($13) <= '$MAX_STR_VALUE' && $7 < 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
