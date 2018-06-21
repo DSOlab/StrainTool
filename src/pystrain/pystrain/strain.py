@@ -233,7 +233,7 @@ class ShenStrain:
         # distances, dx and dy for each station from (cx, cy). Each element of the
         # array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
-        xyr = [ x.distance_from(cc) for x in self.__stalst__ ]
+        xyr = [ cc.distance_from(x) for x in self.__stalst__ ]
         ## design matrix A, observation matrix b
         A = numpy.zeros(shape=(N,M))
         b = numpy.zeros(shape=(N,1))

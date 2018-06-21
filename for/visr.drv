@@ -4,8 +4,8 @@ strain.out                                 ! Strain rate output file
 1                                          ! spatial weighting scheme: 1=azimuth, 2=voronoi area
 1 500 1                                    ! minimum, maximum, and incremental spatial smoothing constants (km)
 6                                          ! weighting threshold Wt
-0.5                                        ! uncertainty threshold for reset
+0.00005                                    ! uncertainty threshold for reset
 3                                          ! function: 1=velocity compatibility checking; 2=velocity interpolation; 3=strain rate interpolation
-19.0 30.0 34.0 42.0 0.5 0.5                ! Lon_min, Lon_max, Lat_min, Lat_max, dLon, dLat
+19.5 30.5 34.5 42.5 0.5 0.5                ! Lon_min, Lon_max, Lat_min, Lat_max, dLon, dLat
 0                                          ! number of creep faults
 crp.dat                                    ! creep fault data file

@@ -355,6 +355,16 @@ c ---------------------------------------------------------------------
           call visr_core(ty(1),tx(1),min_tau,max_tau,in_tau,
      .                   is_wght,id_wght,wt0,id,indxx)
 
+          write(*,2000) 'lon=', tlon, 'lat=', tlat
+          write(*,2001) 'Ux= ', bb(1)
+          write(*,2001) 'Uy= ', bb(2)
+          write(*,2001) 'tx= ', bb(3)
+          write(*,2001) 'txy=', bb(4)
+          write(*,2001) 'ty= ', bb(5)
+          write(*,2001) 'w=  ', bb(6)
+2000      format(a5, f10.5, a5, f10.5)
+2001      format(a5, f10.5)
+
           if ( indxx.eq.0) then
             do i = 1,6
               v(i) = dsqrt(ainv(i,i))

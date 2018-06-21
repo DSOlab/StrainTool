@@ -85,6 +85,11 @@ parser.add_argument('-r', '--region',
     help='Specify a region; any station (in the input file) falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. \"[...] --region=21.0/23.5/36.0/38.5 [...]\"',
     required=False)
 
+parser.add_argument('-c', '--cut-excess-stations',
+    dest='cut_outoflim_sta',
+    help='This option is only considered if the \'-r\' option is set. If this this option is enabled, then any station (from the input file) outside the region limit (passed in via the \'-r\' option) is not considered in the strain estimation.',
+    action='store_true')
+
 parser.add_argument('-b', '--barycenter',
     dest='one_tensor',
     action='store_true',
@@ -166,18 +171,21 @@ dargs = vars(args)
 sta_list_ell = parse_ascii_input(args.gps_file)
 print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 
-##  If a region is passed in, then only keep the stations that fall within it.
+##  If a region is passed in, resolve it.
+##+ If cutting out-of-limits stations option is set, then only keep the
+##+ stations that fall within it.
 ##  The region coordinates (min/max pairs) should be given in decimal degrees.
 if args.region:
     try:
-        Napr = len(sta_list_ell)
         lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
-        #  Note that we have to convert radians to degrees for station coordinates,
-        #+ hence 'sta_list_to_degrees=True'
-        sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
-        Npst = len(sta_list_ell)
-        print('[DEBUG] Station filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
-        print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
+        if args.cut_outoflim_sta:
+            Napr = len(sta_list_ell)
+            #  Note that we have to convert radians to degrees for station coordinates,
+            #+ hence 'sta_list_to_degrees=True'
+            sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
+            Npst = len(sta_list_ell)
+            print('[DEBUG] Stations filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
+            print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     except:
         ## TODO we should exit with error here
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region))
@@ -215,7 +223,10 @@ print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^
 strain_list = []
 if args.method == 'shen':
     # Note that in the grid.generate_grid we transform lon/lat pairs to degrees.
-    grd = pystrain.grid.generate_grid(sta_list_ell, args.x_grid_step, args.y_grid_step, True)
+    if args.region:
+        grd = pystrain.grid.Grid(lonmin, lonmax, args.x_grid_step, latmin, latmax, args.y_grid_step)
+    else:
+        grd = pystrain.grid.generate_grid(sta_list_ell, args.x_grid_step, args.y_grid_step, True)
     print('[DEBUG] Constructed the grid. Limits are:')
     print('\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
     print('\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
@@ -235,6 +246,13 @@ if args.method == 'shen':
                 node_nr += 1
                 print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
+                print('[INFO] lon={:}, lat={:}'.format(degrees(clon), degrees(clat)))
+                print('[INFO] Ux= {:10.5f}'.format(sstr.value_of('Ux')))
+                print('[INFO] Uy= {:10.5f}'.format(sstr.value_of('Uy')))
+                print('[INFO] tx= {:10.5f}'.format(sstr.value_of('taux')*1e6))
+                print('[INFO] txy={:10.5f}'.format(sstr.value_of('tauxy')*1e6))
+                print('[INFO] ty= {:10.5f}'.format(sstr.value_of('tauy')*1e6))
+                print('[INFO] w=  {:10.5f}'.format(sstr.value_of('omega')*1e6))
                 strain_list.append(sstr)
             except RuntimeError:
                 print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(x,y))
