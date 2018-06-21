@@ -433,7 +433,7 @@ class ShenStrain:
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  __cmp_strain__(self.__parameters__, self.__vcv__)
-        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cx, cy, self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
+        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:

@@ -19,10 +19,16 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
-def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst):
+def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
     for sta in sta_lst:
-        if sta.lon >= xmin and sta.lon <= xmax and sta.lat >= ymin and sta.lat <= ymax:
+        if sta_list_to_degrees:
+            slon = degrees(sta.lon)
+            slat = degrees(sta.lat)
+        else:
+            slon = sta.lon
+            slat = sta.lat
+        if slon >= xmin and slon <= xmax and slat >= ymin and slat <= ymax:
             new_sta_lst.append(sta)
     return new_sta_lst
 
@@ -50,20 +56,20 @@ parser.add_argument('-i', '--input-file',
     help='The input file. This must be an ascii file containing the columns: \'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span\'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.')
 
 parser.add_argument('--x-grid-step',
-    default=50000,
+    default=0.5,
     metavar='X_GRID_STEP',
     dest='x_grid_step',
     type=float,
     required=False,
-    help='The x-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors. Default is 50000(m).')
+    help='The x-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg).')
 
 parser.add_argument('--y-grid-step',
-    default=50000,
+    default=0.5,
     metavar='Y_GRID_STEP',
     dest='y_grid_step',
     type=float,
     required=False,
-    help='The y-axis grid step size in meters. This option is only relevant if the program computes more than one strain tensors. Default is 50000(m)')
+    help='The y-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg)')
 
 parser.add_argument('-m', '--method',
     default='shen',
@@ -165,8 +171,10 @@ print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 if args.region:
     try:
         Napr = len(sta_list_ell)
-        lonmin, lonmax, latmin, latmax = [ radians(float(i)) for i in args.region.split('/') ]
-        sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell)
+        lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
+        #  Note that we have to convert radians to degrees for station coordinates,
+        #+ hence 'sta_list_to_degrees=True'
+        sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
         Npst = len(sta_list_ell)
         print('[DEBUG] Station filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
         print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
@@ -198,40 +206,42 @@ if args.one_tensor:
         sstr = VeisStrain(0e0, 0e0, sta_list_utm)
     sstr.set_to_barycenter()
     sstr.estimate()
-    #gmt_script(sta_list_ell, [sstr], utm_zone, outfile='gmt_script', projscale=2000000, strsc=5, frame=2)
     sys.exit(0)
 
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 print('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
 fout = open('strain_info.dat', 'w')
-#print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'Ux', 'Uy', 'omega', 'taux', 'tauxy', 'tauy', 'emax', 'emin', 'taumax', 'dexazim', 'dilat'), file=fout)
 print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
 strain_list = []
 if args.method == 'shen':
-    grd = pystrain.grid.generate_grid(sta_list_utm, args.x_grid_step, args.y_grid_step)
+    # Note that in the grid.generate_grid we transform lon/lat pairs to degrees.
+    grd = pystrain.grid.generate_grid(sta_list_ell, args.x_grid_step, args.y_grid_step, True)
     print('[DEBUG] Constructed the grid. Limits are:')
     print('\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
     print('\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
     print('[DEBUG] Estimating strain tensor for each cell center')
-    ##  Iterate through the grid (on each cell center)
+    ##  Iterate through the grid (on each cell center). Grid returns cell-centre
+    ##+ coordinates in lon/lat pairs, in degrees!
     node_nr = 0
     for x, y in grd:
-        clat, clon = utm2ell(x, y, utm_zone)
-        print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(degrees(clon), degrees(clat), x, y))
-        sstr = ShenStrain(x, y, sta_list_utm, **dargs)
+        clat, clon =  radians(y), radians(x) #utm2ell(x, y, utm_zone)
+        N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
+        assert ZN == utm_zone
+        print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(x, y, E, N))
+        sstr = ShenStrain(E, N, sta_list_utm, **dargs)
         if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
                 estim2 = sstr.estimate()
                 node_nr += 1
-                print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(degrees(clon), degrees(clat), node_nr, grd.xpts*grd.ypts))
+                print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
                 strain_list.append(sstr)
             except RuntimeError:
-                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(degrees(clon), degrees(clat)))
+                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(x,y))
             except ArithmeticError:
-                print('[DEBUG] Failed to compute parameter VcV matrix for strain at {:7.4f}, {:7.4f}. Point skipped'.format(degrees(clon), degrees(clat)))
+                print('[DEBUG] Failed to compute parameter VcV matrix for strain at {:7.4f}, {:7.4f}. Point skipped'.format(x,y))
         else:
-            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(degrees(clon), degrees(clat), degrees(max(sstr.beta_angles()))))
+            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
 else:
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
