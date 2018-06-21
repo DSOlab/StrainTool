@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 from sys  import float_info
-from math import floor
+from math import floor, radians, degrees
 
 class Grid:
     """A dead simple grid class.
@@ -118,7 +118,7 @@ class Grid:
             self.cxi += 1
             return self.xidx2xval(self.cxi-1), self.yidx2yval(self.cyi)
 
-def generate_grid(sta_lst, x_step, y_step):
+def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
     """Grid generator.
 
         Given a list of Stations and x- and y-axis step sizes, compute and
@@ -156,14 +156,20 @@ def generate_grid(sta_lst, x_step, y_step):
     x_min = float_info.max
     x_max = float_info.min
     for s in sta_lst:
-        if   s.lon > x_max:
-            x_max = s.lon
-        elif s.lon < x_min:
-            x_min = s.lon
-        if   s.lat > y_max:
-            y_max = s.lat
-        elif s.lat < y_min:
-           y_min = s.lat
+        if sta_lst_to_deg:
+            slon = degrees(s.lon)
+            slat = degrees(s.lat)
+        else:
+            slon = s.lon
+            slat = s.lat
+        if   slon > x_max:
+            x_max = slon
+        elif slon < x_min:
+            x_min = slon
+        if   slat > y_max:
+            y_max = slat
+        elif slat < y_min:
+           y_min = slat
     # Adjust max and min to step.
     print("\t[DEBUG] Region: Easting: {:}/{:} Northing: {:}/{:}".format(x_min, x_max, y_min, y_max))
     s      = float((floor((y_max-y_min)/y_step)+1e0)*y_step)
