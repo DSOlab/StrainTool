@@ -1,5 +1,6 @@
-from math import sqrt, atan2, atan, pi
-from pystrain import ellipsoid
+from math import sqrt, atan2, atan, pi, cos, sin
+from pystrain.geodesy.ellipsoid import Ellipsoid
+import numpy as np
 
 def top2daz(north, east, up):
     """Compute azimouth, zenith and distance from a topocentric vector.
@@ -21,6 +22,17 @@ def top2daz(north, east, up):
     a        = math.atan2(east, north) % (math.pi*2e0) # normalized [0, 2pi]
     zenith   = math.acos(up/distance);
     return distance, a, zenith
+
+def ell2top(loni, lati, hgti, lonj, latj, hgtj):
+    # Trigonometric numbers.
+    cosf = cos(lati)
+    cosl = cos(loni)
+    sinf = sin(lati)
+    sinl = sin(loni)
+    R = np.matrix([[sinf*cosl, sinf*sinl, -cosf], [-sinl, cosl, 0e0], [cosf*cosl, cosf*sinl, sinl]])
+    v = np.matrix([[cos(latj)*cos(lonj)],[cos(latj)*sin(lonj)],[sin(latj)]])
+    neu = np.dot(R,v)
+    return neu[0], neu[1], neu[2]
 
 def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
     """Cartesian to topocentric vector.
