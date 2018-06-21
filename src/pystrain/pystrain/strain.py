@@ -111,7 +111,7 @@ def __cmp_strain__(str_params, params_cov=None):
     emax  = emean+taumax
     emin  = emean-taumax
     azim  = -atan2(x2, ediff) / cov / 2.0e0
-    #azim  = 90.0e0+azim
+    azim  = 90.0e0+azim
     dexazim = azim+45.0e0-180.0e0
     dilat = x1+x3
     sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
@@ -429,7 +429,6 @@ class ShenStrain:
     def print_details(self, fout, utm_zone=None):
         if utm_zone:
 	    cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) ]
-            #cy, cx = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone)
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  __cmp_strain__(self.__parameters__, self.__vcv__)
