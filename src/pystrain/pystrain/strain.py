@@ -414,9 +414,9 @@ class ShenStrain:
         #+ azimouth difference, of the previous minus the next point.
         #  Special care for the first and last elements (beta angles)
         betas.append(2e0*pi+(azimouths[0]['az'] - azimouths[n-1]['az']))
-        for j in range(0, n-2):
+        for j in range(0, n-1):
             betas.append(azimouths[j+1]['az'] - azimouths[j]['az'])
-        betas.append(2e0*pi+(azimouths[0]['az'] - azimouths[n-1]['az']))
+        #betas.append(2e0*pi+(azimouths[n-1]['az'] - azimouths[n-2]['az']))
         #  Double-check !! All theta angles must be in the range [0, 2*π)
         for angle in betas:
             assert angle >= 0 and angle <= 2*pi
