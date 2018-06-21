@@ -117,7 +117,7 @@ def __cmp_strain__(str_params, params_cov=None):
     sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
     #if params_cov != None:
     # cut the part of vcv that holds tau* info
-    vcv = params_cov[3:6, 3:6]
+    vcv = params_cov[2:5, 2:5]
     # estimate sigma of tau_max
     v = numpy.zeros(shape=(3,1))
     v[0,:] = (x1-x3)/4.0e0/taumax
@@ -211,8 +211,13 @@ class ShenStrain:
             W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
             of each observable.
             Note that we have two observables (x and y) for each station.
+            This function will set up the matrices A, b, such that:
+            A <- A*sqrt(Q)
+            b <- b*sqrt(Q)
+            and if we solve A\b, we' ll end up with the parameter vector:
+            [ Ux, Uy, tx, txy, ty, w ]**T
         """
-        # numper of rows (observations)
+        # number of rows (observations)
         N = len(self.__stalst__)*2
         # number of columns (parameters)
         M = 6
@@ -225,9 +230,8 @@ class ShenStrain:
         assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
         # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
         # a column vector
-        # W = numpy.zeros(shape=(N,1))
         # distances, dx and dy for each station from (cx, cy). Each element of the
-        # array is [ ... (dx, dy, dr) ... ]
+        # array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         xyr = [ x.distance_from(cc) for x in self.__stalst__ ]
         ## design matrix A, observation matrix b
@@ -239,8 +243,8 @@ class ShenStrain:
             dx, dy, dr = xyr[idx]
             Wx     = (1e-3/sta.se)*sqrt(zw[idx]*lw[idx])
             Wy     = (1e-3/sta.sn)*sqrt(zw[idx]*lw[idx])
-            A[i]   = [ Wx*j for j in [1e0, 0e0,  dy,  dx, dy,  0e0] ]
-            A[i+1] = [ Wy*j for j in [0e0, 1e0, -dx,   0e0, dx, dy] ]
+            A[i]   = [ Wx*j for j in [1e0, 0e0,  dx, dy, 0e0, dy] ]
+            A[i+1] = [ Wy*j for j in [0e0, 1e0, 0e0, dx, dy, -dx] ]
             b[i]   = sta.ve * Wx
             b[i+1] = sta.vn * Wy
             i += 2
@@ -426,7 +430,7 @@ class ShenStrain:
 	utm_zone = 34 #added to convert utm 2 latlon
 	clat, clon = utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) #added to conv utm 2 latlon
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  __cmp_strain__(self.__parameters__, self.__vcv__)
-        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[4,4])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[5,5])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
+        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(degrees(clat), degrees(clon), self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
 
     def set_options(self, **kargs):
         for opt in kargs:
@@ -488,10 +492,10 @@ class ShenStrain:
             self.__vcv__ = None
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
-        self.__parameters__['omega'] = float(estim[2])
-        self.__parameters__['taux']  = float(estim[3])
-        self.__parameters__['tauxy'] = float(estim[4])
-        self.__parameters__['tauy']  = float(estim[5])
+        self.__parameters__['taux']  = float(estim[2])
+        self.__parameters__['tauxy'] = float(estim[3])
+        self.__parameters__['tauy']  = float(estim[4])
+        self.__parameters__['omega'] = float(estim[5])
         if self.__vcv__ is None:
             raise ArithmeticError('Failed to Compute var-covar matrix of parameters')
         return estim
