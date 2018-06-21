@@ -219,7 +219,8 @@ if args.one_tensor:
 ##  Construct the grid, based on station coordinates (Ref. UTM)
 print('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
 fout = open('strain_info.dat', 'w')
-print('{:^9s} {:^9s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s} {:^11s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
+print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
+print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'nrad/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 strain_list = []
 if args.method == 'shen':
     # Note that in the grid.generate_grid we transform lon/lat pairs to degrees.
@@ -246,13 +247,13 @@ if args.method == 'shen':
                 node_nr += 1
                 print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
-                print('[INFO] lon={:}, lat={:}'.format(degrees(clon), degrees(clat)))
-                print('[INFO] Ux= {:10.5f}'.format(sstr.value_of('Ux')))
-                print('[INFO] Uy= {:10.5f}'.format(sstr.value_of('Uy')))
-                print('[INFO] tx= {:10.5f}'.format(sstr.value_of('taux')*1e6))
-                print('[INFO] txy={:10.5f}'.format(sstr.value_of('tauxy')*1e6))
-                print('[INFO] ty= {:10.5f}'.format(sstr.value_of('tauy')*1e6))
-                print('[INFO] w=  {:10.5f}'.format(sstr.value_of('omega')*1e6))
+                #print('[INFO] lon={:}, lat={:}'.format(degrees(clon), degrees(clat)))
+                #print('[INFO] Ux= {:10.5f}'.format(sstr.value_of('Ux')))
+                #print('[INFO] Uy= {:10.5f}'.format(sstr.value_of('Uy')))
+                #print('[INFO] tx= {:10.5f}'.format(sstr.value_of('taux')*1e6))
+                #print('[INFO] txy={:10.5f}'.format(sstr.value_of('tauxy')*1e6))
+                #print('[INFO] ty= {:10.5f}'.format(sstr.value_of('tauy')*1e6))
+                #print('[INFO] w=  {:10.5f}'.format(sstr.value_of('omega')*1e6))
                 strain_list.append(sstr)
             except RuntimeError:
                 print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(x,y))
