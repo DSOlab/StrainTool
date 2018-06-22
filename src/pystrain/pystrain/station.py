@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from math import sqrt, radians
 
 # Any Station instance, can have any (or all) of these attributes
@@ -28,8 +29,10 @@ class Station:
 
             ve (float) : velocity of the east component, in meters/year
             vn (float) : velocity of the north component, in meters/year
-            se (float) : std. deviation of the east velocity component, in meters/year
-            sn (float) : std. deviation of the north velocity component, in meters/year
+            se (float) : std. deviation of the east velocity component, in
+                         meters/year
+            sn (float) : std. deviation of the north velocity component, in
+                         meters/year
             rho (float): correlation coefficient between East and North velocity
                          components
             t (float)  : time-span in decimal years
@@ -79,14 +82,15 @@ class Station:
     def init_from_ascii_line(self, input_line):
         '''Assignment from string.
 
-            This function will initialize all member values of a station instance,
-            given a (string) line of type:
+            This function will initialize all member values of a station
+            instance, given a (string) line of type:
             "name lon lat Ve Vn Se Sn RHO T"
             where lon and lat are in decimal degrees and velocity components
-            are in mm/year.
+            and sigmas are in mm/year.
 
             Args:
-                input_line (str): a string (line) of type "name lon lat Ve Vn Se Sn RHO T"
+                input_line (str): a string (line) of type:
+                                  "name lon lat Ve Vn Se Sn RHO T"
 
             Raises:
                 RuntimeError: if the input line (string) cannot be resolved
@@ -96,15 +100,15 @@ class Station:
             self.name = l[0]
             self.lon  = radians(float(l[1]))
             self.lat  = radians(float(l[2]))
-            self.ve   = float(l[3]) / 1000e0
-            self.vn   = float(l[4]) / 1000e0
-            self.se   = float(l[5]) / 1000e0
-            self.sn   = float(l[6]) / 1000e0
-            self.rho  = float(l[7])
+            self.ve   = float(l[3]) / 1e3
+            self.vn   = float(l[4]) / 1e3
+            self.se   = float(l[5]) / 1e3
+            self.sn   = float(l[6]) / 1e3
+            self.rho  = float(l[7]) / 1e3
             self.t    = float(l[8])
         except:
-            print '[DEBUG] Invalid Station instance constrution.'
-            print '[DEBUG] Input line \"{}\"'.format(input_line.strip())
+            print('[DEBUG] Invalid Station instance constrution.')
+            print('[DEBUG] Input line \"{}\"'.format(input_line.strip()))
             raise RuntimeError
 
     def set_none(self):

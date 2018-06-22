@@ -4,6 +4,7 @@
 from __future__ import print_function
 from sys  import float_info
 from math import floor, radians, degrees
+import numpy as np
 
 class Grid:
     """A dead simple grid class.
@@ -39,8 +40,8 @@ class Grid:
     def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
         """Constructor via x- and y- axis limits.
 
-            The __init__ method will assign all of the instance's attributes. The
-            x- and y- tick indexes will be set to 0 (ready for iterating).
+            The __init__ method will assign all of the instance's attributes.
+            The x- and y- tick indexes will be set to 0 (ready for iterating).
 
             Args:
                 x_min : minimum value in x-axis.
@@ -70,6 +71,8 @@ class Grid:
         assert self.xpts > 0 and self.ypts > 0
 
     def __iter__(self):
+        self.cxi = 0
+        self.cyi = 0
         return self
 
     def xidx2xval(self, idx):
@@ -108,15 +111,26 @@ class Grid:
             Raises:
                 StopIteration: if there are not more cell we can get to.
         """
-        if self.cxi >= self.xpts:
-            if self.cyi+1 >= self.ypts:
-                raise StopIteration
+        xi, yi = self.cxi, self.cyi
+        if self.cxi >= self.xpts - 1:
+            if self.cyi >= self.ypts - 1:
+                # last element iin iteration!
+                if self.cxi == self.xpts - 1 and self.cyi == self.ypts - 1:
+                    self.cxi += 1
+                    self.cyi += 1
+                    return self.xidx2xval(xi), \
+                           self.y_min + self.y_step/2e0 + self.y_step*float(yi)
+                else:
+                    raise StopIteration
             self.cxi  = 0
             self.cyi += 1
-            return self.x_max - self.x_step/2e0, self.yidx2yval(self.cyi)
         else:
+            xi, yi = self.cxi, self.cyi
             self.cxi += 1
-            return self.xidx2xval(self.cxi-1), self.yidx2yval(self.cyi)
+        return self.xidx2xval(xi), self.yidx2yval(yi)
+
+    # Python 3.X compatibility
+    __next__ = next
 
 def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
     """Grid generator.
@@ -136,6 +150,8 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
                      to 'ystep'
             x_step  (float): value of step for the x-axis of the grid.
             y_step  (float): value of step for the y-axis of the grid.
+            sta_lst_to_deg: If set to True, then the input parameters are first
+                            converted to degrees (they are assumed to be radians)
 
         Returns:
             A Grid instance: the min and max values of the Grid are computed from
@@ -150,7 +166,8 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
             may throw dues to rounding errors; how can i fix that?
 
     """
-    # Get min/max values of the stations.
+    #  Get min/max values of the stations (also transform from radians to degrees
+    #+ if needed.
     y_min = float_info.max
     y_max = float_info.min
     x_min = float_info.max
@@ -186,3 +203,19 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
     print("\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step))
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
+
+if __name__ == "__main__":
+    #grd = Grid(19.25e0, 30.75e0, 0.5e0, 34.25e0, 42.75e0, 0.5e0)
+    grd = Grid(19.25e0, 20.75e0, 0.5e0, 34.25e0, 40.75e0, 0.5e0)
+    print('Constructed grid with axis:')
+    print('\tX: from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
+    print('\tY: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
+    idx = 0
+    for x, y in grd:
+        idx += 1
+        print('index {:3d}/{:4d}: Cell centre is at: {:}, {:}'.format(idx, grd.xpts*grd.ypts, x, y))
+    dummy = np.arange(grd.x_min+grd.x_step/2e0, grd.x_max, grd.x_step)
+    assert len(dummy) == grd.xpts
+    dummy = np.arange(grd.y_min+grd.y_step/2e0, grd.y_max, grd.y_step)
+    assert len(dummy) == grd.ypts
+    assert grd.xpts*grd.ypts == idx
