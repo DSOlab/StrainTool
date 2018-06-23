@@ -1,3 +1,7 @@
+#! /usr/bin/python
+#-*- coding: utf-8 -*-
+
+from __future__ import print_function
 from math import cos, sin, sqrt
 
 ##  A dictionary holding standard reference ellipsoids. The keys are the
@@ -56,12 +60,14 @@ class Ellipsoid:
         self.name = name
         # if a and f are None, the user (probably) wants a standard ellipsoid
         if not a:
-            if not ref_ell_dict.has_key(name.lower()):
+            #if not ref_ell_dict.has_key(name.lower()): !! not Python3 compatible
+            if name.lower() not in ref_ell_dict:
                 raise LookupError
             self.a, self.f = ref_ell_dict[name.lower()]
         # user has supplied a and f vals
         else:
-            if ref_ell_dict.has_key(name.lower()):
+            #if ref_ell_dict.has_key(name.lower()):
+            if name.lower() in ref_ell_dict:
                 raise RuntimeError
             self.a = a
             self.f = f
@@ -145,7 +151,7 @@ class Ellipsoid:
         if name == "b"   : return self.semi_minor()
         if name == "finv": return 1.0e0/self.f
         raise AttributeError
-"""
+
 if __name__ == "__main__":
     ell1 = Ellipsoid("grs80")
     ell2 = Ellipsoid("GRS80")
@@ -154,17 +160,16 @@ if __name__ == "__main__":
         # this should throw
         ell4 = Ellipsoid("mine", 1.2)
     except:
-        print 'Caught exception for ell4.'
+        print('Caught exception for ell4.')
     try:
         ell5 = Ellipsoid("pz90", 1.2, 4.5)
     except:
-        print 'Caught exception for ell5.'
-    print 'Normal radius of curvature at ~ Athens {:15.3f}'.format(ell1.N(0.6628663536338242))
-    print 'Meridional radius of curvature at ~ Athens {:15.3f}'.format(ell1.M(0.6628663536338242))
-    print 'grs80 geometric parameters:'
-    print '\tSemi-major           {:10.3f}'.format(ell1.a)
-    print '\tSemi-minor           {:10.3f}'.format(ell1.b)
-    print '\tFLattening           {:10.3f}'.format(ell1.f)
-    print '\tInv. Flattening      {:10.3f}'.format(ell1.finv)
-    print '\tEccentricity Squared {:10.3f}'.format(ell1.e2)
-"""
+        print('Caught exception for ell5.')
+    print('Normal radius of curvature at ~ Athens {:15.3f}'.format(ell1.N(0.6628663536338242)))
+    print('Meridional radius of curvature at ~ Athens {:15.3f}'.format(ell1.M(0.6628663536338242)))
+    print('grs80 geometric parameters:')
+    print('\tSemi-major           {:10.3f}'.format(ell1.a))
+    print('\tSemi-minor           {:10.3f}'.format(ell1.b))
+    print('\tFLattening           {:10.3f}'.format(ell1.f))
+    print('\tInv. Flattening      {:10.3f}'.format(ell1.finv))
+    print('\tEccentricity Squared {:10.3f}'.format(ell1.e2))

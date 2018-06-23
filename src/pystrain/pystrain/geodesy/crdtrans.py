@@ -1,6 +1,10 @@
-from math import sqrt, atan2, atan, pi, cos, sin
-from pystrain.geodesy.ellipsoid import Ellipsoid
+#! /usr/bin/python
+#-*- coding: utf-8 -*-
+
+from __future__ import print_function
+import math
 import numpy as np
+from pystrain.geodesy.ellipsoid import Ellipsoid
 
 def top2daz(north, east, up):
     """Compute azimouth, zenith and distance from a topocentric vector.
@@ -23,17 +27,6 @@ def top2daz(north, east, up):
     zenith   = math.acos(up/distance);
     return distance, a, zenith
 
-def ell2top(loni, lati, hgti, lonj, latj, hgtj):
-    # Trigonometric numbers.
-    cosf = cos(lati)
-    cosl = cos(loni)
-    sinf = sin(lati)
-    sinl = sin(loni)
-    R = np.matrix([[sinf*cosl, sinf*sinl, -cosf], [-sinl, cosl, 0e0], [cosf*cosl, cosf*sinl, sinl]])
-    v = np.matrix([[cos(latj)*cos(lonj)],[cos(latj)*sin(lonj)],[sin(latj)]])
-    neu = np.dot(R,v)
-    return neu[0], neu[1], neu[2]
-
 def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
     """Cartesian to topocentric vector.
 
@@ -51,7 +44,8 @@ def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
             zj (float): z-component of end point (m).
 
         Returns:
-            tuple (float): a 3-element float tuple, as [north, east, up] in meters.
+            tuple (float): a 3-element float tuple, as [north, east, up] in
+                           meters.
 
         Note:
             The vector transformed is [xj-xi, yj-yi, zj-zi]
@@ -61,9 +55,9 @@ def car2top(xi, yi, zi, xj, yj, zj, ell=Ellipsoid("wgs84")):
 
     # Trigonometric numbers.
     cosf = math.cos(phi_i)
-    cosl = math.cos(lambda_i)
+    cosl = math.cos(lamda_i)
     sinf = math.sin(phi_i)
-    sinl = math.sin(lambda_i)
+    sinl = math.sin(lamda_i)
 
     # Cartesian vector.
     dx = xj - xi
@@ -112,7 +106,7 @@ def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
     # Finished.
     return x, y, z
 
-def car2elll(x, y, z, ell=Ellipsoid("wgs84")):
+def car2ell(x, y, z, ell=Ellipsoid("wgs84")):
     """Cartesian to ellipsoidal coordinates.
     
         Cartesian to ellipsoidal coordinates (aka latitude, longtitude and
@@ -192,3 +186,25 @@ def car2elll(x, y, z, ell=Ellipsoid("wgs84")):
 
     # Finished.
     return phi, lamda, h
+
+if __name__ == "__main__":
+    dyng_xyz = [4595220.002e0, 2039434.077e0, 3912625.997e0]
+    lat, lon, hgt = car2ell(dyng_xyz[0], dyng_xyz[1], dyng_xyz[2])
+    dx, dy, dz = ell2car(lat, lon, hgt)
+    print('From cartesian to ellipsoidal and back, diffs are:')
+    print('Δx = {}\nΔy = {}\nΔz = {}'.format(abs(dyng_xyz[0]-dx),
+        abs(dyng_xyz[1]-dy), abs(dyng_xyz[2]-dz)))
+    assert abs(dyng_xyz[0]-dx) < 1e-7 and \
+        abs(dyng_xyz[1]-dy) < 1e-7 and \
+        abs(dyng_xyz[2]-dz) < 1e-7
+
+    dyng2xyz = [ c+5e0 for c in dyng_xyz ]
+    lat2, lon2, hgt2 = car2ell(dyng2xyz[0], dyng2xyz[1], dyng2xyz[2])
+    n1, e1, u1 = car2top(dyng_xyz[0], dyng_xyz[1], dyng_xyz[2],
+        dyng2xyz[0], dyng2xyz[1], dyng2xyz[2])
+    print('Cartesian to Topocentric')
+    print('Δn = {}\nΔe = {}\nΔu = {}'.format(n1,e1,u1))
+    dr = math.sqrt(3e0 * math.pow(5e0,2))
+    assert abs(dr - math.sqrt(n1*n1 + e1*e1 +u1*u1)) < 1e-5
+    distance, a, zenith = top2daz(n1, e1, u1)
+    assert abs(dr-distance) < 1e-5
