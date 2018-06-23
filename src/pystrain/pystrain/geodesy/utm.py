@@ -1,5 +1,7 @@
-#! /usr/bin/python2.7
+#! /usr/bin/python
+#-*- coding: utf-8 -*-
 
+from __future__ import print_function
 from math import floor, degrees, radians, pi, sin, cos, tan
 from pystrain.geodesy.ellipsoid import Ellipsoid
 
@@ -183,7 +185,7 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), zone=None, lcm=None):
     N = No+ko*RN*(N1+N2+N3+N4+N5)
 
     return N, E, Zone, lcm
-"""
+
 if __name__ == "__main__":
     # lats = [39.010444, -12.0464, -37.8136, 38.7223]
     lats = [0.6808606982218858, -0.2102493430122449, -0.6599718220321278, 0.6758316289450003]
@@ -198,14 +200,13 @@ if __name__ == "__main__":
         [5812911.69963288, 320704.446318808, 55, 2.56563400043166],
         [4285969.85875752, 487890.758080714, 29, -0.157079632679490]]
     for i in range(0, len(lats)):
-        print '> Testing Point #{} lat={} lon={}'.format(i, lats[i], lons[i])
+        print('> Testing Point #{} lat={} lon={}'.format(i, degrees(lats[i]), degrees(lons[i])))
         n, e, z, l = ell2utm(lats[i], lons[i], ell)
-        print '\tNorthing={} Easting={} Zone={} Central Mer.={}'.format(n, e, z, l)
-        print '\tOctave (abs) diffs: dN{} dE{} dZ{} dCM{}'.format(abs(n-octave[i][0]), abs(e-octave[i][1]), abs(z-octave[i][2]), abs(l-octave[i][3]))
+        print('\tNorthing={} Easting={} Zone={} Central Mer.={}'.format(n, e, z, l))
+        print('\tOctave (abs) diffs: dN{} dE{} dZ{} dCM{}'.format(abs(n-octave[i][0]), abs(e-octave[i][1]), abs(z-octave[i][2]), abs(l-octave[i][3])))
         clat, clon = utm2ell(e, n, z, ell)
         if abs(clat-lats[i])>5e-10 or abs(clon-lons[i])>5e-10:
-            print '\tERROR Too big discrepancies for station #{}'.format(i)
-            print '\tdlat={} dlon={} in decimal degrees'.format(degrees(abs(clat-lats[i])), degrees(abs(clon-lons[i])))
-            print '\tdLat={} dLon={} in seconds'.format(degrees(abs(clat-lats[i]))*3600e0, degrees(abs(clon-lons[i]))*3600e0)
-            print '\tInput {}, {} output {}, {}'.format(degrees(lats[i]), degrees(lons[i]), degrees(clat), degrees(clon))
-"""
+            print('\tERROR Too big discrepancies for station #{}'.format(i))
+            print('\tdlat={} dlon={} in decimal degrees'.format(degrees(abs(clat-lats[i])), degrees(abs(clon-lons[i]))))
+            print('\tdLat={} dLon={} in seconds'.format(degrees(abs(clat-lats[i]))*3600e0, degrees(abs(clon-lons[i]))*3600e0))
+            print('\tInput {}, {} output {}, {}'.format(degrees(lats[i]), degrees(lons[i]), degrees(clat), degrees(clon)))
