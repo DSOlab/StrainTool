@@ -7,25 +7,32 @@ import numpy
 from scipy import linalg
 import operator
 from math import atan2, exp, sqrt, floor, pi, degrees
+
+import pystrain.grid
 from station import Station
-##############################################  pystrain
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
-import pystrain.grid
-
 
 def barycenter(sta_list):
     ''' Compute the barycenter from a list of stations. The function will use
-        each station's self.x and self.y components.
+        each station's self.lat and self.lon components.
         Barycenter's coordinates will have the same units as the input ones.
+
+        Args:
+            sta_lst (list of Station): a list of Station instances.
+
+        Returns:
+            tuple (float, float): first element is the average of the stations
+                                  longtitude, while the second is the average
+                                  latitude.
     '''
     y_mean = sta_list[0].lat
     x_mean = sta_list[0].lon
     for i in range(1, len(sta_list)):
         y_mean = (sta_list[i].lat + (i-1)*y_mean) / float(i)
         x_mean = (sta_list[i].lon + (i-1)*x_mean) / float(i)
-    return y_mean, x_mean
+    return x_mean, y_mean
 
 def ls_matrices_veis4(sta_lst, cx, cy):
     """  4-parameter deformation
@@ -81,23 +88,7 @@ def ls_matrices_veis6(sta_lst, cx, cy):
     # numpy.linalg.lstsq(A,b)
     return A, b
 
-def __strain_info__(str_params):
-    info_dict = {}
-    tx  = str_params['Ux']
-    ty  = str_params['Uy']
-    exx = str_params['taux']
-    exy = str_params['tauxy'] + str_params['omega']
-    eyx = str_params['tauxy'] - str_params['omega']
-    eyy = str_params['tauy']
-    info_dict['e'] = (exy - eyx) / 2e0
-    info_dict['k'] = (exx + eyy) * 1000000. / 2e0
-    info_dict['strain'] = sqrt((exx-eyy) * (exx-eyy) + (exy+eyx) * (exy+eyx)) * 1000000.
-    info_dict['k_max'] = info_dict['k'] + info_dict['strain'] / 2e0
-    info_dict['k_min'] = info_dict['k'] - info_dict['strain'] / 2e0
-    info_dict['az'] = degrees(2e0 * atan2(exy + eyx, eyy - exx))
-    return info_dict
-
-def __cmp_strain__(str_params, params_cov=None):
+def OBSOLETE__cmp_strain__(str_params, params_cov=None):
     info_dict = {}
     x1  = str_params['taux']
     x2  = str_params['tauxy']
@@ -145,30 +136,104 @@ def __cmp_strain__(str_params, params_cov=None):
     return emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv
 
 class ShenStrain:
+    """A class to represeent Strain Tensors.
+
+        Attributes:
+            __xcmp__ (float): x coordinate (could also be easting)
+            __ycmp__ (float): y coordinate (could also be northing)
+            __stalst__ (list of Station): a list of stations to be used
+                for strain estimation. Some of them may be filtered out.
+            __zweights__ (list): a list of floats, where each element is the
+                weight of the station based on azimouthal coverage.
+            __lweights__ (list): a list of floats, where each element is the
+                weight of the station based on distance.
+            __options__ (dictionary): A dictionary holding the following:
+                * ltype (str): gaussian or quadratic; this is the function
+                               to be used for distance weight computation.
+                * Wt (float): parameter for finding optimal D value (km)
+                * dmin (float): min D value for finding optimal D (km)
+                * dmax (float): max D value for finding optimal D (km)
+                * dstep (float): step for range dmin, dmax (km)
+                * d_coef (float): optimal D value (km)
+                * cutoff_dis (float): cut off distance (km)
+
+        Note:
+            The Station class has no x or y members; it only has lon and lat.
+            Because a lot of (member) functions will need to compute distances
+            between points and the Strain Tensor centre point (aka __xcmp__ and
+            __ycmp__), it will be assumed that:
+                * the Station.lon member corresponds to __xcmp__, and
+                * the Station.lat member corresponds to __ycmp__
+            For example, to compute the distance between the point with index i
+            and the Strain Tensor centre, the instance will do something like:
+            d = sqrt((__stalst__[i].lon - __xcmp__)^2 + (__stalst__[i].lat - __ycmp__)^2)
+    """
+
     def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
+        """ShenStrain constructor
+
+            Args:
+                x (float): x coordinate (could also be easting)
+                y (float): y coordinate (could also be northing)
+                station_list (list of Station): a list of stations to be used
+                    for strain estimation. Some of them may be filtered out.
+                **kwargs: a dictionary containing any of the keys:
+                    * ltype (str): gaussian or quadratic; this is the function
+                                   to be used for distance weight computation.
+                    * Wt (float): parameter for finding optimal D value (km)
+                    * dmin (float): min D value for finding optimal D (km)
+                    * dmax (float): max D value for finding optimal D (km)
+                    * dstep (float): step for range dmin, dmax (km)
+                    * d_coef (float): optimal D value (km)
+        """
         self.__stalst__ = station_list
         self.__xcmp__   = x
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
-        self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 'dmin': 1, 'dmax': 500, 'dstep': 2, 'd_coef': None, 'cutoff_dis': None}
-        self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+        self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 
+            'dmin': 1, 'dmax': 500, 'dstep': 2, 'd_coef': None,
+            'cutoff_dis': None}
+        self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 
+            'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
         self.__vcv__ = None
         for key in kwargs:
             if key in self.__options__:
                 self.__options__[key] = kwargs[key]
-            #else:
-            #    print('[DEBUG] Irrelevant key in Strain constructor: {:}; skipped'.format(key))
         if self.__options__['ltype'] == 'gaussian':
             self.__options__['cutoff_dis'] = 2.15e0
         else:
             self.__options__['cutoff_dis'] = 10e0
 
     def clean_weight_matrices(self):
+        """Set both distance and spatial weight lists to None
+        """
         self.__zweights__ = None
         self.__lweights__ = None
 
     def filter_sta_wrt_distance(self, d=None):
+        """Filter station list wrt the cutoof distance.
+            
+            This function will compute a cut-off distance:
+                cod = self.__options__['cutoff_dis'] * D
+            and filter all stations in the instance's __stalst__ list. A new
+            station list will be returned, containing only stations that are
+            less (or equal to) than cod km apart from the instance's 
+            __xcmp__, __ycmp__ point.
+            If the input parameter d is provided, then the function will use
+            that as D, else the function will use self.__options__['d_coef']
+            as D (in cod computation).
+
+            Args:
+                d (float): parameter for computing the cut-off distance. If not
+                    provided, __options__['d_coef'] will be used. d should be
+                    provided in km.
+
+            Returns:
+                list of Station: a list of Station instances, where each station
+                    is less than cut-off distance away from the instance.
+
+        """
         cc = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         if not d: d = self.__options__['d_coef']
         limit = self.__options__['cutoff_dis'] * d
@@ -176,47 +241,79 @@ class ShenStrain:
         return nlst
     
     def azimouths(self, other_sta_lst=None):
-        #  Get the azimouth of each line from central point (cx,cy) to each point in
-        #+ the list. The computed azimouths are stored in a sorted list
-        #+ (aka azimouths). This list is made up of dictionary elements, where each
-        #+ dictionary contains:
-        #+   1. the azimouth value (in radians) as 'az' and
-        #+   2. the index of the station in the sta_lst, as 'nr'.
-        #  To compute the azimouths, we need the ΔX and ΔY components, which are
-        #+ computed as:
-        #+ ΔX = sta.lon-self.__xcmp__
-        #+ ΔY = sta.lat-self.__ycmp__
-        #+ Obviously, all of these quantities **should** be in a cartesian RF.
-        #  For example, if the instance's station list is:
-        #+ [ankr, buku, dion, ...] and the function returns: 
-        #+ [{'az':0.34, 'nr':2}, ..., {'az':3.01, 'nr':0}]
-        #+ it means, that the line from the instance's centre to dion has an 
-        #+ azimouth of 0.34 radians, the line from the instance's centre to 
-        #+ ankr has an azimouth of 3.01 radians, etc...
-        #  Note that sorted means **in ascending order** (obviously).
+        """Azimouth of line containing the Strain Tensor centre and each point.
+            
+            Get the azimouth of each line from central point (__xcmp__, __ycmp__) 
+            to each point in the other_sta_lst list. The computed azimouths 
+            are stored in a sorted list (aka azimouths). This list is made up 
+            of dictionary elements, where each dictionary contains:
+              1. the azimouth value (in radians) as 'az' and
+              2. the index of the station in the other_sta_lst, as 'nr'.
+            To compute the azimouths, we need the ΔX and ΔY components, which 
+            are computed as:
+                ΔX = sta.lon-self.__xcmp__
+                ΔY = sta.lat-self.__ycmp__
+            Obviously, all of these quantities **should** be in a cartesian RF.
+            For example, if the instance's station list is:
+            [ankr, buku, dion, ...] and the function returns: 
+            [{'az':0.34, 'nr':2}, ..., {'az':3.01, 'nr':0}]
+            it means, that the line from the instance's centre to dion has an 
+            azimouth of 0.34 radians, the line from the instance's centre to 
+            ankr has an azimouth of 3.01 radians, etc...
+            Note that sorted means **in ascending order** (obviously).
+            If the user does not provide a other_sta_lst parameter, then
+            the function will use the isntance's __stalst__.
+
+            Args:
+                other_sta_lst (list of Station): a list of Station instances. If
+                    not provided, __stalst__ will be used.
+
+           Returns:
+                (sorted) list: This list is made up of dictionary elements, 
+                where each dictionary contains:
+                    1. the azimouth value (in radians) as 'az' and
+                    2. the index of the station in the other_sta_lst, as 'nr'.
+
+            Note:
+                All azimouths will fall in range [0, 2π)
+        """
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
         n = len(stalst)
         azimouths = []
         for idx, sta in enumerate(stalst):
             az = atan2(sta.lon-self.__xcmp__, sta.lat-self.__ycmp__)
-            azimouths.append({'az': az+int(az<0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
+            azimouths.append({'az': az+int(az<0e0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
         azimouths = sorted(azimouths, key=operator.itemgetter('az'))
         #  Confirm that all azimouths are in the range [0,2*pi)
         for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
         return azimouths
 
-    def ls_matrices(self, **kargs):
-        """ Construct Least Squares Matrices (A and b) to be solved for. The function
-            will first evaluate the covariance matrix C, where:
-            W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the 1/std.dev
-            of each observable.
-            Note that we have two observables (x and y) for each station.
+    def ls_matrices(self):
+        """Construct Least Squares Matrices (A and b) to be solved for.
+        
+            The function will first evaluate the covariance matrix C, where:
+            W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the
+            1e-3/std.dev of each observable (aka Veast, Vnorth).
+            Note that we have two observables (Vx and Vy) for each station.
             This function will set up the matrices A, b, such that:
             A <- A*sqrt(Q)
             b <- b*sqrt(Q)
             and if we solve A\b, we' ll end up with the parameter vector:
-            [ Ux, Uy, tx, txy, ty, w ]**T
+            [ Ux, Uy, τx, τxy, τy, ω ]**T
+            The weights (spatial, and distance) L and Z are read off from the
+            instance's __zweights__ and __lweights__ lists.
+            The number of rows in A and b matrices, will be:
+            len(self.__stalst__)*2
+            For each station i, in __stalst__, we will compute:
+            cx = (sigma0/sigmaVe) * sqrt(Z(i)*L(i))
+            cy = (sigma0/sigmaVn) * sqrt(Z(i)*L(i))
+            A(i*2,:)   = [ 1  0  Δx Δy  0    Δy ] * cx
+            A(i*2+1,:) = [ 0  1  0  Δx  Δy  -Δx ] * cy
+            b(i*2)     = [ Veast  ] * cx
+            b(i+1)     = [ Vnorth ] * cy
         """
+        # std. deviation (a-priori)
+        sigma0 = 1e-3
         # number of rows (observations)
         N = len(self.__stalst__)*2
         # number of columns (parameters)
@@ -228,149 +325,132 @@ class ShenStrain:
         zw     = self.__zweights__
         lw     = self.__lweights__
         assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
-        # the weight matrix W = Q^(-1) = C^(-1)*G = C^(-1)*(L*Z), which is actualy
-        # a column vector
-        # distances, dx and dy for each station from (cx, cy). Each element of the
-        # array is xyr = [ ... (dx, dy, dr) ... ]
+        # distances, dx and dy for each station from (cx, cy). Each element of
+        # the array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         xyr = [ cc.distance_from(x) for x in self.__stalst__ ]
         ## design matrix A, observation matrix b
         A = numpy.zeros(shape=(N,M))
         b = numpy.zeros(shape=(N,1))
         i = 0
-        #debug_list = []
         for idx, sta in enumerate(self.__stalst__):
             dx, dy, dr = xyr[idx]
-            Wx     = (1e-3/sta.se)*sqrt(zw[idx]*lw[idx])
-            Wy     = (1e-3/sta.sn)*sqrt(zw[idx]*lw[idx])
+            Wx     = (sigma0/sta.se)*sqrt(zw[idx]*lw[idx])
+            Wy     = (sigma0/sta.sn)*sqrt(zw[idx]*lw[idx])
             A[i]   = [ Wx*j for j in [1e0, 0e0,  dx, dy, 0e0, dy] ]
             A[i+1] = [ Wy*j for j in [0e0, 1e0, 0e0, dx, dy, -dx] ]
             b[i]   = sta.ve * Wx
             b[i+1] = sta.vn * Wy
             i += 2
-            #debug_list.append({'name':sta.name, 'x':sta.lon, 'y':sta.lat, 'dr':dr/1000e0, 'zw':zw[idx], 'lw':lw[idx], 'wx':Wx, 'wy':Wy, 'used':sta_used})
         assert i == N, "[DEBUG] Failed to construct ls matrices"
         # we can solve this as:
         # numpy.linalg.lstsq(A,b)
-        #for db in sorted(debug_list, key=lambda k: k['dr']):
-        #    print('{:s} {:10.3f}m {:10.3f}m {:10.3f}km z={:10.5f} l={:10.5f} wx={:10.5f} wy={:10.5f} used for strain: {:}'.format(db['name'], db['x'], db['y'], db['dr'],db['zw'],db['lw'],db['wx'],db['wy'],db['used']))
         return A, b
 
-    def z_weights(self, other_sta_lst=None, debug_mode=False):
-        """ Given a list of Stations and the coordinates of a central point (i.e.
-            cx, cy), compute and return the function:
+    def z_weights(self, other_sta_lst=None):
+        """Compute spatial (i.e. azimouthal coverage) weights.
+        
+            Given a list of Stations, compute and return the function:
             Z(i) = n*θ(i) / 4π
             which is used as a weighting function fom strain estimation in Shen 
             et al, 2015, see Equation (5a).
-            The individual station weights are returned in a list, in the order they
-            were passed in in the sta_lst list.
-            It is assumed, that the coordinates of every point in the list and the
-            cx,cy coordinates, are given in meters.
-            Note that, Easting is considered as 'x' or longtitude.
-            Northing is considered as 'y' or latitude.
+            The individual station weights are returned in a list, in the
+            order they were passed in in the other_sta_lst list.
+            It is assumed, that the coordinates of every point in the list and
+            the __xcmp__, __ycmp__coordinates, are given in a Cartesian RF and
+            are in meters.
+            Note that (for each station), Station.lon is considered the 'x'
+            component and Station.lat is considered the 'y' component.
 
-            Parameters:
-            -----------
-            sta_lst: list
+            Args:
+            other_sta_lst: list
                     A list of Station instances. For each one a weight will be
-                    computed and returned.
-            cx:      float
-                    The x-component of the central point
-            cy:      float
-                    The y-component of the central point
+                    computed and returned. If not given, the instance's
+                    __stalst__ list will be used.
 
             Returns:
-            --------
-            list
-                Each element in the list is the weight of the respective station in
-                the input station list.
+            list of floats
+                Each element in the list is the weight of the respective
+                station in the input station list (aka 
+                len(list) == len(other_sta_lst))
+
+            Todo:
+                The weighting function is NOT Z(i) = n*θ(i) / 4π, but it is
+                extracted from VISR
         """
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
         n = len(stalst)
         thetas = self.compute_theta_angles(stalst)
         assert len(thetas) == n
-        #  Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
-        if debug_mode:
-            print('[DEBUG] Here are the final weights:')
-            tmp_lst = [ x['w']*n/(4*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
-            for idx, val in enumerate(tmp_lst):
-                print('\t{:4s} -> z = {:+8.4f}'.format(stalst[idx].name, val))
+        # Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
         # return [ x['w']*float(n)/(4e0*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
         wt_az = 0.25e0
         azi_avrg = wt_az * 360.0e0 / n
         azi_tot = (1.0e0+wt_az)*360.0e0
-        # wght(i)=(0.5d0*(daz1-daz2)+azi_avrg) *nslct/azi_tot ! compute azimuthal weighting
-        return [ (0.5e0*degrees(x['w'])+azi_avrg)*n/azi_tot for x in sorted(thetas, key=operator.itemgetter('nr')) ]
+        return [ (0.5e0*degrees(a)+azi_avrg)*n/azi_tot for a in thetas ]
 
     def compute_theta_angles(self, other_sta_lst=None):
+        """Compute θ angles, aka next minus the previous point.
+
+            Make a list of the 'theta' angles; for each point i, the theta angle
+            is an azimouth difference, of the previous (i-1) minus the next 
+            point (i+1). All of the θ angles will be in the range (0, 2π).
+            
+            Args:
+            other_sta_lst: A list of Station instances. For each one a θ (theta)
+                angle is computed and returned. If not given, the instance's
+                __stalst__ list will be used.
+
+            Returns:
+                a list of floats. Each element in the list, is the θ angle of
+                the corresponding station in other_sta_lst.
+        """
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
         n = len(stalst)
         azimouths = self.azimouths(stalst)
         assert len(azimouths) == n
         thetas = []
-        #  Make a list of the 'theta' angles; for each point i, the theta angle
-        #+ is an azimouth difference, of the previous (i-1) minus the next 
-        #+ point (i+1).
         #  Special care for the first and last elements (theta angles).
-        thetas.append({'w': 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']), 'nr':azimouths[0]['nr']})
+        thetas.append({'w' : 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']),\
+                       'nr': azimouths[0]['nr']})
         for j in range(1, n-1):
-            thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'], 'nr':azimouths[j]['nr']})
-        thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']), 'nr':azimouths[n-1]['nr']})
+            thetas.append({'w':azimouths[j+1]['az'] - azimouths[j-1]['az'],\
+                          'nr':azimouths[j]['nr']})
+        thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']),\
+                      'nr':azimouths[n-1]['nr']})
         #  Double-check !! All theta angles must be in the range [0, 2*π)
-        for angle in thetas:
-            assert angle['w'] >= 0 and angle['w'] <= 2*pi, '[ERROR] Error computing statial weights. Station is \"{}\".'.format(stalst[angle['nr']].name)
-        return thetas
+        for angle in thetas: assert angle['w'] >= 0 and angle['w'] <= 2*pi
+        return [ i['w'] for i in sorted(thetas, key=operator.itemgetter('nr')) ]
 
-    def l_weights(self, other_sta_lst=None, **kargs):
-        """ Compute L(i) for each of the points in the station list sta_lst, where
+    def l_weights(self, other_sta_lst=None):
+        """Compute distance-dependent weights.
+        
+            Compute L(i) for each of the points in the station list sta_lst, where
             L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
             L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
-
-            To compute the function, the parameter D is needed; in this function the
-            approach is to try different D values (from dmin to dmax with step
-            dstep), untill the total re-weighting coefficient of the data approaches
-            the limit Wt. The re-weighting coefficient is:
-            W = Σ{i=0, i=len(sta_lst)*2}G(i)
-            where Σ denotes the sum and G(i) = L(i) * Z(i); this is why we also need
-            (as function input) the Z weights.
-
-            Note that the coordinates (both in sta_lst and in cx, cy), must be given
-            in meters. Also, cx is matched to sta_lst[i].lon and cy is matched to
-            sta_lst[i].lat.
-
-            The parameters dmin, dmax and dstep must be given in km. Wt must be an
-            integer.
+            It is assumed, that the coordinates of every point in the list and
+            the __xcmp__, __ycmp__coordinates, are given in a Cartesian RF and
+            are in meters.
+            Note that (for each station), Station.lon is considered the 'x'
+            component and Station.lat is considered the 'y' component.
+            The function will extract the gaussian or quadratic function,
+            depending on __options__['ltype']. Also the (optimal) D value
+            will be extracted from __options__['d_coef'], which should be in km.
 
             Args:
-            sta_lst: A list of Station instances, i.e. the list of stations
-            cx: The x coordinate of the center point
-            cy: The y coordinate of the center point
-            z_weights: A list of weights (i.e. float values) for each station
-            **kwargs: Arbitrary keyword arguments; the following are relevant:
-            ltype: type of weighting function; can be either 'gaussian', or
-            'quadratic'.
-            Wt:    value for optimal Wt; default is 24
-            dmin:  Minimum value of tested D's; default is 1
-            dmax:  Maximum value of tested D's; defult is 500
-            dstep: Step for searching for optimal D, from dmin to dmax until
-            we hit Wt; default is 2
-            d:     Value D for computing the weights; if given, then
-            it is used and no effort is made to find an 'optimal'
-            D value.
-            debug_mode: Sets debuging mode on.
+                other_sta_lst: A list of Station instances, i.e. the list of
+                    stations. If not given, the instance's __stalst__ will be
+                    used.
 
             Returns:
-            tuple: (list, float)
-            list is a list of weights (i.e. L(i) values) for each station, in the
-            order they are passed in.
-            float: is the D value used to compute the weights.
+                tuple: (list, float)
+                list is a list of weights (i.e. L(i) values) for each station,
+                in the order they are passed in.
+                float is the D value used to compute the weights.
 
             Raises:
-            RuntimeError if dmin > dmax, or if we cannot find an optimal D.
+                RuntimeError if dmin > dmax, or if we cannot find an optimal D.
         """
-        debug_mode = False
-        if 'debug_mode' in kargs: debug_mode = kargs['debug_mode']
-
         #  Note: d and dri must be in the same units (here km).
         def gaussian(dri, d):  return exp(-pow(dri/d,2))
         def quadratic(dri, d): return 1e0/(1e0+pow(dri/d,2))
@@ -423,6 +503,105 @@ class ShenStrain:
         assert len(betas) == n
         return betas
 
+    def cmp_strain(self, params_cov=None):
+        '''Compute strain tensor parameters and sigmas
+
+            This function will compute the strain tensor parameters:
+            emean, ediff, taumax, emax, emin, azim, dilat, sec_inv
+            given that the "fundamental" parameters have already been estimated
+            (i.e. the parameters [Ux, Uy, τx, τxy, τy, ω]).
+            The function will also compute the parameter corresponding std.
+            deviation  values (aka staumax, semax, semin, sazim, sdilat) if
+            the Variance-Covariance matrix of the "fundamental" parameters is
+            passed in.
+            The variance-covariance matrix, must be a numpy.array of size
+            6x6. It is assumed, that the rows concering the τx, τxy, τy 
+            parameters, are in indexes [2,5), i.e. the var-covar matrix is of
+            type:
+            | σ_Ux^2  σ_UxUy  σ_Uxτx σ_Uxτxy  σ_Uxτy   σ_Uxω  | (row 0)
+            | σUxUy   σ_Uy^2  σ_Uyτx σ_Uyτxy  σ_Uyτy   σ_Uyω  | (row 1)
+            | σUxτx   .       σ_τx^2 σ_τxτxy  σ_τxτy   σ_τxω  | (row 2)
+            | .       .       .      σ_τxy^2  σ_τxyτy  σ_τxyω | (row 3)
+            | .       .       .      .        σ_τy^2   σ_τyω  | (row 4)
+            | .       .       .      .        .        σ_ω^2  | (row 5)
+            Actualy, to perform the calculation, the function is going to cut
+            the submatrix params_cov[2:5, 2:5], so all other elements could
+            contain whatever values.
+            If the function parameter params_cov is set to None, then all values
+            for the parameters std. deviations, will be also set to None.
+
+            Args:
+                params_cov (numpy.matrix(6,6)): The variance-covariance matrix
+                of the parameters [Ux, Uy, τx, τxy, τy, ω] --in that order--.
+
+            Returns:
+                a tuple, holding the elements: 
+                (emean, ediff, taumax, staumax, emax, semax, emin, semin, \
+                azim, sazim, dilat, sdilat, sec_inv)
+
+            Note:
+                Normaly, the user should call the funtion with self.__vcv__ as
+                the (input) params_cov parameter.
+
+            Refs:
+                The functions to compute the strain parameters, are taken from
+                Shen's VISR fortran code.
+        '''
+        x1  = self.__parameters__['taux']
+        x2  = self.__parameters__['tauxy']
+        x3  = self.__parameters__['tauy']
+        cov = pi / 180.0e0
+        ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
+        ##+ and dextral tau_max azimuth
+        emean = (x1+x3) / 2.0e0
+        ediff = (x1-x3) / 2.0e0
+        taumax= sqrt(x2**2 + ediff**2)
+        emax  = emean+taumax
+        emin  = emean-taumax
+        azim  = -atan2(x2, ediff) / cov / 2.0e0
+        azim  = 90.0e0+azim
+        dexazim = azim+45.0e0-180.0e0
+        dilat = x1+x3
+        sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
+        if params_cov is None:
+            staumax, semax, semin, sazim, sdilat = [None] * 5
+        else:
+            nv, mv = params_cov.shape
+            assert nv == mv and nv == 6
+            # cut the part of vcv that holds tau* info
+            vcv = params_cov[2:5, 2:5]
+            v   = numpy.zeros(shape=(3,1))
+            # estimate sigma of tau_max
+            v[0,:] = (x1-x3)/4.0e0/taumax
+            v[1,:] = x2/taumax
+            v[2,:] = -v[0,:]
+            staumax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+            # estimate sigma of emax
+            v[0,:] = 0.5e0*(1+(x1-x3)/2.e0/taumax)
+            v[1,:] = x2/taumax
+            v[2,:] = 0.5e0*(1-(x1-x3)/2.e0/taumax)
+            semax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+            # estimate sigma of emin
+            v[0,:] = 0.5e0*(1-(x1-x3)/2.0e0/taumax)
+            v[1,:] = -x2/taumax
+            v[2,:] = 0.5e0*(1+(x1-x3)/2.0e0/taumax)
+            semin = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+            # estimate sigma of azimuth
+            cf = 1.0e0/((x1-x3)**2e0+4.0e0*x2**2e0)
+            v[0,:] = cf*x2
+            v[1,:] = -cf*(x1-x3)
+            v[2,:] = -v[0,:]
+            sazim = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
+            # estimate sigma of dilatation
+            sdilat = sqrt(vcv[0,0]+vcv[2,2]+2e0*vcv[0,2])
+        return emean, ediff, \
+            taumax, staumax, \
+            emax, semax, \
+            emin, semin, \
+            azim, sazim, \
+            dilat, sdilat, \
+            sec_inv
+
     def info(self):
         return __strain_info__(self.__parameters__)
 
@@ -431,7 +610,7 @@ class ShenStrain:
 	    cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
-        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  __cmp_strain__(self.__parameters__, self.__vcv__)
+        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
         print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
 
     def set_options(self, **kargs):
@@ -457,7 +636,7 @@ class ShenStrain:
         self.__ycmp__ = y
 
     def set_to_barycenter(self):
-        self.__ycmp__, self.__xcmp__ = barycenter(self.__stalst__)
+        self.__xcmp__, self.__ycmp__ = barycenter(self.__stalst__)
 
     def estimate(self, **kargs):
         if not self.__options__['d_coef']:
@@ -528,7 +707,7 @@ class VeisStrain:
         self.__ycmp__ = y
 
     def set_to_barycenter(self):
-        self.__ycmp__, self.__xcmp__ = barycenter(self.__stalst__)
+        self.__xcmp__, self.__ycmp__ = barycenter(self.__stalst__)
 
     def estimate(self,parameters=6):
         if parameters == 4:
