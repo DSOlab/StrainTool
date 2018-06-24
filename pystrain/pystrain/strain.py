@@ -9,7 +9,7 @@ import operator
 from math import atan2, exp, sqrt, floor, pi, degrees
 
 import pystrain.grid
-from station import Station
+from pystrain.station import Station
 from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
@@ -621,7 +621,7 @@ class ShenStrain:
                 matrix), then the sigmas will be printed as '-'
         """
         if utm_zone:
-	    cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) ]
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \

@@ -1,7 +1,7 @@
 import setuptools
 
-setup(name='pystrain',
-      version='1.0'0,
+setuptools.setup(name='pystrain',
+      version='1.0',
       description='Python Strain Tensor estimation tool.',
       url='https://github.com/DSOlab/StrainTool.git',
       author='Xanthos Papanikolaou, Demitris Anastasiou',
