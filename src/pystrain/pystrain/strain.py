@@ -448,8 +448,6 @@ class ShenStrain:
                 in the order they are passed in.
                 float is the D value used to compute the weights.
 
-            Raises:
-                RuntimeError if dmin > dmax, or if we cannot find an optimal D.
         """
         #  Note: d and dri must be in the same units (here km).
         def gaussian(dri, d):  return exp(-pow(dri/d,2))
@@ -465,13 +463,52 @@ class ShenStrain:
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
 
         #  Distances for each point from center in km.
-        dr = [ sqrt((x.lon-self.__xcmp__)*(x.lon-self.__xcmp__)+(x.lat-self.__ycmp__)*(x.lat-self.__ycmp__))/1000e0 for x in stalst ]
+        dr = [ sqrt((x.lon-self.__xcmp__)*(x.lon-self.__xcmp__)+\
+                    (x.lat-self.__ycmp__)*(x.lat-self.__ycmp__))/1000e0 \
+                    for x in stalst ]
         d  = float(self.__options__['d_coef'])
         return [ l_i(dri,d) for dri in dr ], d
 
     def find_optimal_d(self):
+        """Find optimal D coefficient, for distance weighting.
+
+            This function will test the range [dmin, dstep) with a step of
+            dstep (km) for an optimal D coefficient (aka the coefficient used
+            to compute the distance-dependent weighting).
+            The optimal D is that for which:
+            int(w) >= int(W_t), where:
+            W = Σ{L(i)*Z(i)} for i in 1,2,...,len(stations)*2
+            Note that when testing the individual D coefficients, the stations
+            list used may not be the instance's __stalst__. That is because,
+            for every D selected, the __stalst__ is filtered using:
+            self.filter_sta_wrt_distance(d).
+
+            Returns:
+                a tuple with elements:
+                list (floats): the lweights (i.e. distance weights) computed 
+                    with the optimal D coeff.
+                list (floats): the zweights (i.e. spatial weights) computed
+                    with the optimal D coeff
+                float: The optimal D coefficient in km.
+
+            Warning:
+                The returned lists (lweights and zweights), may not be of the
+                same size as __stalst__. They actually correspond to the list
+                of stations that where filtered using the function:
+                self.filter_sta_wrt_distance(D). So if you do something like:
+                lw, zw, D = self.find_optimal_d()
+                valid_sta = self.filter_sta_wrt_distance(D)
+                then, lw[i] and zw[i] will be the weights of valid_sta[i] (and
+                not self.__stalst__[i]).
+
+            Raises:
+                RuntimeError if no  optimal D coeff can be found within the
+                range [dmin, dmax).
+        """
         assert self.__options__['dmin'] < self.__options__['dmax']
-        for d in numpy.arange(self.__options__['dmin'], self.__options__['dmax'], self.__options__['dstep']):
+        for d in numpy.arange(self.__options__['dmin'], \
+                              self.__options__['dmax'], \
+                              self.__options__['dstep']):
             self.__options__['d_coef'] = d
             new_sta_lst = self.filter_sta_wrt_distance(d)
             if len(new_sta_lst) > 3:
@@ -479,24 +516,25 @@ class ShenStrain:
                 zwghts   = self.z_weights(new_sta_lst)
                 assert len(lwghts) == len(zwghts)
                 w = sum([ x[0]*x[1] for x in zip(lwghts,zwghts) ])*2 # w(i) = l(i)*z(i)
-                if int(round(w)) >= self.__options__['Wt']:
-                    print('[DEBUG] Found optimal D value {}; Number of stations involved {} out of {}.'.format(d, len(new_sta_lst), len(self.__stalst__)))
+                if int(round(w)) >= int(self.__options__['Wt']):
                     return lwghts, zwghts, d
         # Fuck! cannot find optimal D
         print('[ERROR] Cannot compute optimal D in weighting scheme')
         raise RuntimeError
 
     def beta_angles(self):
+        """Return the β angles (internal angles).
+
+            Make a list of the β ('beta') angles; for each point, the β angle
+            is an azimouth difference, of the next minus the previous point
+            aka β = Az(i+1) - Az(i)
+        """
         azimouths = self.azimouths()
-        n         = len(azimouths)
-        betas     = []
-        #  Make a list of the 'beta' angles; for each point, the theta angle is an
-        #+ azimouth difference, of the previous minus the next point.
-        #  Special care for the first and last elements (beta angles)
+        n = len(azimouths)
+        betas = []
         betas.append(2e0*pi+(azimouths[0]['az'] - azimouths[n-1]['az']))
         for j in range(0, n-1):
             betas.append(azimouths[j+1]['az'] - azimouths[j]['az'])
-        #betas.append(2e0*pi+(azimouths[n-1]['az'] - azimouths[n-2]['az']))
         #  Double-check !! All theta angles must be in the range [0, 2*π)
         for angle in betas:
             assert angle >= 0 and angle <= 2*pi
