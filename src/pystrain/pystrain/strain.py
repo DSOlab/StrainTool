@@ -88,53 +88,6 @@ def ls_matrices_veis6(sta_lst, cx, cy):
     # numpy.linalg.lstsq(A,b)
     return A, b
 
-def OBSOLETE__cmp_strain__(str_params, params_cov=None):
-    info_dict = {}
-    x1  = str_params['taux']
-    x2  = str_params['tauxy']
-    x3  = str_params['tauy']
-    cov = pi / 180.0e0
-    ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
-    ##+ and dextral tau_max azimuth
-    emean = (x1+x3) / 2.0e0
-    ediff = (x1-x3) / 2.0e0
-    taumax= sqrt(x2**2 + ediff**2)
-    emax  = emean+taumax
-    emin  = emean-taumax
-    azim  = -atan2(x2, ediff) / cov / 2.0e0
-    azim  = 90.0e0+azim
-    dexazim = azim+45.0e0-180.0e0
-    dilat = x1+x3
-    sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
-    #if params_cov != None:
-    # cut the part of vcv that holds tau* info
-    vcv = params_cov[2:5, 2:5]
-    # estimate sigma of tau_max
-    v = numpy.zeros(shape=(3,1))
-    v[0,:] = (x1-x3)/4.0e0/taumax
-    v[1,:] = x2/taumax
-    v[2,:] = -v[0,:]
-    staumax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
-    # estimate sigma of emax
-    v[0,:] = 0.5e0*(1+(x1-x3)/2.e0/taumax)
-    v[1,:] = x2/taumax
-    v[2,:] = 0.5e0*(1-(x1-x3)/2.e0/taumax)
-    semax = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
-    # estimate sigma of emin
-    v[0,:] = 0.5e0*(1-(x1-x3)/2.0e0/taumax)
-    v[1,:] = -x2/taumax
-    v[2,:] = 0.5e0*(1+(x1-x3)/2.0e0/taumax)
-    semin = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
-    # estimate sigma of azimuth
-    cf = 1.0e0/((x1-x3)**2e0+4.0e0*x2**2e0)
-    v[0,:] = cf*x2
-    v[1,:] = -cf*(x1-x3)
-    v[2,:] = -v[0,:]
-    sazim = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
-    # estimate sigma of dilatation
-    sdilat = sqrt(vcv[0,0]+vcv[2,2]+2e0*vcv[0,2])
-    return emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv
-
 class ShenStrain:
     """A class to represeent Strain Tensors.
 
@@ -644,14 +597,64 @@ class ShenStrain:
         return __strain_info__(self.__parameters__)
 
     def print_details(self, fout, utm_zone=None):
+        """Print Strain Tensor details
+
+            With details, we mean the following parameters:
+            'Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', \
+            'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', \
+            'azi+dazi', 'dilat+ddilat', 'sec. invariant'
+            where the units are (in the corresponding order):
+            'deg', 'deg', 'mm/yr', 'mm/yr', 'nrad/yr', 'nstrain/yr', \
+            'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', \
+            'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'
+
+            Args:
+                fout (output stream): the (already opened) output stream where
+                    the details will be written
+                utm_zone (int): If given, then the instance's __xcmp__ and 
+                    __ycmp__ will be considered UTM Easting and Northing
+                    coordinates in the given Zone, and will be transformed to
+                    longtitude and latitude before the actual writting takes
+                    place.
+            Note:
+                if the instance's __vcv__ is None (aka we have no var-covar
+                matrix), then the sigmas will be printed as '-'
+        """
         if utm_zone:
 	    cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__,  self.__ycmp__ , utm_zone) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
-        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
-        print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
+        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
+            dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
+        if self.__vcv__ is not None:
+            print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} \
+            {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} \
+            {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} \
+            {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
+            self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
+            self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
+            self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, \
+            self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, \
+            self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
+            self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
+            emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, \
+            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
+        else:
+            novar = '-'
+            print('{:9.5f} {:9.5f} {:+7.1f} {:8s} {:+7.1f} \
+            {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} \
+            {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} \
+            {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f}'.format(cy, cx, \
+            self.value_of('Ux')*1e3, novar, \
+            self.value_of('Uy')*1e3, novar, \
+            self.value_of('omega')*1e9, novar, \
+            self.value_of('taux')*1e9, novar, \
+            self.value_of('tauxy')*1e9, novar, \
+            self.value_of('tauy')*1e9, novar, \
+            emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
+            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9), file=fout)
 
-    def set_options(self, **kargs):
+    def OBSOLETE_set_options(self, **kargs):
         for opt in kargs:
             if opt not in self.__options__:
                 print('[DEBUG] Option {:} not relevant for ShenStrain. Ommiting')
@@ -659,6 +662,18 @@ class ShenStrain:
                 self.__options__[opt] = kargs[opt]
 
     def value_of(self, key):
+        """Kinda getter.
+
+            This function provides easy access to the instance's attributes,
+            specifically the ones in dictionaries. 
+
+            Args:
+                Any of the following:
+                x returns __xcmp__
+                y returns __ycmp__
+                any key of the __parameters__ dictionary, or
+                any key of the __options__ dictionary
+        """
         if key == 'x':
             return self.__xcmp__
         if key == 'y':
@@ -670,13 +685,48 @@ class ShenStrain:
         raise RuntimeError
     
     def set_xy(self, x, y):
+        """Set the x,y values of the instance.
+
+            Args:
+                x (float): the value to set __xcmp__ to
+                y (float): the value to set __ycmp__ to
+
+        """
         self.__xcmp__ = x
         self.__ycmp__ = y
 
     def set_to_barycenter(self):
+        """Sets the Strain Tensor (x,y) pair the __stalst__ barycentre
+        """
         self.__xcmp__, self.__ycmp__ = barycenter(self.__stalst__)
 
-    def estimate(self, **kargs):
+    def estimate(self):
+        """Estimate fundamental parameters of the Strain Tensor.
+
+            This function will (try to) estimate the Strain Tensor's fundamental
+            parameters, aka [Ux, Uy, τx, τxy, τy, ω]. To achieve this, the
+            function will perform the following:
+            1. Find the optimal D coefficient
+               Use __options__['d_coef'] if it exists, else find the optimal D
+                coefficient. Assign __options__['d_coef']
+            2. Filter stations based on optimal D. The instance's __stalst__
+                will from now on hold only the filtered stations. Assign
+                __stalst__
+            3. Compute distance and spatial weights; assign __zweights__ and
+                __lweights__
+            4. Compute A and b matrices for LSE (aka Ax = b + ε) and estimate
+                x, aka the parameter vector [Ux, Uy, τx, τxy, τy, ω]
+            5. Compute a-posteriori std. deviation of the fit and var-covar
+                matrix of the estimated parameters. If the latter fails (cause
+                it needs an invertion), then the matrix is set to None. Assign
+                __vcv__
+            6. Assign all fundamental parameters in the __parameters__ dictionary.
+
+            Todo:
+                When formulating the A and b matrices, we use a sigma0 (aka
+                a-priori std. deviation). I think i need this here to compute
+                the a-posteriori std. deviation.
+        """
         if not self.__options__['d_coef']:
             print('[DEBUG] Searching for optimal D parameter.')
             if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
@@ -691,7 +741,7 @@ class ShenStrain:
             zwghts   = self.z_weights()
         self.__zweights__ = zwghts
         self.__lweights__ = lwghts
-        A, b = self.ls_matrices(**kargs)
+        A, b = self.ls_matrices()
         VcV  = numpy.dot(A.T, A)
         m, n = A.shape
         if m <= 3:
@@ -701,9 +751,9 @@ class ShenStrain:
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         # Parameter variance-covariance matrix
         try:
-            # A-posteriori variance
+            # A-posteriori std. deviation
             sigma0_post = float(res[0])
-            print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
+            # print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
             bvar = linalg.inv(VcV) * sigma0_post
             self.__vcv__ = bvar
         except:
