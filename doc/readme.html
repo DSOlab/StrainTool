@@ -48,6 +48,20 @@
 
 <body>
     <div>
+<h1 id="coulomb2gmtv10rc10">StrainTool</h1>
+
+<p>Software package to calculate strain tensor parameters</p>
+
+<!--
+<p><a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/LICENSE"><img src="http://img.shields.io/badge/license-MIT-brightgreen.svg" alt="License MIT" /></a>
+<a href="https://github.com/DSOlab/StrainTool/releases/latest"><img src="https://img.shields.io/github/release/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/tags"><img src="https://img.shields.io/github/tag/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/stargazers"><img src="https://img.shields.io/github/stars/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/network"><img src="https://img.shields.io/github/forks/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/issues"><img src="https://img.shields.io/github/issues/DSOlab/StrainTool.svg" alt="" /></a></p>
+<a href="https://zenodo.org/badge/latestdoi/106276451"><img src="https://zenodo.org/badge/106276451.svg" alt="DOI"></a>
+-->
+
         <h1>General</h1>
         <p>StrainTool allows the estimation of Strain Tensor parameters, on the
         earth's crust, given a list of data point, aka points on the earth along
@@ -98,9 +112,9 @@
                 and <a href="https://docs.scipy.org/doc/scipy/reference/spatial.html">SciPy.spatial</a> modules.</li>
         </ul>
         Both <code>NumPy</code> and <code>SciPy</code> have extended installation guides
-        for most, if not all, operating systems.</p>
+        for most, if not all, operating systems.</p> 
         <p>To use the <a href="#plot_tools_pck">Plot Tools</a> bundle, you must have
-        <a href="http://gmt.soest.hawaii.edu/">GMT</a> installed, allong with a
+        <a href="http://gmt.soest.hawaii.edu/">GMT</a> (> 5.0.0) installed, allong with a
         variety of UNIX-based tools. If you are on a UNIX/Linux operating system,
         most or all of them are pre-installed.</p>
         <h2>Installation Procedure</h2>
@@ -216,8 +230,23 @@
         printed (i.e. how many fields, decimal places, etc). The only condition is 
         that fields are seperated by whitespace(s). To see an example of a valid
         input file, you can check <code>data/CNRS_midas.vel</code>.</p>
-        <h3>TODO: Output Files</h3>
-        <h1>TODO: How to use Plot Tools</h1>
+        <h2>Output Files</h2>
+	<p>Results of <code>StrainTensor.py</code> are recorded in the following three files: </p>
+	  <ul>
+	    <li> <b>strain_info.dat :</b> This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.<br>The columns of the file are structured as below:</li>
+		 <pre id="block-samp"<samp>
+Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
+   deg       deg         mm/yr           mm/yr          nrad/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
+	        </samp></pre>
+
+	    <li> <b>station_info.dat :</b>Stations' data used for the calculation of strain tensor are written at htis file. Format is: </li>
+                 <pre id="block-samp"<samp>
+Code Longtitude Latitude Ve Vn
+                </samp></pre>
+
+	    <li> <b>StrainTensor.out :</b> Parameters used to modigy grid, calculate Strain tensors etc. </li>
+	  </ul>
+        <h1>How to use Plot Tools</h1>
         <p>Plotting scripts are placed under <code>plot/</code> directory. They are:
         <ul>
         <li><code>gmtstrainplot.sh</code>, and</li>
@@ -226,6 +255,51 @@
         All of the scripts need the file named <code>default-param</code> to be in the
         same folder.
         </p>
+        <b>default-param file options</b>
+        <pre id="block-samp"<samp>
+        pth2inptf=../data/  # set default folder for input files (strain_info.dat, station_info.dat)
+	west, east, south, north, projscale, frame, sclength: set region parameters
+        STRSC=0.01 : set principal axis plot scale
+        ROTSC=.7 : set rotational rates plot scale
+        </samp></pre>
+
+        <b>gmtstrainplot.sh options:</b>
+        <pre id="block-samp"<samp>
+/*** Basic Plots & Background ***********************************/
+     -r | --region : region to plot (default Greece)
+         usage: -r west east south north projscale frame
+
+/*** PLOT STATIONS **********************************************/
+     -psta [:=stations] plot only stations from input file
+
+/*** PLOT VELOCITIES ********************************************/
+     -vhor (station_file)[:= horizontal velocities]
+     -vsc [:=velocity scale] change valocity scale default 0.05
+
+/*** PLOT STRAIN PARAMETERS *************************************/
+     -str (strain file)[:= strains] Plot strain rates
+     -rot (strain file)[:= rots] Plot rotational rates
+     -gtot(strain file)[:=shear strain] plot total shear strain rate contours
+     -gtotaxes (strain file) dextral and sinistral max shear strain rates
+     -dil (strainfile)[:= dilatation] Plot dilatation and principal axes
+     -secinv (strain file) [:=2nd invariand] Plot second invariand
+     -strsc [:=strain scale]
+     -rotsc [:=rotational scales]
+
+/*** OTHER OPRTIONS *********************************************/
+     -o | --output : name of output files
+     -l | --labels : plot labels
+     -jpg : convert eps file to jpg
+     -h | --help : help menu
+ Exit Status:    1 -> help message or error
+ Exit Status:  = 0 -> sucesseful exit
+/***************************************************************/
+        </samp></pre>
+        <p>For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+        <pre id="block-samp"<samp>
+$>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
+        </samp></pre>
+
         <h1 id="bck_and_algorithms">TODO: Background and Algorithms</h1>
     </div>
     <div class="container"> 
