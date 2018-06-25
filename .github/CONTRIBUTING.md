@@ -13,16 +13,15 @@
 * __branch__ master/develop: stucture of main branch
   	* bin/
   		* StrainTensor.py : main script
-    	* data/
+	* data/
   		* CNRS_midas.vel : valid input file
-		* station_info.dat.ref: "reference" output file
-		* strain_info.dat: "reference" output file
+		* station_info.dat.ref: reference output file
+		* strain_info.dat: reference output file
   	* doc/
   		* 
   	* plot/
   		* gmtstrainplot.py
 	* pystrain/
-		*
 	* test/
 	
 	* .github/
