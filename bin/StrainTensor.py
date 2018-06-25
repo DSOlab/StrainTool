@@ -15,8 +15,6 @@ from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 import pystrain.grid
 ############################################## ploting
-#from mpl_toolkits.basemap import Basemap
-#import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
