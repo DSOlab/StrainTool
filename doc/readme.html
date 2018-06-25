@@ -1,0 +1,159 @@
+<!doctype html>
+<meta charset="UTF-8"> 
+<html>
+
+<head>
+    <title>StrainTool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=TeX-MML-AM_CHTML' async></script>
+    <script type="text/javascript" src="straindoc.js"></script>
+    <style>
+        .container {
+            margin: 15px auto;
+            display: flex;
+        }
+        #chart_div {
+            width: 80%;
+        }
+        #dparam_div {
+            width: 20%;
+            vertical-align: middle;
+        }
+        #chart_div2 {
+            width: 80%;
+        }
+        pre code {
+            background-color: #eee;
+            border: 1px solid #999;
+            display: block;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>General</h1>
+        <p>StrainTool allows the estimation of Strain Tensor parameters, on the
+        earth's crust, given a list of data point, aka points on the earth along
+        with their tectonic velocities.</p> 
+        <p>StrainTool has three basic components:
+            <ul>
+            <li>A python package, named <code>pystrain</code></li>
+            <li>The main executable, named <code>StrainTensor.py</code></li>
+            <li>A list of shell scripts to plot results from <code>StrainTensor.py</code></li>
+            </ul>
+        </p>
+        <h2 id="pystrain_pkg">pystrain Package</h2>
+        <p><code>pystrain</code> is a package written in <a href="https://www.python.org/">python</a>,
+        defining a variety of functions, classes, etc to enable the computation of
+        strain tensors.</p>
+        <p>When installing this package, all of its modules will be available to
+        the user. It is the <i>core</i> part of the project and should be installed
+        before the main program (<code>StrainTensor.py</code>) can be used.</p>
+        <p>The package is found under <code>StrainTool/pystrain</code></p2>
+        <h2 id="straintensor_prg">StrainTensor.py</h2>
+        <p>This is the <i>main program</i>, i.e the program that the user will
+        run to produce strain tensor results. It is heavily dependant on the
+        <code>pystrain</code> package (so any change there will affect 
+        <code>StrainTensor.py</code>'s behaviour</p>
+        <p>This program does not need installation; it is just a pyrhon script.
+        The user may only need to change priviledges to make it executable</p>
+        <p><code>StrainTensor.py</code> is located at <code>StrainTool/bin</code></p2>
+        <h2 id="plot_tools_pck">Plot Tools</h2>
+        <p>By 'Plot Tools', we mean an array of shell (<a href="https://www.gnu.org/software/bash/">Bash</a>)
+        scripts that can be used to plot <code>StrainTensor.py</code> results.
+        These scripts actualy use <a href="http://gmt.soest.hawaii.edu/">GMT</a> to
+        perform the plotting. The scripts are an efficient, ready-to-use</p>
+        <p>It is by no means mandatory to use these scripts to plot the results; users
+        can use their own tools and/or scripts to do so. Actualy, this is a totaly
+        independent part of the Project and can be skipped alltogether.</p>
+        <p>These scripts, are found under <code>StrainTool/plot</code></p2>
+        <h1>Installation</h1>
+        <h2>Prerequisites</h2>
+        <p>To install the Project, you will need:
+        <ul>
+            <li><a href="https://www.python.org/downloads/">python</a>; the installation has been
+                tested under Versions 2.7 and 3.6 and both work fine.</li>
+            <li><a href="http://www.numpy.org/">NumPy</a>; NumPy is the fundamental
+                package for scientific computing with Python.</li>
+            <li><a href="https://www.scipy.org/">SciPy</a>; SciPy is a Python-based
+                ecosystem of open-source software for mathematics, science, and engineering.
+                Actualy, we are only using the <a href="https://docs.scipy.org/doc/scipy/reference/linalg.html">SciPy.linalg</a>
+                and <a href="https://docs.scipy.org/doc/scipy/reference/spatial.html">SciPy.spatial</a> modules.</li>
+        </ul>
+        Both <code>NumPy</code> and <code>SciPy</code> have extended installation guides
+        for most, if not all, operating systems.</p>
+        <p>To use the <a href="#plot_tools_pck">Plot Tools</a> bundle, you must have
+        <a href="http://gmt.soest.hawaii.edu/">GMT</a> installed, allong with a
+        variety of UNIX-based tools. If you are on a UNIX/Linux operating system,
+        most or all of them are pre-installed.</p>
+        <h2>Installation Procedure</h2>
+        <p>To install the Project, you actualy only need to install the
+        <a href="pystrain_pkg">pystrain</a> package. What this means, is that
+        python will see that the package modules are build and extracted to a suitable folder
+        on your local system (something like <code>/usr/lib/python2.7/site-packages/</code> on
+        a UNIX-like system). After this step, you will be able to make use of the
+        modules in the package, both for running <code>StrainTool.py</code> and
+        for any new program you may wish to code. <a href="#straintesnor_prg">StrainTensor.py</a>
+        and <a href="#plot_tools_pck">Plot Tools</a> are programs, so you do not
+        to "install" them.</p>
+        <p>To install <a href="pystrain_pkg">pystrain</a>, do the following:
+        <ol>
+            <li>go to the directory the package is located, i.e. <code>StrainTool/pystrain</code></li>
+            <li>the package comes with a <code>setup.py</code> script, so you only need
+            to run it (as root/administrator): <pre><code>$> python setup.py install</code></pre></li>
+        </ol>
+        That's it! The package modules should now be in place and you should be able to
+        use the main script, <a href="#straintesnor_prg">StrainTensor.py</a></p>
+        <h2>Example</h2>
+        <p>To validate that the installation has succeded, you can run a "test case"
+        scenario. Under the folder <code>data/</code>, you will find a file named
+        <code>CNRS_midas.vel</code>. This ascii file, contains velocity and coordinate information
+        for a large list of GPS/GNSS stations around the globe. We will use it to
+        perform a test run of <code>StrainTensor.py</code>.</p>
+        <p>Go to the <code>bin/</code> folder and execute the command:
+        <pre><code>./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c</code></pre>
+        <em>(You may not need the ./ part at the begining if you are on a Wnidows system)</em>. This command will
+        compute Strain Tensor parameters for approximately the whole of Greece, using the input file <code>CNRS_midas.vel</code>.
+        The results will be written in a (newly created) file, named <code>strain_info.dat</code>,
+        while station information will be written in the file <code>station_info.dat</code>
+        (this latter file is mainly used for plotting). You should be able to verify that
+        both files have been succesefuly created. </p>
+        <p>Under <code>data/</code> you will find the "reference" output files for checking,
+        named <code>strain_info.dat.ref</code> and <code>station_info.dat.ref</code>.
+        Verify that the files you have just created (placed under <code>bin/</code>)
+        contain the same results as the "reference" files (this can be very easily
+        performed using the <a href="https://www.gnu.org/software/diffutils/">diff</a> command).</p>
+        <h3>TODO: plot example files and compare</h3>
+        <h1>TODO: How to use StrainTensor.py</h1>
+        <h1>TODO: How to use Plot Tools</h1>
+        <h1>TODO: Background and Algorithms</h1>
+    </div>
+    <div class="container"> 
+        <h2>Strain Weighting Functions - Demo</h2>
+        <div id="chart_div">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div id="dparam_div">
+            Parameter D:
+            <input type="number" id="dparam" value="15">
+            <button onclick="submit_data();">Try it</button>
+            <div>
+            <h3>Weighting Functions</h3>
+            <p>The weighting functions are computed as follows:
+            Gaussian  Weighting Function: $$L_i = \exp(-{\Delta}R_i^{2} / D^{2})$$
+            Quadratic Weighting Function: $$L_i = 1/(1 + {\Delta}R_i^{2} / D^{2})$$
+            </p>
+            </div>
+        </div>
+    </div>
+    <div class="container"> 
+        <h2>Azimouthal Weighting Function - Demo</h2>
+        <div id="chart_div2">
+            <canvas id="myChart2"></canvas>
+        </div>
+    </div>
+    <h1>License</h1>
+    <h1>Authors & Bug Reports</h1>
+</body>
