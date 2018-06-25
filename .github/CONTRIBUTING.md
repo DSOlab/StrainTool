@@ -11,15 +11,21 @@
 ### git structure
 
 * __branch__ master/develop: stucture of main branch
-  	* src/
-  		* pystrain/
-    	* bin/
-  		* StrainTool
-  	* script/
-  		* gmtplot
-  	* docs/
-  		* Tutorial and user guide
-  	* .github/
+  	* bin/
+  		* StrainTensor.py : main script
+    	* data/
+  		* CNRS_midas.vel : valid input file
+		* station_info.dat.ref: "reference" output file
+		* strain_info.dat: "reference" output file
+  	* doc/
+  		* 
+  	* plot/
+  		* gmtstrainplot.py
+	* pystrain/
+		*
+	* test/
+	
+	* .github/
   		 MarkDown templates for issues, pull requests, contributions etc.
   		
 
