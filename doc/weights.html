@@ -3,7 +3,7 @@
 <html>
 
 <head>
-    <title>Strain Weighting</title>
+    <title>StrainTool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/javascript" src="straindoc.js"></script>
@@ -27,7 +27,40 @@
 
 <body>
     <div>
-        
+        <h1>General</h1>
+        <p>StrainTool allows the estimation of Strain Tensor parameters, on the
+        earth's crust, given a list of data point, aka points on the earth along
+        with their tectonic velocities.</p> 
+        <p>StrainTool has three basic components:
+            <ul>
+            <li>A python package, named <code>pystrain</code></li>
+            <li>The main executable, named <code>StrainTensor.py</code></li>
+            <li>A list of shell scripts to plot results from <code>StrainTensor.py</code></li>
+            </ul>
+        </p>
+        <h2>pystrain Package</h2>
+        <p><code>pystrain</code> is a package written in <a href="https://www.python.org/">python</a>,
+        defining a variety of functions, classes, etc to enable the computation of
+        strain tensors.</p>
+        <p>When installing this package, all of its modules will be available to
+        the user. It is the <i>core</i> part of the project and should be installed
+        before the main program (<code>StrainTensor.py</code>) can be used.</p>
+        <p>The package is found under <code>StrainTool/pystrain</code></p2>
+        <h2>StrainTensor.py</h2>
+        <p>This is the <i>main program</i>, i.e the program that the user will
+        run to produce strain tensor results. It is heavily dependant on the
+        <code>pystrain</code> package (so any change there will affect 
+        <code>StrainTensor.py</code>'s behaviour</p>
+        <p>This program does not need installation; it is just a pyrhon script.
+        The user may only need to change priviledges to make it executable</p>
+        <p><code>StrainTensor.py</code> is located at <code>StrainTool/bin</code></p2>
+        <h2>Plot Tools</h2>
+        <p>By 'Plot Tools', we mean an array of shell (<a href="https://www.gnu.org/software/bash/">Bash</a>)
+        scripts that can be used to plot <code>StrainTensor.py</code> results.
+        These scripts actualy use <a href="http://gmt.soest.hawaii.edu/">GMT</a> to
+        perform the plotting.</p>
+        It is by no means mandatory to use these scripts to plot the results; users
+        can use their own tools and/or scripts to do so.</p>
     </div>
     <div class="container"> 
         <h2>Strain Weighting Functions - Demo</h2>
