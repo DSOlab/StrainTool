@@ -1,0 +1,75 @@
+{
+    "license": "other-open", 
+    "description": "<p>beta version for testing</p>", 
+     "contributors": [
+        {
+            "orcid": "0000-0002-7680-7076", 
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "type": "Researcher", 
+            "name": "Dimitrios G. Anastasiou"
+        }, 
+        {
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "type": "Editor", 
+            "name": "Xanthos Papanikolaou"
+        }, 
+        {
+            "orcid": "0000-0002-7680-7076", 
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "type": "ContactPerson", 
+            "name": "Dimitrios G. Anastasiou"
+        }, 
+        {
+            "affiliation": "National Observatory of Athens", 
+            "type": "ContactPerson", 
+            "name": "Dr. Athanassios Ganas"
+        }
+    ], 
+    "title": "DSOlab/StrainTool: StrainTool v1.0-beta2.0", 
+    "notes": "additional notes", 
+    "grants": [
+        {
+            "id": "262229"
+        }
+    ], 
+    "references": [
+        "Shen, Z.-K., M. Wang, Y. Zeng, and F. Wang, (2015), Strain determination using spatially discrete geodetic data, Bull. Seismol. Soc. Am., 105(4), 2117-2127, doi: 10.1785/0120140247", 
+        "Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166"
+    ], 
+    "upload_type": "software", 
+    "version": "v1.0-beta2.0", 
+    "keywords": [
+        "strain tensor", 
+        "gnss velocities", 
+        "EPOS"
+    ], 
+    "publication_date": "2018-06-25", 
+    "creators": [
+        {
+            "orcid": "0000-0002-7680-7076", 
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "name": "Dimitrios G. Anastasiou"
+        }, 
+        {
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "name": "Xanthos Papanikolaou"
+        }, 
+        {
+            "affiliation": "National Obsrvatory of Athens", 
+            "name": "Dr. Athanassios Ganas"
+        }
+    ], 
+    "access_right": "open", 
+    "related_identifiers": [
+        {
+            "scheme": "url", 
+            "identifier": "https://github.com/DSOlab/StrainTool/tree/v1.0-beta2.0", 
+            "relation": "isSupplementTo"
+        }, 
+        {
+            "scheme": "doi", 
+            "identifier": "10.5281/zenodo.1297565", 
+            "relation": "isVersionOf"
+        }
+    ]
+}
