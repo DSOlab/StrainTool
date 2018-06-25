@@ -237,13 +237,6 @@ if args.method == 'shen':
                 node_nr += 1
                 print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
-                #print('[INFO] lon={:}, lat={:}'.format(degrees(clon), degrees(clat)))
-                #print('[INFO] Ux= {:10.5f}'.format(sstr.value_of('Ux')))
-                #print('[INFO] Uy= {:10.5f}'.format(sstr.value_of('Uy')))
-                #print('[INFO] tx= {:10.5f}'.format(sstr.value_of('taux')*1e6))
-                #print('[INFO] txy={:10.5f}'.format(sstr.value_of('tauxy')*1e6))
-                #print('[INFO] ty= {:10.5f}'.format(sstr.value_of('tauy')*1e6))
-                #print('[INFO] w=  {:10.5f}'.format(sstr.value_of('omega')*1e6))
                 strain_list.append(sstr)
             except RuntimeError:
                 print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(x,y))
@@ -257,9 +250,10 @@ else:
     for idx, trng in enumerate(tri.simplices):
         cx = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
         cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
-        sstr = VeisStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]])
-        estim2 = sstr.estimate()
-        clat, clon = utm2ell(cx, cy, utm_zone)
+        sstr = ShenStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
+        sstr.estimate()
+        sstr.print_details(fout, utm_zone)
+        # clat, clon = utm2ell(cx, cy, utm_zone)
         strain_list.append(sstr)
 
 fout.close()

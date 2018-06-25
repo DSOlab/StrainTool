@@ -34,7 +34,7 @@ def barycenter(sta_list):
         x_mean = (sta_list[i].lon + (i-1)*x_mean) / float(i)
     return x_mean, y_mean
 
-def ls_matrices_veis4(sta_lst, cx, cy):
+def OBSOLETE_ls_matrices_veis4(sta_lst, cx, cy):
     """  4-parameter deformation
          Dx = dx      + y rotation + x scale
          Dy =      dy - x rotation + y scale
@@ -61,7 +61,7 @@ def ls_matrices_veis4(sta_lst, cx, cy):
     # numpy.linalg.lstsq(A,b)
     return A, b
 
-def ls_matrices_veis6(sta_lst, cx, cy):
+def OBSOLETE_ls_matrices_veis6(sta_lst, cx, cy):
     """  6-parameter deformation
     """
     # numper of rows (observations)
@@ -109,6 +109,9 @@ class ShenStrain:
                 * dstep (float): step for range dmin, dmax (km)
                 * d_coef (float): optimal D value (km)
                 * cutoff_dis (float): cut off distance (km)
+                * weighting_function (str): can be shen (to use shen weighting
+                    algorithm), or equal_weights (to use equal weights for all
+                    stations)
 
         Note:
             The Station class has no x or y members; it only has lon and lat.
@@ -146,7 +149,7 @@ class ShenStrain:
         self.__lweights__ = None
         self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 
             'dmin': 1, 'dmax': 500, 'dstep': 2, 'd_coef': None,
-            'cutoff_dis': None}
+            'cutoff_dis': None, 'weighting_function': 'shen'}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 
             'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
         self.__vcv__ = None
@@ -241,6 +244,7 @@ class ShenStrain:
         for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
         return azimouths
 
+    ## TODO documentation in the following function needs update!!!
     def ls_matrices(self):
         """Construct Least Squares Matrices (A and b) to be solved for.
         
@@ -271,13 +275,22 @@ class ShenStrain:
         N = len(self.__stalst__)*2
         # number of columns (parameters)
         M = 6
-        # the (spatial) weights, i.e. Z(i)
-        if not self.__zweights__ or not self.__lweights__:
-            raise RuntimeError
-        d_coef = self.__options__['d_coef']
-        zw     = self.__zweights__
-        lw     = self.__lweights__
+        # the weights, i.e. W(i)
+        """
+        if self.__options__['weighting_function'] == 'shen':
+            if not self.__zweights__ or not self.__lweights__:
+                raise RuntimeError
+            d_coef = self.__options__['d_coef']
+            zw     = self.__zweights__
+            lw     = self.__lweights__
+        elif self.__options__['weighting_function'] == 'equal_weights':
+            for idx, sta in enumerate(self.__stalst__):
+                self.__zweights__[idx] = 1e0
+                self.__lweights__[idx] = 
         assert len(zw) == N/2 and len(zw) == len(lw), '[ERROR] Invalid weight arrays size.'
+        """
+        W = self.make_weight_matrix()
+        assert W.shape == (N,1)
         # distances, dx and dy for each station from (cx, cy). Each element of
         # the array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
@@ -288,8 +301,10 @@ class ShenStrain:
         i = 0
         for idx, sta in enumerate(self.__stalst__):
             dx, dy, dr = xyr[idx]
-            Wx     = (sigma0/sta.se)*sqrt(zw[idx]*lw[idx])
-            Wy     = (sigma0/sta.sn)*sqrt(zw[idx]*lw[idx])
+            # Wx     = (sigma0/sta.se)*sqrt(zw[idx]*lw[idx])
+            # Wy     = (sigma0/sta.sn)*sqrt(zw[idx]*lw[idx])
+            Wx     = W[i]
+            Wy     = W[i+1]
             A[i]   = [ Wx*j for j in [1e0, 0e0,  dx, dy, 0e0, dy] ]
             A[i+1] = [ Wy*j for j in [0e0, 1e0, 0e0, dx, dy, -dx] ]
             b[i]   = sta.ve * Wx
@@ -299,6 +314,51 @@ class ShenStrain:
         # we can solve this as:
         # numpy.linalg.lstsq(A,b)
         return A, b
+
+    ## TODO documentation in the following function needs update!!!
+    def make_weight_matrix(self):
+        """Construct the weight matrix.
+
+            This function will construct the weight matrix to be used for
+            strain estimation (in LSE). The weight matrix will be formed according
+            to the option in __options['weighting_function']__.
+            Note that the returned matrix is actually an array(!!) of shape
+            (N,1), where N = len(self.__stalst__)*2. Each element in the returned
+            matrix, will be the weight for the corresponding station's lon and
+            lat component. E.g., if __stalst__ = ['dyng', 'ankr', ...], then
+            W[0] is the x-weight of dyng, W[1] is the y-weight of dyng, W[2]
+            is the x-weight of ankr, W[3] is the y-weight of ankr ....
+
+            Returns:
+                The weight matrix computed, of size (2*len(__stalst__),1), where
+                W[0] <- weight of __stalst__[0] x component
+                W[1] <- weight of __stalst__[0] y component
+                W[2] <- weight of __stalst__[1] x component
+                [ ... ]
+        """
+        # std. deviation (a-priori)
+        sigma0 = 1e-3
+        # number of rows (observations)
+        N = len(self.__stalst__)*2
+        W = numpy.ones(shape=(N,1))
+        if self.__options__['weighting_function'] == 'shen':
+            if not self.__zweights__ or not self.__lweights__:
+                raise RuntimeError
+            d_coef = self.__options__['d_coef']
+            zw = self.__zweights__
+            lw = self.__lweights__
+            i = 0
+            for idx, sta in enumerate(self.__stalst__):
+                W[i]   = (sigma0/sta.se)*sqrt(zw[idx]*lw[idx])
+                W[i+1] = (sigma0/sta.sn)*sqrt(zw[idx]*lw[idx])
+                i += 2
+            assert i == N
+        elif self.__options__['weighting_function'] == 'equal_weights':
+            print('[DEBUG] Using equal-weight covar matrix!')
+            #pass
+        else:
+            raise RuntimeError
+        return W
 
     def z_weights(self, other_sta_lst=None):
         """Compute spatial (i.e. azimouthal coverage) weights.
@@ -727,46 +787,51 @@ class ShenStrain:
                 a-priori std. deviation). I think i need this here to compute
                 the a-posteriori std. deviation.
         """
-        if not self.__options__['d_coef']:
-            print('[DEBUG] Searching for optimal D parameter.')
-            if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
-                raise RuntimeError
-            lwghts, zwghts, d = self.find_optimal_d()
-            self.__stalst__ = self.filter_sta_wrt_distance(d)
-        else:
-            d = self.__options__['d_coef']
-            print('[DEBUG] Using optimal D parameter {}km.'.format(d))
-            self.__stalst__ = self.filter_sta_wrt_distance(d)
-            lwghts,_ = self.l_weights()
-            zwghts   = self.z_weights()
-        self.__zweights__ = zwghts
-        self.__lweights__ = lwghts
+        if self.__options__['weighting_function'] is 'shen':
+            if not self.__options__['d_coef']:
+                print('[DEBUG] Searching for optimal D parameter.')
+                if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
+                    raise RuntimeError
+                lwghts, zwghts, d = self.find_optimal_d()
+                self.__stalst__ = self.filter_sta_wrt_distance(d)
+            else:
+                d = self.__options__['d_coef']
+                print('[DEBUG] Using optimal D parameter {}km.'.format(d))
+                self.__stalst__ = self.filter_sta_wrt_distance(d)
+                lwghts,_ = self.l_weights()
+                zwghts   = self.z_weights()
+            self.__zweights__ = zwghts
+            self.__lweights__ = lwghts
         A, b = self.ls_matrices()
         VcV  = numpy.dot(A.T, A)
         m, n = A.shape
-        if m <= 3:
+        if m < 6:
             raise RuntimeError('Too few obs to perform LS.')
+        elif m == 6:
+            print('[DEBUG] Only 3 stations available; computing NOT estimating strain.')
+            self.__vcv__ = None
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
         estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         # Parameter variance-covariance matrix
-        try:
-            # A-posteriori std. deviation
-            sigma0_post = float(res[0])
-            # print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
-            bvar = linalg.inv(VcV) * sigma0_post
-            self.__vcv__ = bvar
-        except:
-            print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
-            self.__vcv__ = None
+        if m > 6:
+            try:
+                # A-posteriori std. deviation
+                sigma0_post = float(res[0])
+                # print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
+                bvar = linalg.inv(VcV) * sigma0_post
+                self.__vcv__ = bvar
+            except:
+                print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
+                self.__vcv__ = None
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
         self.__parameters__['taux']  = float(estim[2])
         self.__parameters__['tauxy'] = float(estim[3])
         self.__parameters__['tauy']  = float(estim[4])
         self.__parameters__['omega'] = float(estim[5])
-        if self.__vcv__ is None:
-            raise ArithmeticError('Failed to Compute var-covar matrix of parameters')
+        #if self.__vcv__ is None:
+        #    raise ArithmeticError('Failed to Compute var-covar matrix of parameters')
         return estim
 
 class VeisStrain:
