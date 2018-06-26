@@ -1,5 +1,3 @@
-<div>
-
 # StrainTool
 
 Software package to calculate strain tensor parameters
@@ -179,26 +177,26 @@ Plotting scripts are placed under `plot/` directory. They are:
 
 All of the scripts need the file named `default-param` to be in the same folder.**default-param file options**
 
-<pre id="block-samp" <samp="">        pth2inptf=../data/  # set default folder for input files (strain_info.dat, station_info.dat)
-	west, east, south, north, projscale, frame, sclength: set region parameters
-        STRSC=0.01 : set principal axis plot scale
-        ROTSC=.7 : set rotational rates plot scale
-        </pre>
+<pre id="block-samp" <samp="">   
+pth2inptf=../data/  # set default folder for input files (strain_info.dat, station_info.dat)
+west, east, south, north, projscale, frame, sclength: set region parameters
+STRSC=0.01 : set principal axis plot scale
+ROTSC=.7 : set rotational rates plot scale
+</pre>
 
 **gmtstrainplot.sh options:**
 
-<pre id="block-samp" <samp="">/*** Basic Plots & Background ***********************************/
+<pre id="block-samp" <samp="">
+Basic Plots & Background :
      -r | --region : region to plot (default Greece)
          usage: -r west east south north projscale frame
 
-/*** PLOT STATIONS **********************************************/
-     -psta [:=stations] plot only stations from input file
+PLot station and velocitiess:
+    -psta [:=stations] plot only stations from input file
+    -vhor (station_file)[:= horizontal velocities]
+    -vsc [:=velocity scale] change valocity scale default 0.05
 
-/*** PLOT VELOCITIES ********************************************/
-     -vhor (station_file)[:= horizontal velocities]
-     -vsc [:=velocity scale] change valocity scale default 0.05
-
-/*** PLOT STRAIN PARAMETERS *************************************/
+Plot strain tensor parameters:
      -str (strain file)[:= strains] Plot strain rates
      -rot (strain file)[:= rots] Plot rotational rates
      -gtot(strain file)[:=shear strain] plot total shear strain rate contours
@@ -208,61 +206,66 @@ All of the scripts need the file named `default-param` to be in the same folder.
      -strsc [:=strain scale]
      -rotsc [:=rotational scales]
 
-/*** OTHER OPRTIONS *********************************************/
+Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
      -jpg : convert eps file to jpg
      -h | --help : help menu
- Exit Status:    1 -> help message or error
- Exit Status:  = 0 -> sucesseful exit
-/***************************************************************/
-        </pre>
+</pre>
 
 For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
 
 <pre id="block-samp" <samp="">$>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
         </pre>
 
-# TODO: Background and Algorithms
+## Contributing
 
-</div>
+1. Create an issue and describe your idea
+2. [Fork it](https://github.com/demanasta/coulomb2gmt/network#fork-destination-box)
+3. Create your feature branch (`git checkout -b my-new-idea`)
+4. Commit your changes (`git commit -am 'Add some feature'`)
+5. Publish the branch (`git push origin my-new-idea`)
+6. Create a new Pull Request
+7. Profit! :white_check_mark:
 
-<div class="container">
 
-## Strain Weighting Functions - Demo
+## License
+[MIT-license](LICENSE)
 
-<div id="chart_div">
 
-<canvas id="myChart"></canvas>
+## Authors & Bug Reports
+**Dimitrios G. Anastasiou **
+> Dr.Eng Rural & Surveying Engineer
+> Dionysos Satellite Observatory - NTUA
+> dganastasiou@gmail.com
 
-</div>
+**Xanthos Papanikolaou**
+> Rural & Surveying Engineer
+> Dionysos Satellite Observatory - NTUA
+> [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
 
-<div id="dparam_div">Parameter D: <input type="number" id="dparam" value="15"> <button onclick="submit_data();">Try it</button>
+**Dr. Athanassios Ganas**
+> Research Director
+> Institute of Geodynamics
+> National Observatory of Athens 
+> [aganas@gein.noa.gr](mailto:aganas@gein.noa.gr)
 
-<div>
+## ChangeLog
 
-### Weighting Functions
+The history of releases can be viewed at [ChangeLog](.github/CHANGELOG.md)
 
-The weighting functions are computed as follows: Gaussian Weighting Function: $L_i = \exp(-{\Delta}R_i^{2} / D^{2})$ Quadratic Weighting Function: $L_i = 1/(1 + {\Delta}R_i^{2} / D^{2})$
+## Acknowlegments
+**EPOS IP - EPOS Implementation Phase 
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
 
-</div>
+Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.
 
-</div>
+## References
+* Shen, Z.-K., M. Wang, Y. Zeng, and F. Wang, (2015), Strain determination using spatially discrete geodetic data, Bull. Seismol. Soc. Am., 105(4), 2117-2127, doi: 10.1785/0120140247
 
-</div>
+* Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166
 
-<div class="container">
+* [The Generic Mappting Tools - GMT](http://gmt.soest.hawaii.edu/)
 
-## Azimouthal Weighting Function - Demo
+* Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org
 
-<div id="chart_div2">
-
-<canvas id="myChart2"></canvas>
-
-</div>
-
-</div>
-
-# License
-
-# Authors & Bug Reports
