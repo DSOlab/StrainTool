@@ -7,7 +7,7 @@ python:
 
 before_install:
  - sudo apt-get install -qq python-numpy python-scipy
- - - python pystrain/setup.py install
+ - python pystrain/setup.py install
 script:
  - bin/StrainTensor.py
  
