@@ -19,7 +19,7 @@
 #    usage          :
 #    GMT Modules    : gmtset, makecpt, psbasemap, xyz2grd, grdsample, grdimage,
 #                     pscoast, psscale, psxy, pstext, psvelo, psconvert
-#    UNIX progs     : awk, sed
+#    UNIX progs     : awk 
 #    exit code(s)   : 0 -> success
 #                   : 1 -> error
 #    discription    : 
@@ -43,16 +43,13 @@ function help {
 	echo "/*** Basic Plots & Background ***********************************/"
 	echo "     -r | --region : region to plot (default Greece)"
 	echo "         usage: -r west east south north projscale frame"
-# 	echo "     -faults [:= faults] plot NOA fault database"
-# 	echo "     -pcmt [:= plot cmt] plot HARVARD cmt and papazachos fm"
-# 	echo "     -topo [:= topography] plot topography"
 	echo ""
 	echo "/*** PLOT STATIONS ***********************************************/"
 	echo "     -psta [:=stations] plot only stations from input file"
 	echo ""
 	echo "/*** PLOT VELOCITIES ********************************************/"
 	echo "     -vhor (station_file)[:= horizontal velocities]  "
-	echo "     -vsc [:=velocity scale] change valocity scale default 0.05"
+	echo "     -vsc [:=velocity scale] change velocity scale default 0.05"
 	echo ""
 	echo "/*** PLOT STRAINS **********************************************/"
 	echo "     -str (strain file)[:= strains] Plot strain rates "
@@ -63,18 +60,15 @@ function help {
 	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
 	echo "     -strsc [:=strain scale]"
 	echo "     -rotsc [:=rotational scales]"
-# 	echo "     -max_str_value (value) [:=exclude] exclude bigger strain values"
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
 	echo "     -l | --labels : plot labels"
-# 	echo "     -leg [:=legend] insert legends"
-# 	echo "     -logo [:=logo] plot logo"
 	echo "     -jpg : convert eps file to jpg"
 	echo "     -h | --help : help menu"
 	echo " Exit Status:    1 -> help message or error"
 	echo " Exit Status:  = 0 -> sucesseful exit"
-# 	echo " run scr: ./gmtplot.sh -topo -jpg"
+	echo " run scr: ./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l"
 	echo "/*************************************************************/"
 	exit 1
 }
@@ -89,10 +83,9 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-beta1.0"
+VERSION="v.1.0-beta2.0"
 
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
-# 
 export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -167,7 +160,7 @@ do
 	shift
 	;;
     -psta)
-	pth2sta=../station_info.dat
+	pth2sta=${pth2inptf}/station_info.dat
 	PSTA=1
 	shift
 	;;
@@ -540,10 +533,10 @@ then
   fi
 
 # plot strain rates
-  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
+  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
@@ -552,14 +545,18 @@ then
   strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
   strsclon=$sclon
 
-  echo "$strsclon $strsclat 0 -100 90" \
+  echo "$strsclon $strsclat 0 -100 -45" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 100 0 90" \
+  echo "$strsclon $strsclat 100 0 -45" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9 0 1 CB 100 nstrain/y" \
-  | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
+  echo "$strsclon $strsclat 9,1,black 45 RB dextral" \
+  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+  echo "$strsclon $strsclat 9,1,black -45 LB sinistral" \
+  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+  echo "$strsclon $strsclat 9,1,black 0 CB 100 nstrain/y" \
+  | gmt pstext -Jm -R -Dj0c/1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -676,13 +673,6 @@ then
   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
 fi
 
-
-# awk 'NR > 1 {print $1,$2,0,$5*1e09,$6}' principal-axes.txt \
-# | gmt psvelo  -Jm $range -Sx${STRSC} -L -A5p+e -Gblue -W1p,blue -O -K -V${VRBLEVM} >> $outfile
-# awk 'NR > 1 {print $1,$2,$3*1e09,0,$4+90}' principal-axes.txt \
-# | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
-
-
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT ROTATIONAL RATES parameters
 if [ "$STRROT" -eq 1 ]
@@ -724,10 +714,6 @@ then
         -O -K -V${VRBLEVM} >> $outfile
   echo "$strsclon $strsclat 9 0 1 CB -0.05 / 0.05 ppm" \
   | gmt pstext -Jm -R -Dj0c/-.6c -Gwhite -O -K -V${VRBLEVM} >> $outfile
-
-# psvelo <<END -Jm $range -Sw2/1.e3 -Gred -E0/0/0/10 -L -A0.05/0/0  -V -K -O>> $outfile
-# 20.53726 38.33053 -0.001697 0.0001
-# END
 fi
 
 
