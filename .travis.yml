@@ -1,15 +1,16 @@
 sudo: required
 dist: xenial
 language: python
-virtualenv:
-  system_site_packages: true
+
 python:
   - "2.7"
+  - "3.5"
+before_install:
+ - sudo apt-get install -qq python-numpy python-scipy
+install:
+ - python pystrain/setup.py install
 
-script: 
-  - python pystrain/setup.py install
-  - source pystrain 
-  - cd bin
-  - python StrainTensor.py -i ../data/CNRS_midas.vel
-
+script:
+ - bin/StrainTensor.py
+ 
 after_script: cd ~
