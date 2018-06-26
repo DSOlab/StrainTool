@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.0-beta2.0.1](https://github.com/DSOlab/StrainTool/tree/v1.0-beta2.0.1) (2018-06-25)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-beta2.0...v1.0-beta2.0.1)
+
+## [v1.0-beta2.0](https://github.com/DSOlab/StrainTool/tree/v1.0-beta2.0) (2018-06-25)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-beta1.0...v1.0-beta2.0)
+
+**Implemented enhancements:**
+
+- Docs patch [\#19](https://github.com/DSOlab/StrainTool/pull/19) ([demanasta](https://github.com/demanasta))
+- Pretty code [\#18](https://github.com/DSOlab/StrainTool/pull/18) ([demanasta](https://github.com/demanasta))
+
+**Merged pull requests:**
+
+- Create LICENSE [\#17](https://github.com/DSOlab/StrainTool/pull/17) ([xanthospap](https://github.com/xanthospap))
+
 ## [v1.0-beta1.0](https://github.com/DSOlab/StrainTool/tree/v1.0-beta1.0) (2018-06-21)
 **Implemented enhancements:**
 

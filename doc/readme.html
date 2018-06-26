@@ -265,18 +265,16 @@ Code Longtitude Latitude Ve Vn
 
         <b>gmtstrainplot.sh options:</b>
         <pre id="block-samp"<samp>
-/*** Basic Plots & Background ***********************************/
+Basic Plots & Background :
      -r | --region : region to plot (default Greece)
          usage: -r west east south north projscale frame
 
-/*** PLOT STATIONS **********************************************/
-     -psta [:=stations] plot only stations from input file
+PLot station and velocitiess:
+    -psta [:=stations] plot only stations from input file
+    -vhor (station_file)[:= horizontal velocities]
+    -vsc [:=velocity scale] change valocity scale default 0.05
 
-/*** PLOT VELOCITIES ********************************************/
-     -vhor (station_file)[:= horizontal velocities]
-     -vsc [:=velocity scale] change valocity scale default 0.05
-
-/*** PLOT STRAIN PARAMETERS *************************************/
+Plot strain tensor parameters:
      -str (strain file)[:= strains] Plot strain rates
      -rot (strain file)[:= rots] Plot rotational rates
      -gtot(strain file)[:=shear strain] plot total shear strain rate contours
@@ -286,14 +284,11 @@ Code Longtitude Latitude Ve Vn
      -strsc [:=strain scale]
      -rotsc [:=rotational scales]
 
-/*** OTHER OPRTIONS *********************************************/
+Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
      -jpg : convert eps file to jpg
      -h | --help : help menu
- Exit Status:    1 -> help message or error
- Exit Status:  = 0 -> sucesseful exit
-/***************************************************************/
         </samp></pre>
         <p>For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
         <pre id="block-samp"<samp>
@@ -326,6 +321,49 @@ $>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
             <canvas id="myChart2"></canvas>
         </div>
     </div>
-    <h1>License</h1>
-    <h1>Authors & Bug Reports</h1>
+  <h2 id="contributing">Contributing</h2>
+    <ol>
+      <li>Create an issue and describe your idea</li>
+      <li><a href="https://github.com/demanasta/coulomb2gmt/network#fork-destination-box">Fork it</a></li>
+      <li>Create your feature branch (<code>git checkout -b my-new-idea</code>)</li>
+      <li>Commit your changes (<code>git commit -am 'Add some feature'</code>)</li>
+      <li>Publish the branch (<code>git push origin my-new-idea</code>)</li>
+      <li>Create a new Pull Request</li>
+      <li>Profit! :white<em>check</em>mark:</li>
+    </ol>
+
+  <h1 id="license">License</h2>
+    <p>The work is licensed under <a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/.github/CHANGELOG.md">MIT-license</a></p>
+  
+  <h1 id="authorsbugreports">Authors &amp; Bug Reports</h2>
+    <p><strong>Dimitrios G. Anastasiou</strong></p>
+    <blockquote>
+      <p>Dr.Eng Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:dganastasiou@gmail.com">dganastasiou@gmail.com</p></a>
+    </blockquote>
+
+    <p><strong>Xanthos Papanikolaou</strong></p>
+    <blockquote>
+      <p>Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:xanthos@mail.ntua.gr">xanthos@mail.ntua.gr</a></p>
+    </blockquote>
+
+    <p><strong>Dr. Athanassios Ganas</strong></p>
+    <blockquote>
+      <p>Research Director | Institute of Geodynamics | National Observatory of Athens | <a href="mailto:aganas@gein.noa.gr">aganas@gein.noa.gr</a></p>
+    </blockquote>
+
+  <h1 id="changelog">ChangeLog</h2>
+    <p>The history of releases can be viewed at <a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/.github/CHANGELOG.md">ChangeLog</a></p>
+  
+  <h1 id="acknowlegments">Acknowlegments</h2>
+    <p><strong>EPOS IP - EPOS Implementation Phase</strong></p>
+    <p>This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564</p>
+    <p>Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.</p>
+
+  <h1 id="references">References</h2>
+    <ul>
+      <li><p>Shen, Z.-K., M. Wang, Y. Zeng, and F. Wang, (2015), Strain determination using spatially discrete geodetic data, Bull. Seismol. Soc. Am., 105(4), 2117-2127, doi: 10.1785/0120140247</p></li>
+      <li><p>Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166</p></li>
+      <li><p>Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org</p></li>
+      <li><p><a href="http://gmt.soest.hawaii.edu/">The Generic Mappting Tools - GMT</a></p></li>
+    </ul>
 </body>

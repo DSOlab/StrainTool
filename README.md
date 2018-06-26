@@ -230,32 +230,26 @@ For exanple, to plot the principal axis fo strain rates for the example case abo
 
 
 ## License
-[MIT-license](LICENSE)
+The work is licensed under [MIT-license](LICENSE)
 
 
 ## Authors & Bug Reports
-**Dimitrios G. Anastasiou **
-> Dr.Eng Rural & Surveying Engineer
-> Dionysos Satellite Observatory - NTUA
-> dganastasiou@gmail.com
+**Dimitrios G. Anastasiou**
+> Dr.Eng Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
 
 **Xanthos Papanikolaou**
-> Rural & Surveying Engineer
-> Dionysos Satellite Observatory - NTUA
-> [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
+> Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
 
 **Dr. Athanassios Ganas**
-> Research Director
-> Institute of Geodynamics
-> National Observatory of Athens 
-> [aganas@gein.noa.gr](mailto:aganas@gein.noa.gr)
+> Research Director | Institute of Geodynamics | National Observatory of Athens | [aganas@gein.noa.gr](mailto:aganas@gein.noa.gr)
 
 ## ChangeLog
 
 The history of releases can be viewed at [ChangeLog](.github/CHANGELOG.md)
 
 ## Acknowlegments
-**EPOS IP - EPOS Implementation Phase 
+**EPOS IP - EPOS Implementation Phase**
+
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
 
 Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.
@@ -265,7 +259,7 @@ Disclaimer: the content of this website reflects only the author’s view and th
 
 * Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166
 
-* [The Generic Mappting Tools - GMT](http://gmt.soest.hawaii.edu/)
-
 * Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org
+
+* [The Generic Mappting Tools - GMT](http://gmt.soest.hawaii.edu/)
 
