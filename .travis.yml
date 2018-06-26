@@ -21,7 +21,8 @@ matrix:
           packages:
             - python-numpy
             - python-scipy
-
+before_script:
+ - export PYTHONPATH=$PYTHONPATH:/home/travis/.local/lib/python2.7/site-packages/
 install:
  - python pystrain/setup.py install
  - pip install -r test/requirements.txt
