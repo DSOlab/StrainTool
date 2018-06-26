@@ -5,4 +5,5 @@ python:
 
 script: 
   - python pystrain/setup.py install
-  - python bin/StrainTensor.py -i data/CNRS_midas.vel
+  - cd bin
+  - python StrainTensor.py -i ../data/CNRS_midas.vel
