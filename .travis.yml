@@ -5,11 +5,10 @@ language: python
 python:
   - "2.7"
 
-before_install:
- - sudo apt-get install -qq python-numpy python-scipy
 install:
+ - pip install -r tests/requirements.txt
  - python pystrain/setup.py install
 script:
- - bin/StrainTensor.py
+ - bin/StrainTensor.py -i data/CNRS_midas.vel
  
 after_script: cd ~
