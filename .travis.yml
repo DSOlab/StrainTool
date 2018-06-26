@@ -1,9 +1,15 @@
+sudo: required
+dist: xenial
 language: python
-
+virtualenv:
+  system_site_packages: true
 python:
   - "2.7"
 
 script: 
   - python pystrain/setup.py install
+  - source pystrain 
   - cd bin
   - python StrainTensor.py -i ../data/CNRS_midas.vel
+
+after_script: cd ~
