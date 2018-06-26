@@ -6,7 +6,7 @@ python:
   - "2.7"
 
 install:
- - pip install -r tests/requirements.txt
+ - pip install -r test/requirements.txt
  - python pystrain/setup.py install
 script:
  - bin/StrainTensor.py -i data/CNRS_midas.vel
