@@ -245,6 +245,7 @@ if args.method == 'shen':
         else:
             print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
 else:
+    dlnout = open('delaunay_info.dat', 'w')
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
     for idx, trng in enumerate(tri.simplices):
@@ -253,7 +254,8 @@ else:
         sstr = ShenStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
         sstr.estimate()
         sstr.print_details(fout, utm_zone)
-        # clat, clon = utm2ell(cx, cy, utm_zone)
+        print('> {:}, {:}, {:}'.format(sta_list_utm[trng[0]].name, sta_list_utm[trng[1]].name, sta_list_utm[trng[2]].name), file=dlnout)
+        print('{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}'.format(*[ degrees(x) for x in [sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat, sta_list_ell[trng[1]].lon, sta_list_ell[trng[1]].lat, sta_list_ell[trng[2]].lon, sta_list_ell[trng[2]].lat, sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat]]), file=dlnout)
         strain_list.append(sstr)
 
 fout.close()
