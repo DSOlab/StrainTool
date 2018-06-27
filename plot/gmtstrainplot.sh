@@ -118,6 +118,7 @@ GTOTAL=0
 GTOTALAXES=0
 DILATATION=0
 SECINV=0
+GRDDAT=1
 # MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -343,22 +344,22 @@ then
 fi
 
 ###check NOA FAULT catalogue
-if [ "$FAULTS" -eq 1 ]
-then
-  if [ ! -f $pth2faults ]
-  then
-    echo "[WARNING] NOA Faults database does not exist"
-    echo "          please download it and then use this switch"
-    FAULTS=0
-  fi
-fi
-
-###check LOGO file
-if [ ! -f "$pth2logos" ]
-then
-  echo "[WARNING] Logo file does not exist"
-  LOGO=0
-fi
+# if [ "$FAULTS" -eq 1 ]
+# then
+#   if [ ! -f $pth2faults ]
+#   then
+#     echo "[WARNING] NOA Faults database does not exist"
+#     echo "          please download it and then use this switch"
+#     FAULTS=0
+#   fi
+# fi
+# 
+# ###check LOGO file
+# if [ ! -f "$pth2logos" ]
+# then
+#   echo "[WARNING] Logo file does not exist"
+#   LOGO=0
+# fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
@@ -506,11 +507,15 @@ then
   Tmax=$(python -c "print(round(${T},-1))")
   gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
   
-  gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
-  gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -K -V${VRBLEVM}>> $outfile
-
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+    gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
+  else
+    gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
+    gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
+    gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -K -V${VRBLEVM}>> $outfile
+  fi
 #   gmt pscontour tmpgtot -R -J  -Wthin -Cinx.cpt -Lthinnest,- -Gd1i -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
