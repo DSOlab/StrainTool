@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=MAY-2018
+#    update list    : LAST_UPDATE=JUN-2018
 #    contact        : Demitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -61,10 +61,13 @@ function help {
 	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
 	echo "     -strsc [:=strain scale]"
 	echo "     -rotsc [:=rotational scales]"
+	echo "  *for -gtot | -dil | -secinv use +grd to plot gridded data"
+	echo "        ex:-gtot+grd "
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
 	echo "     -l | --labels : plot labels"
+	echo "     -mt | --map_title <title> : title map default none use quotes"
 	echo "     -jpg : convert eps file to jpg"
 	echo "     -h | --help : help menu"
 	echo " Exit Status:    1 -> help message or error"
@@ -84,7 +87,7 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-beta2.0"
+VERSION="v.1.0-beta4.0"
 
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
@@ -118,6 +121,7 @@ GTOTAL=0
 GTOTALAXES=0
 DILATATION=0
 SECINV=0
+GRDDAT=0
 # MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -204,9 +208,12 @@ do
 	shift
 	shift
 	;;
-    -gtot)
+    -gtot*)
 	pth2strinfo=${pth2inptf}/${2}
 	GTOTAL=1
+	if [ "${1:5:8}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
@@ -216,15 +223,21 @@ do
 	shift
 	shift
 	;;
-    -dil)
+    -dil*)
 	pth2strinfo=${pth2inptf}/${2}
 	DILATATION=1
+	if [ "${1:4:7}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
-    -secinv)
+    -secinv*)
 	pth2strinfo=${pth2inptf}/${2}
 	SECINV=1
+	if [ "${1:7:10}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
@@ -343,22 +356,22 @@ then
 fi
 
 ###check NOA FAULT catalogue
-if [ "$FAULTS" -eq 1 ]
-then
-  if [ ! -f $pth2faults ]
-  then
-    echo "[WARNING] NOA Faults database does not exist"
-    echo "          please download it and then use this switch"
-    FAULTS=0
-  fi
-fi
-
-###check LOGO file
-if [ ! -f "$pth2logos" ]
-then
-  echo "[WARNING] Logo file does not exist"
-  LOGO=0
-fi
+# if [ "$FAULTS" -eq 1 ]
+# then
+#   if [ ! -f $pth2faults ]
+#   then
+#     echo "[WARNING] NOA Faults database does not exist"
+#     echo "          please download it and then use this switch"
+#     FAULTS=0
+#   fi
+# fi
+# 
+# ###check LOGO file
+# if [ ! -f "$pth2logos" ]
+# then
+#   echo "[WARNING] Logo file does not exist"
+#   LOGO=0
+# fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
@@ -501,20 +514,36 @@ then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1,$19}' $pth2strinfo > tmpgtot
-  gmt makecpt -Cjet -T0/100/1 > inx.cpt
-#   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
-  gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
-  gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -K -V${VRBLEVM}>> $outfile
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmpgtot | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1)+10)")
+  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+  
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+#   gmt surface tmpgtot -R -I1 -Gdata.nc
+# gmt grdcontour data.nc -J  -C10 -A50 -Gd3i -S4 -O -K -V${VRBLEVM} >> ${outfile}
 
+    gmt pscontour tmpgtot -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+#     gmt surface tmpgtot -R -I0.1 -Gtmpraws0.nc -T0.5
+#     gmt grdview tmpraws0.nc -R -J  -Cinx.cpt -Qs -O -K -V${VRBLEVM} >> ${outfile}
+    
+#     gmt triangulate tmpgtot -Grawt.nc -R -I0.1
+# gmt grdfilter rawt.nc -Gfiltered.nc -D0 -Fc1
+# gmt grdview filtered.nc -R -J -B -Cinx.cpt -Ts -O -K -V${VRBLEVM} >> ${outfile}
+  else
+    gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
+    gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
+    gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -K -V${VRBLEVM}>> $outfile
+  fi
+#   gmt pscontour tmpgtot -R -J  -Wthin -Cinx.cpt -Lthinnest,- -Gd1i -O -K -V${VRBLEVM} >> ${outfile}
+#   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
 # plot stations
@@ -591,19 +620,28 @@ then
   echo "...plot dilatation..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
-  gmt makecpt -Cjet -T-150/150/5 > inx.cpt
-#   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
-  gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
-  gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -V${VRBLEVM} -K >> $outfile
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmpdil | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1)+10)")
+  T=`awk '{print $3}' tmpdil | gmt info -El `
+  Tmin=$(python -c "print(round(${T},-1)-10)")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
 
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+    gmt pscontour tmpdil -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+  else 
+    gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
+    gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
+    gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -V${VRBLEVM} -K >> $outfile
+  fi
+  
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
@@ -628,19 +666,26 @@ then
   echo "...plot 2nd invariant..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1, $25}' $pth2strinfo >tmp2inv
-  gmt makecpt -Cjet -T0/150/1 > inx.cpt
-#   gmt pscontour tmp2inv -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmp2inv -R -J -I -Cinx.cpt -O -K >> $outfile
-  gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
-  gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
-  gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -V${VRBLEVM} -K >> $outfile
-
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmp2inv | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1)+10)")
+  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+  
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+    gmt pscontour tmp2inv -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+  else 
+    gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
+    gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
+    gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -V${VRBLEVM} -K >> $outfile
+  fi
+  
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
