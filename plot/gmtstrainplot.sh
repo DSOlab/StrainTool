@@ -118,7 +118,7 @@ GTOTAL=0
 GTOTALAXES=0
 DILATATION=0
 SECINV=0
-GRDDAT=1
+GRDDAT=0
 # MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -205,9 +205,12 @@ do
 	shift
 	shift
 	;;
-    -gtot)
+    -gtot*)
 	pth2strinfo=${pth2inptf}/${2}
 	GTOTAL=1
+	if [ "${1:5:8}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
@@ -217,15 +220,21 @@ do
 	shift
 	shift
 	;;
-    -dil)
+    -dil*)
 	pth2strinfo=${pth2inptf}/${2}
 	DILATATION=1
+	if [ "${1:4:7}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
-    -secinv)
+    -secinv*)
 	pth2strinfo=${pth2inptf}/${2}
 	SECINV=1
+	if [ "${1:7:10}" == "+grd" ]; then
+	  GRDDAT=1
+	fi
 	shift
 	shift
 	;;
@@ -504,12 +513,21 @@ then
   awk 'NR > 2 {print $2,$1,$19}' $pth2strinfo > tmpgtot
   # find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1))")
+  Tmax=$(python -c "print(round(${T},-1)+10)")
   gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
   then
-    gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
+#   gmt surface tmpgtot -R -I1 -Gdata.nc
+# gmt grdcontour data.nc -J  -C10 -A50 -Gd3i -S4 -O -K -V${VRBLEVM} >> ${outfile}
+
+    gmt pscontour tmpgtot -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+#     gmt surface tmpgtot -R -I0.1 -Gtmpraws0.nc -T0.5
+#     gmt grdview tmpraws0.nc -R -J  -Cinx.cpt -Qs -O -K -V${VRBLEVM} >> ${outfile}
+    
+#     gmt triangulate tmpgtot -Grawt.nc -R -I0.1
+# gmt grdfilter rawt.nc -Gfiltered.nc -D0 -Fc1
+# gmt grdview filtered.nc -R -J -B -Cinx.cpt -Ts -O -K -V${VRBLEVM} >> ${outfile}
   else
     gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
     gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
@@ -601,17 +619,21 @@ then
   awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1))")
+  Tmax=$(python -c "print(round(${T},-1)+10)")
   T=`awk '{print $3}' tmpdil | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1))")
-  echo $Tmin $Tmax
+  Tmin=$(python -c "print(round(${T},-1)-10)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
 
-  gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
-  gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
-  gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -V${VRBLEVM} -K >> $outfile
-
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+    gmt pscontour tmpdil -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+  else 
+    gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
+    gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
+    gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -V${VRBLEVM} -K >> $outfile
+  fi
+  
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
@@ -643,14 +665,19 @@ then
   awk 'NR > 2 {print $2,$1, $25}' $pth2strinfo >tmp2inv
   # find min max and create cpt file
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1))")
+  Tmax=$(python -c "print(round(${T},-1)+10)")
   gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
   
-  gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
-  gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
-  gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
-      -O -V${VRBLEVM} -K >> $outfile
-
+  if [ "${GRDDAT}" -eq 0 ]
+  then
+    gmt pscontour tmp2inv -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
+  else 
+    gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
+    gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
+    gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+	-O -V${VRBLEVM} -K >> $outfile
+  fi
+  
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
