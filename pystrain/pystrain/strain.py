@@ -58,6 +58,10 @@ class ShenStrain:
                 * weighting_function (str): can be shen (to use shen weighting
                     algorithm), or equal_weights (to use equal weights for all
                     stations)
+                * verbose_mode (bool): sets verbose mde on if True; i.e. print
+                  debugging messages
+            vprint (function): if the instance is created with with verbose_mode
+                on, then this function is just print(); else vprint is a noop.
 
         Note:
             The Station class has no x or y members; it only has lon and lat.
@@ -87,18 +91,33 @@ class ShenStrain:
                     * dmax (float): max D value for finding optimal D (km)
                     * dstep (float): step for range dmin, dmax (km)
                     * d_coef (float): optimal D value (km)
+                    * cutoff_dis (float): cut off distance (km)
+                    * weighting_function (str): can be shen (to use shen 
+                      weighting algorithm), or equal_weights (to use equal 
+                      weights for all stations)
+                    * verbose_mode (bool): sets verbose mde on if True; i.e.
+                      print debugging messages.
+
+            Warning:
+                the value of __options__[cutoff_dis] will be automatically set.
+                Even if the user specifies a value at the constrcutor, it will
+                change.
         """
+        ##  Set input values (x, y, station_list) and initiallize all others to
+        ##+ default values.
         self.__stalst__ = station_list
         self.__xcmp__   = x
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
-        self.__options__    = {'ltype': 'gaussian', 'Wt': 24, 
+        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 
             'dmin': 1, 'dmax': 500, 'dstep': 2, 'd_coef': None,
-            'cutoff_dis': None, 'weighting_function': 'shen'}
+            'cutoff_dis': None, 'weighting_function': 'shen',
+            'verbose_mode': False}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 
             'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
         self.__vcv__ = None
+        ## Resolve the dictionary passed in (if any)
         for key in kwargs:
             if key in self.__options__:
                 self.__options__[key] = kwargs[key]
@@ -106,6 +125,9 @@ class ShenStrain:
             self.__options__['cutoff_dis'] = 2.15e0
         else:
             self.__options__['cutoff_dis'] = 10e0
+        ##  If in verbose_mode, set the vprint function to print; else vprint is
+        ##+ a noop
+        self.vprint = print if self.__options__['verbose_mode'] else lambda *a, **k: None
 
     def clean_weight_matrices(self):
         """Set both distance and spatial weight lists to None
@@ -300,7 +322,7 @@ class ShenStrain:
                 i += 2
             assert i == N
         elif self.__options__['weighting_function'] == 'equal_weights':
-            print('[DEBUG] Using equal-weight covar matrix!')
+            self.vprint('[DEBUG] Using equal-weight covar matrix!')
             #pass
         else:
             raise RuntimeError
@@ -658,13 +680,6 @@ class ShenStrain:
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
             novar, azim, novar, dilat*1e9, novar, sec_inv*1e9), file=fout)
 
-    def OBSOLETE_set_options(self, **kargs):
-        for opt in kargs:
-            if opt not in self.__options__:
-                print('[DEBUG] Option {:} not relevant for ShenStrain. Ommiting')
-            else:
-                self.__options__[opt] = kargs[opt]
-
     def value_of(self, key):
         """Kinda getter.
 
@@ -733,14 +748,14 @@ class ShenStrain:
         """
         if self.__options__['weighting_function'] is 'shen':
             if not self.__options__['d_coef']:
-                print('[DEBUG] Searching for optimal D parameter.')
+                self.vprint('[DEBUG] Searching for optimal D parameter.')
                 if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
                     raise RuntimeError
                 lwghts, zwghts, d = self.find_optimal_d()
                 self.__stalst__ = self.filter_sta_wrt_distance(d)
             else:
                 d = self.__options__['d_coef']
-                print('[DEBUG] Using optimal D parameter {}km.'.format(d))
+                self.vprint('[DEBUG] Using optimal D parameter {}km.'.format(d))
                 self.__stalst__ = self.filter_sta_wrt_distance(d)
                 lwghts,_ = self.l_weights()
                 zwghts   = self.z_weights()
@@ -752,7 +767,7 @@ class ShenStrain:
         if m < 6:
             raise RuntimeError('Too few obs to perform LS.')
         elif m == 6:
-            print('[DEBUG] Only 3 stations available; computing NOT estimating strain.')
+            self.vprint('[DEBUG] Only 3 stations available; computing NOT estimating strain.')
             self.__vcv__ = None
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
@@ -766,7 +781,7 @@ class ShenStrain:
                 bvar = linalg.inv(VcV) * sigma0_post
                 self.__vcv__ = bvar
             except:
-                print('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
+                self.vprint('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
                 self.__vcv__ = None
         self.__parameters__['Ux']    = float(estim[0])
         self.__parameters__['Uy']    = float(estim[1])
@@ -785,7 +800,6 @@ class VeisStrain:
         self.__ycmp__   = y
         self.__options__  = {}
         self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
-        # self.__parameters__ = {'tx':0e0, 'ty':0e0, 'exx':0e0, 'exy':0e0, 'eyx':0e0, 'eyy':0e0}
 
     def value_of(self, key):
         if key == 'x':
