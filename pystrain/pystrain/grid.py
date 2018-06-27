@@ -64,9 +64,9 @@ class Grid:
         #+ a floor() so, 7.99999999.... will became a '7' not an '8'.
         self.xpts   = int((x_max-x_min) / x_step + .49e0)
         self.ypts   = int((y_max-y_min) / y_step + .49e0)
-        print('[DEGUB] Grid x-axis details: x_min {}, x_max {}, x_step {}, #pts {}, computed end at {}, diff {}'.format(self.x_min, self.x_max, self.x_step, self.xpts, x_min + self.xpts * x_step, abs(x_min + self.xpts * x_step - x_max)))
+        #print('[DEGUB] Grid x-axis details: x_min {}, x_max {}, x_step {}, #pts {}, computed end at {}, diff {}'.format(self.x_min, self.x_max, self.x_step, self.xpts, x_min + self.xpts * x_step, abs(x_min + self.xpts * x_step - x_max)))
         assert x_min + self.xpts * x_step <= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
-        print('[DEGUB] Grid y-ayis details: y_min {}, y_max {}, y_step {}, #pts {}, computed end at {}, diff {}'.format(self.y_min, self.y_max, self.y_step, self.ypts, y_min + self.ypts * y_step, abs(y_min + self.ypts * y_step - y_max)))
+        #print('[DEGUB] Grid y-ayis details: y_min {}, y_max {}, y_step {}, #pts {}, computed end at {}, diff {}'.format(self.y_min, self.y_max, self.y_step, self.ypts, y_min + self.ypts * y_step, abs(y_min + self.ypts * y_step - y_max)))
         assert y_min + self.ypts * y_step <= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step/float(2)
         assert self.xpts > 0 and self.ypts > 0
 
@@ -188,7 +188,7 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
         elif slat < y_min:
            y_min = slat
     # Adjust max and min to step.
-    print("\t[DEBUG] Region: Easting: {:}/{:} Northing: {:}/{:}".format(x_min, x_max, y_min, y_max))
+    #print("\t[DEBUG] Region: Easting: {:}/{:} Northing: {:}/{:}".format(x_min, x_max, y_min, y_max))
     s      = float((floor((y_max-y_min)/y_step)+1e0)*y_step)
     r      = s-(y_max-y_min)
     y_min -= r/2
@@ -199,8 +199,8 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
     x_min -= r/2
     x_max += r/2
     # assert divmod(x_max-x_min, x_step)[1] == 0e0
-    print("\t[DEBUG] Adjusted Easting : from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step))
-    print("\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step))
+    #print("\t[DEBUG] Adjusted Easting : from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step))
+    #print("\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step))
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
