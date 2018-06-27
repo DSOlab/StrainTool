@@ -46,6 +46,7 @@ function help {
 	echo ""
 	echo "/*** PLOT STATIONS ***********************************************/"
 	echo "     -psta [:=stations] plot only stations from input file"
+	echo "     -deltr [:= delaunay triangles] plot delaunay triangles"
 	echo ""
 	echo "/*** PLOT VELOCITIES ********************************************/"
 	echo "     -vhor (station_file)[:= horizontal velocities]  "
@@ -109,6 +110,7 @@ LEGEND=0
 LOGO=0
 
 PSTA=0
+DELTR=0
 VHORIZONTAL=0
 STRAIN=0
 STRROT=0
@@ -162,6 +164,11 @@ do
     -psta)
 	pth2sta=${pth2inptf}/station_info.dat
 	PSTA=1
+	shift
+	;;
+    -deltr)
+	pth2deltr=${pth2inptf}/delaunay_info.dat
+	DELTR=1
 	shift
 	;;
     -vhor)
@@ -294,6 +301,18 @@ then
   if [ ! -f $pth2sta ]
   then
     echo "[WARNING] input file $pth2sta does not exist"
+    echo "          please download it and then use this switch"
+    PSTA=0
+    exit 1
+  fi
+fi
+
+##check inputfiles
+if [ "$DELTR" -eq 1 ]
+then
+  if [ ! -f $pth2deltr ]
+  then
+    echo "[WARNING] input file $pth2deltr does not exist"
     echo "          please download it and then use this switch"
     PSTA=0
     exit 1
@@ -518,6 +537,12 @@ fi
 if [ "$GTOTALAXES" -eq 1 ]
 then
   echo "...plot dextral and sinistral maximum shear strain axes..."
+  #   plot delaunay
+  if [ "${DELTR}" -eq 1 ]
+  then
+    gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
+  fi
+  
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
@@ -638,6 +663,12 @@ fi
 if [ "$STRAIN" -eq 1 ]
 then
   echo "...plot principal axes of strain rates..."
+#   plot delaunay
+  if [ "${DELTR}" -eq 1 ]
+  then
+    gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
+  fi
+  
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
@@ -678,6 +709,12 @@ fi
 if [ "$STRROT" -eq 1 ]
 then
   echo "...plot rotational rates..."
+  #   plot delaunay
+  if [ "${DELTR}" -eq 1 ]
+  then
+    gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
+  fi
+  
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
