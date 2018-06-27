@@ -242,13 +242,14 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
         N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
         assert ZN == utm_zone
         vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
+        print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
         ## Construct the Strain instance, with all args (from input)
         sstr = ShenStrain(E, N, sta_list_utm, **dargs)
         ## check azimouth coverage (aka max β angle)
         if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
                 sstr.estimate()
-                vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
+                vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
                 # strain_list.append(sstr)
                 nodes_estim += 1
@@ -268,6 +269,7 @@ else:
     tri = Delaunay(points)
     print('[DEBUG] Number of Delaunay triangles: {}'.format(len(tri.simplices)))
     for idx, trng in enumerate(tri.simplices):
+        print('[DEBUG] {:5d}/{:7d}'.format(idx+1, len(tri.simplices)), end="\r")
         ## triangle barycentre
         cx = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
         cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
