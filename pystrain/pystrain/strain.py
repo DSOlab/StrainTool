@@ -34,60 +34,6 @@ def barycenter(sta_list):
         x_mean = (sta_list[i].lon + (i-1)*x_mean) / float(i)
     return x_mean, y_mean
 
-def OBSOLETE_ls_matrices_veis4(sta_lst, cx, cy):
-    """  4-parameter deformation
-         Dx = dx      + y rotation + x scale
-         Dy =      dy - x rotation + y scale
-    """
-    # numper of rows (observations)
-    N = len(sta_lst)*2
-    # number of columns (parameters)
-    M = 4
-    cc  = Station(lon=cx, lat=cy)
-    xyr = [ x.distance_from(cc) for x in sta_lst ]
-    ## design matrix A, observation matrix b
-    A = numpy.zeros(shape=(N,M))
-    b = numpy.zeros(shape=(N,1))
-    i = 0
-    for idx,sta in enumerate(sta_lst):
-        dx, dy, dr = xyr[idx]
-        A[i]   = [ 1e0, 0e0,  dx, dy ]
-        A[i+1] = [ 0e0, 1e0, -dx, dy ]
-        b[i]   = (sta.ve/1000) * Wx
-        b[i+1] = (sta.vn/1000) * Wy
-        i+=2
-    assert i is N, "[DEBUG] Failed to construct ls matrices"
-    # we can solve this as:
-    # numpy.linalg.lstsq(A,b)
-    return A, b
-
-def OBSOLETE_ls_matrices_veis6(sta_lst, cx, cy):
-    """  6-parameter deformation
-    """
-    # numper of rows (observations)
-    N = len(sta_lst)*2
-    # number of columns (parameters)
-    M = 6
-    cc  = Station(lon=cx, lat=cy)
-    xyr = [ x.distance_from(cc) for x in sta_lst ]
-    ## design matrix A, observation matrix b
-    A = numpy.zeros(shape=(N,M))
-    b = numpy.zeros(shape=(N,1))
-    i = 0
-    for idx,sta in enumerate(sta_lst):
-        dx, dy, dr = xyr[idx]
-        A[i]   = [ 1e0, 0e0,  dy,  dx, dy,  0e0]
-        A[i+1] = [ 0e0, 1e0, -dx, 0e0, dx,   dy]
-        #A[i]    = [ 1e0, 0e0,  dx,  dy, 0e0, 0e0]
-        #A[i+1]  = [ 0e0, 1e0, 0e0, 0e0, -dx, dy ]
-        b[i]   = sta.ve/1000
-        b[i+1] = sta.vn/1000
-        i+=2
-    assert i is N, "[DEBUG] Failed to construct ls matrices"
-    # we can solve this as:
-    # numpy.linalg.lstsq(A,b)
-    return A, b
-
 class ShenStrain:
     """A class to represeent Strain Tensors.
 
@@ -395,8 +341,6 @@ class ShenStrain:
         n = len(stalst)
         thetas = self.compute_theta_angles(stalst)
         assert len(thetas) == n
-        # Now compute z = n*θ/4π and re-arrange so that we match the input sta_lst
-        # return [ x['w']*float(n)/(4e0*pi) for x in sorted(thetas, key=operator.itemgetter('nr')) ]
         wt_az = 0.25e0
         azi_avrg = wt_az * 360.0e0 / n
         azi_tot = (1.0e0+wt_az)*360.0e0

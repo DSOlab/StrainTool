@@ -149,33 +149,40 @@ parser.add_argument('--d-param',
     required=False,
     help='Only relevant for \'--mehod=shen\'. This is the \'D\' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.')
 
-##  Parse command line arguments.
-args = parser.parse_args()
-##  Collect args into a dictionary
+parser.add_argument('--verbose',
+    dest='verbose_mode',
+    help='Run in verbose mode (show debugging messages)',
+    action='store_true')
+
+##  Parse command line arguments and stack them in a dictionary
+args  = parser.parse_args()
 dargs = vars(args)
+
+## Verbose print (function only exists in verbose mode)
+vprint = print if args.verbose_mode else lambda *a, **k: None
 
 ##  Parse stations from input file; at input, station coordinates are in decimal
 ##+ degrees and velocities are in mm/yr.
-##+ After reading, station coordinates are in radians and velocities are in
+##  After reading, station coordinates are in radians and velocities are in
 ##+ m/yr.
 sta_list_ell = parse_ascii_input(args.gps_file)
 print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 
 ##  If a region is passed in, resolve it.
-##+ If cutting out-of-limits stations option is set, then only keep the
-##+ stations that fall within it.
+##+ If cutting out-of-limits stations option is set, or method is veis, then 
+##+ only keep the stations that fall within it.
 ##  The region coordinates (min/max pairs) should be given in decimal degrees.
 if args.region:
     try:
         lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
-        if args.cut_outoflim_sta:
+        if args.cut_outoflim_sta or args.method == 'veis':
             Napr = len(sta_list_ell)
-            #  Note that we have to convert radians to degrees for station coordinates,
-            #+ hence 'sta_list_to_degrees=True'
+            #  Note that we have to convert radians to degrees for station 
+            #+ coordinates, hence 'sta_list_to_degrees=True'
             sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
             Npst = len(sta_list_ell)
-            print('[DEBUG] Stations filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
-            print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
+            vprint('[DEBUG] Stations filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
+            vprint('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     except:
         ## TODO we should exit with error here
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region))
@@ -187,73 +194,82 @@ if args.region:
 mean_lon = degrees(sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell))
 utm_zone = floor(mean_lon/6)+31
 utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
-print('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
+vprint('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
 sta_list_utm = deepcopy(sta_list_ell)
 for idx, sta in enumerate(sta_list_utm):
     N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), utm_zone)
     sta_list_utm[idx].lon = E
     sta_list_utm[idx].lat = N
     assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
-print('[DEBUG] Station list transformed to UTM.')
+vprint('[DEBUG] Station list transformed to UTM.')
+
+##  Open file to write Strain Tensor estimates; write the header
+fout = open('strain_info.dat', 'w')
+vprint('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
+print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
+print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'nrad/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 
 ##  Compute only one Strain Tensor, at the region's barycenter; then exit.
 if args.one_tensor:
     if args.method == 'shen':
         sstr = ShenStrain(0e0, 0e0, sta_list_utm, **dargs)
-    else:
-        sstr = VeisStrain(0e0, 0e0, sta_list_utm)
     sstr.set_to_barycenter()
     sstr.estimate()
     sys.exit(0)
 
-##  Construct the grid, based on station coordinates (Ref. UTM)
-print('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
-fout = open('strain_info.dat', 'w')
-print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
-print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'nrad/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 strain_list = []
-if args.method == 'shen':
-    # Note that in the grid.generate_grid we transform lon/lat pairs to degrees.
+if args.method == 'shen':  ## Going for Shen algorithm ...
+    ##  Construct the grid, in ellipsoidal coordinates --degrees--. If a region
+    ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs 
+    ##+ to degrees and produce a grid from extracting min/max crds from the
+    ##+ station list.
     if args.region:
         grd = pystrain.grid.Grid(lonmin, lonmax, args.x_grid_step, latmin, latmax, args.y_grid_step)
     else:
         grd = pystrain.grid.generate_grid(sta_list_ell, args.x_grid_step, args.y_grid_step, True)
-    print('[DEBUG] Constructed the grid. Limits are:')
-    print('\tEasting : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
-    print('\tNorthing: from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
-    print('[DEBUG] Estimating strain tensor for each cell center')
+    vprint('[DEBUG] Constructed the grid. Limits are:')
+    vprint('\tLongtitude : from {} to {} with step {}'.format(grd.x_min, grd.x_max, grd.x_step))
+    vprint('\tLatitude   : from {} to {} with step {}'.format(grd.y_min, grd.y_max, grd.y_step))
+    vprint('[DEBUG] Estimating strain tensor for each cell center')
     ##  Iterate through the grid (on each cell center). Grid returns cell-centre
     ##+ coordinates in lon/lat pairs, in degrees!
     node_nr = 0
     for x, y in grd:
-        clat, clon =  radians(y), radians(x) #utm2ell(x, y, utm_zone)
+        clat, clon =  radians(y), radians(x)
         N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
         assert ZN == utm_zone
-        print('[DEBUG] Grid point at {:7.4f}, {:7.4f} or {:}, {:}'.format(x, y, E, N))
+        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
+        ## Construct the Strain instance, with all args (from input)
         sstr = ShenStrain(E, N, sta_list_utm, **dargs)
+        ## check azimouth coverage (aka max β angle)
         if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
-                estim2 = sstr.estimate()
-                node_nr += 1
-                print('[DEBUG] Computed tensor at {:7.4f}, {:7.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
+                sstr.estimate()
+                vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
                 strain_list.append(sstr)
             except RuntimeError:
-                print('[DEBUG] Too few observations to estimate strain at {:7.4f}, {:7.4f}. Point skipped.'.format(x,y))
+                vprint('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
             except ArithmeticError:
-                print('[DEBUG] Failed to compute parameter VcV matrix for strain at {:7.4f}, {:7.4f}. Point skipped'.format(x,y))
+                vprint('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
         else:
-            print('[DEBUG] Skipping computation at {:7.4f},{:7.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
+            vprint('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
+        node_nr += 1
 else:
+    ## Open file to write delaunay triangles.
     dlnout = open('delaunay_info.dat', 'w')
     points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
     tri = Delaunay(points)
     for idx, trng in enumerate(tri.simplices):
+        ## triangle barycentre
         cx = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
         cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
+        ##  Construct a strain instance, at the triangle's barycentre, with only
+        ##+ 3 points (in UTM) and equal_weights weighting scheme.
         sstr = ShenStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
         sstr.estimate()
         sstr.print_details(fout, utm_zone)
+        ## Print the triangle in the corresponding file (ellipsoidal crd, degrees)
         print('> {:}, {:}, {:}'.format(sta_list_utm[trng[0]].name, sta_list_utm[trng[1]].name, sta_list_utm[trng[2]].name), file=dlnout)
         print('{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}'.format(*[ degrees(x) for x in [sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat, sta_list_ell[trng[1]].lon, sta_list_ell[trng[1]].lat, sta_list_ell[trng[2]].lon, sta_list_ell[trng[2]].lat, sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat]]), file=dlnout)
         strain_list.append(sstr)
