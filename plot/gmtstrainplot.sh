@@ -501,20 +501,23 @@ then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1,$19}' $pth2strinfo > tmpgtot
-  gmt makecpt -Cjet -T0/100/1 > inx.cpt
-#   gmt pscontour tmpgtot -J -R -W.5p -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmpgtot | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1))")
+  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+  
   gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
   gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
   gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
       -O -K -V${VRBLEVM}>> $outfile
 
+#   gmt pscontour tmpgtot -R -J  -Wthin -Cinx.cpt -Lthinnest,- -Gd1i -O -K -V${VRBLEVM} >> ${outfile}
+#   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
 # plot stations
@@ -591,9 +594,14 @@ then
   echo "...plot dilatation..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
-  gmt makecpt -Cjet -T-150/150/5 > inx.cpt
-#   gmt pscontour tmpgtot -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmpgtot -R -J -I -Cinx.cpt -O -K >> $outfile
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmpdil | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1))")
+  T=`awk '{print $3}' tmpdil | gmt info -El `
+  Tmin=$(python -c "print(round(${T},-1))")
+  echo $Tmin $Tmax
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
+
   gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
   gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
   gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -601,9 +609,9 @@ then
 
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
@@ -628,9 +636,11 @@ then
   echo "...plot 2nd invariant..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1, $25}' $pth2strinfo >tmp2inv
-  gmt makecpt -Cjet -T0/150/1 > inx.cpt
-#   gmt pscontour tmp2inv -R -J -Wthin -Cinx.cpt  -O -K >> $outfile
-#   gmt pscontour tmp2inv -R -J -I -Cinx.cpt -O -K >> $outfile
+  # find min max and create cpt file
+  T=`awk '{print $3}' tmp2inv | gmt info -Eh `
+  Tmax=$(python -c "print(round(${T},-1))")
+  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+  
   gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
   gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
   gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -638,9 +648,9 @@ then
 
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  # pscoast -J -R -W -Di -O -K -UBL/3.8c/-3.2c/"DSO-HGL/NTUA" >> $ps
+  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
-  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B100/:"nstrain/y": -I -S \
+  gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
 # plot stations
