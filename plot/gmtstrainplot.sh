@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=MAY-2018
+#    update list    : LAST_UPDATE=JUN-2018
 #    contact        : Demitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -61,10 +61,13 @@ function help {
 	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
 	echo "     -strsc [:=strain scale]"
 	echo "     -rotsc [:=rotational scales]"
+	echo "  *for -gtot | -dil | -secinv use +grd to plot gridded data"
+	echo "        ex:-gtot+grd "
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
 	echo "     -l | --labels : plot labels"
+	echo "     -mt | --map_title <title> : title map default none use quotes"
 	echo "     -jpg : convert eps file to jpg"
 	echo "     -h | --help : help menu"
 	echo " Exit Status:    1 -> help message or error"
@@ -84,7 +87,7 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-beta2.0"
+VERSION="v.1.0-beta4.0"
 
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
