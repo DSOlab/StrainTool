@@ -17,6 +17,8 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
+Version = 'StrainTensor.py\nVersion: 1.0-beta (pre-release)'
+
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
     for sta in sta_lst:
@@ -154,9 +156,19 @@ parser.add_argument('--verbose',
     help='Run in verbose mode (show debugging messages)',
     action='store_true')
 
+parser.add_argument('-v',
+    dest='version',
+    help='Display version and exit.',
+    action='store_true')
+
 ##  Parse command line arguments and stack them in a dictionary
 args  = parser.parse_args()
 dargs = vars(args)
+
+##  Wait!! amybe we only want the version
+if args.version:
+    print('{}'.format(Version))
+    sys.exit(0)
 
 ## Verbose print (function only exists in verbose mode)
 vprint = print if args.verbose_mode else lambda *a, **k: None

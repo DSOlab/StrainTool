@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from math import sqrt, radians
+from math import sqrt, radians, sin, cos, atan2, pi
 
 # Any Station instance, can have any (or all) of these attributes
 station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
@@ -160,3 +160,41 @@ class Station:
         dlon = sta.lon - self.lon
         dlat = sta.lat - self.lat
         return dlon, dlat, sqrt(dlat*dlat + dlon*dlon)
+
+    def haversine_distance(self, sta, R=6371008.8e0):
+        """Distance between two point on sphere.
+
+            This function will calculate the distance on a spherical earth
+            (ignoring ellipsoidal effects), via the ‘haversine’ formula 
+            (great-circle distance between two points). Note that  using a 
+            spherical model gives errors typically up to 0.3%. 
+            If the calling station has index i and the station passed in
+            has index j, then the returned value is computed as
+            * δr = sta.lon - self.lon
+
+            Args:
+                sta (Station): a station instance
+                R (float): mean Earth's radius in meters
+
+            Returns:
+                tuple (float, float): First element is distance in m and second
+                    is the error, computed as 0.3%.
+
+            Warning:
+                It is assumed that the stations's (both calling instance and sta)
+                .lon and .lat components are in radians.
+
+        """
+        if self.lon < 0e0 or sta.lon < 0e0:
+            selflon, stalon = self.lon + 2e0*pi, sta.lon  + 2e0*pi
+        else:
+            selflon, stalon = self.lon, sta.lon
+        Df = sta.lat - self.lat
+        Dl = stalon - selflon
+        sinDf2 = sin(Df/2e0)
+        cosDf2 = cos(Df/2e0)
+        a  = sinDf2*sinDf2 + cos(sta.lat)*cos(self.lat)*sinDf2*sinDf2
+        c  = 2e0*atan2(sqrt(a), sqrt(1e0-a))
+        dr = R*c
+        ddr = (dr * 0.3e0) / 100e0
+        return dr, ddr

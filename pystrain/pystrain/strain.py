@@ -498,7 +498,7 @@ class ShenStrain:
                 if int(round(w)) >= int(self.__options__['Wt']):
                     return lwghts, zwghts, d
         # Fuck! cannot find optimal D
-        print('[ERROR] Cannot compute optimal D in weighting scheme')
+        self.vprint('[ERROR] Cannot compute optimal D in weighting scheme')
         raise RuntimeError
 
     def beta_angles(self):
