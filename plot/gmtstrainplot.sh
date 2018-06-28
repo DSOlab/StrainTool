@@ -209,10 +209,16 @@ do
 	shift
 	;;
     -gtot*)
-	pth2strinfo=${pth2inptf}/${2}
-	GTOTAL=1
 	if [ "${1:5:8}" == "+grd" ]; then
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTAL=1
 	  GRDDAT=1
+	elif [ "${1:5:8}" == "axes" ]; then
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTALAXES=1
+	else
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTAL=1
 	fi
 	shift
 	shift
@@ -400,68 +406,56 @@ then
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
 
-if [ "$TOPOGRAPHY" -eq 1 ]
-then
-  echo "...plot topography dem..."
-  # ####################### TOPOGRAPHY ###########################
-  # bathymetry
-  gmt makecpt -Cgebco.cpt -T-7000/0/50 -Z > $bathcpt
-  gmt grdimage $inputTopoB $range $proj -C$bathcpt -K > $outfile
-  gmt pscoast $proj -P $range -Df -Gc -K -O >> $outfile
-	# land
-  gmt makecpt -Cgray.cpt -T-6000/1800/50 -Z > $landcpt
-  gmt grdimage $inputTopoL $range $proj -C$landcpt  -K -O >> $outfile
-  gmt pscoast -R -J -O -K -Q >> $outfile
-	#------- coastline -------------------------------------------
-  gmt psbasemap -R -J -O -K -B$frame:."$maptitle":  $scale >> $outfile
-  gmt pscoast -J -R -Df -W0.25p,black -K  -O -U$logo_pos >> $outfile
-fi
-
-# //////////////////////////////////////////////////////////////////////////////
-#  PLOT NOA CATALOGUE FAULTS Ganas et.al, 2013
-if [ "$FAULTS" -eq 1 ]
-then
-  echo "...plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
-  gmt psxy $pth2faults -R -J -O -K  -W.5,204/102/0  >> $outfile
-fi
-
-# //////////////////////////////////////////////////////////////////////////////
-#  PLOT HARVARD CMT catalogue
-if [ "$PCMT" -eq 1 ]
-then
-# gmt	makecpt -Cseis -T0/150/10 -Z > seis2.cpt
-  gmt psmeca harvardcat.cmt -R -J -Sm0.3c/0 -G247/207/136 -W0.25p -T0 -O -K >> $outfile
-  gmt psmeca papazachos.cmt -R -Jm -Sa0.3/0 -h1 -CP0.25 -G110 -K -O -P >> $outfile
-fi
-
-# //////////////////////////////////////////////////////////////////////////////
-### PLOT STATIONS
-
-# if [ "$PSTA" -eq 1 ]
+# if [ "$TOPOGRAPHY" -eq 1 ]
 # then
-# # 	awk 'NR != 1 {print $1,$2,$3,$4,0,0,0,$8}' $pth2vhor | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile  # 205/133/63.
-# # 	awk -F, '{print $3, $2}' $pth2sta | gmt psxy -Jm -O -R -St0.17c -W0.01c -Gred -K >> $outfile
-# 	awk -F, '{print $1, $2}' $pth2inptf/ionpvel_vhor.sta | gmt psxy -Jm -O -R -St0.27c -W0.01c -Gblue -K >> $outfile
-# 	awk -F, '{print $1, $2}' $pth2inptf/ioncvel_vhor.sta | gmt psxy -Jm -O -R -St0.22c -W0.01c -Gred -K >> $outfile
+#   echo "...plot topography dem..."
+#   # ####################### TOPOGRAPHY ###########################
+#   # bathymetry
+#   gmt makecpt -Cgebco.cpt -T-7000/0/50 -Z > $bathcpt
+#   gmt grdimage $inputTopoB $range $proj -C$bathcpt -K > $outfile
+#   gmt pscoast $proj -P $range -Df -Gc -K -O >> $outfile
+# 	# land
+#   gmt makecpt -Cgray.cpt -T-6000/1800/50 -Z > $landcpt
+#   gmt grdimage $inputTopoL $range $proj -C$landcpt  -K -O >> $outfile
+#   gmt pscoast -R -J -O -K -Q >> $outfile
+# 	#------- coastline -------------------------------------------
+#   gmt psbasemap -R -J -O -K -B$frame:."$maptitle":  $scale >> $outfile
+#   gmt pscoast -J -R -Df -W0.25p,black -K  -O -U$logo_pos >> $outfile
+# fi
 # 
+# # //////////////////////////////////////////////////////////////////////////////
+# #  PLOT NOA CATALOGUE FAULTS Ganas et.al, 2013
+# if [ "$FAULTS" -eq 1 ]
+# then
+#   echo "...plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
+#   gmt psxy $pth2faults -R -J -O -K  -W.5,204/102/0  >> $outfile
+# fi
 # 
-# 	if [ "$LABELS" -eq 1 ]
-# 	then
-# # 		 awk -F, '{print $3,$2,7,0,1,"LM",$1}' $pth2sta | grep -v "PYLO" | gmt pstext -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-# 	gmt pstext $pth2inptf/ionpvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-# 	gmt pstext $pth2inptf/ioncvel_vhor.sta -Jm -R -Dj0.2c/0.2c -Gwhite -O -K -V>> $outfile
-# 	fi
-# 
-# echo "22.3 37.72" | gmt psxy -Jm -O -R -St0.27c -W0.01c -Gblue -K >> $outfile
-# echo "22.3 37.72 8 0 1 LM Permanent Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
-# echo "22.3 37.65" | gmt psxy -Jm -O -R -St0.22c -W0.01c -Gred -K >> $outfile
-# echo "22.3 37.65 8 0 1 LM Campaign Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
-# ###scale
-# # echo "$vsclon $vsclat $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/10 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
-# 
+# # //////////////////////////////////////////////////////////////////////////////
+# #  PLOT HARVARD CMT catalogue
+# if [ "$PCMT" -eq 1 ]
+# then
+# # gmt	makecpt -Cseis -T0/150/10 -Z > seis2.cpt
+#   gmt psmeca harvardcat.cmt -R -J -Sm0.3c/0 -G247/207/136 -W0.25p -T0 -O -K >> $outfile
+#   gmt psmeca papazachos.cmt -R -Jm -Sa0.3/0 -h1 -CP0.25 -G110 -K -O -P >> $outfile
 # fi
 
+# //////////////////////////////////////////////////////////////////////////////
+### PLOT ONLY STATIONS ITHOUT ANY OTHER PARAMETER
 
+if [ "$PSTA" -eq 1 ] && [ "$STRAIN" -eq 0 ] && [ "$STRROT" -eq 0 ] && [ "$GTOTAL" -eq 0 ] \
+    && [ "$DILATATION" -eq 0 ] && [ "$GTOTALAXES" -eq 0 ] && [ "$SECINV" -eq 0 ]
+  then
+
+    awk '{print $2,$3}' $pth2sta  \
+    | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
+    
+    if [ "$LABELS" -eq 1 ]
+    then
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
+    fi
+fi
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT HORIZONTAL VELOCITIES
@@ -492,19 +486,21 @@ then
     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
 ###scale
-# echo "$vsclon $vsclat $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
-# echo "$vsclon $vsclat $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
-# echo "$vsclon $vsclat 9 0 1 LB $vscmagn \261 1 mm/y" | gmt pstext -Jm -R -Dj-.3c/0.5c  -O -K -V>> $outfile
+# plot scale of strain rates
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
+  velsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  velsclon=$sclon
 
-# echo "22.48 37.70 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
-# echo "22.48 37.70 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,blue -A10p+e -Gblue -O -K -L -V >> $outfile
-# 
-# echo "22.48 37.65 $vscmagn 0 1 1 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,50 -A10p+e -Gblue -O -K -L -V >> $outfile
-# echo "22.48 37.65 $vscmagn 0 0 0 0 $vscmagn mm" | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W2p,red -A10p+e -Gblue -O -K -L -V >> $outfile
-# echo "22.45 37.69 8 0 1 LB $vscmagn \261 1 mm/y" | gmt pstext -Jm -R -Dj-.3c/0.5c  -O -K -V>> $outfile
-# echo "22.48 37.70 8 0 1 RM Permanent Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
-# echo "22.48 37.65 8 0 1 RM Campaign Sites" | gmt pstext -Jm -R -Dj0.4c/0.3c -Gwhite -O -K -V>> $outfile
-
+  echo "$velsclon $velsclat 20 0 1 1 0 " \
+  | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile
+  
+  echo "$velsclon $velsclat 20 0 5 5 0 " \
+  | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
+    -O -K -V${VRBLEVM} >> $outfile
+  
+  echo "$velsclon $velsclat 9,1,black 0 CB 20 \261 1 mm/y" \
+  | gmt pstext -Jm -R -Dj0c/.5c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
