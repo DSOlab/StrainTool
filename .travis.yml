@@ -2,16 +2,15 @@ language: python
 notifications:
   email: false
 sudo: true
-#python:
+python:
 #  - 2.7
 #  - 3.4
 #  - 3.5
 #  - 3.6 
+  - 3.7
 matrix:
   include:
-    - python: 
-        - 2.7
-        - 3.7
+    - python: 2.7
       dist: trusty
       sudo: required
       virtualenv:
