@@ -771,7 +771,7 @@ class ShenStrain:
             self.__vcv__ = None
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
-        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b, rcond=None)
+        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
         # Parameter variance-covariance matrix
         if m > 6:
             try:

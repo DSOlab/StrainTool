@@ -61,8 +61,8 @@ class Grid:
         self.y_step= y_step
         self.cxi    = 0      # current x-axis tick / index
         self.cyi    = 0      # current y-axis tick / index
-        self.xpts   = floor((x_max-x_min) / float(x_step))
-        self.ypts   = floor((y_max-y_min) / float(y_step))
+        self.xpts   = int(floor((x_max-x_min) / float(x_step)))
+        self.ypts   = int(floor((y_max-y_min) / float(y_step)))
         # if using ceil for pts number
         #assert x_min + self.xpts * x_step >= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
         #assert y_min + self.ypts * y_step >= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step/float(2)
