@@ -9,7 +9,9 @@ sudo: true
 #  - 3.6 
 matrix:
   include:
-    - python: 2.7
+    - python: 
+        - 2.7
+        - 3.7
       dist: trusty
       sudo: required
       virtualenv:
