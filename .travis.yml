@@ -29,6 +29,6 @@ install:
  - pip install -r test/requirements.txt
 
 script:
- - bin/StrainTensor.py -i data/CNRS_midas.vel
+ - bin/StrainTensor.py -i data/CNRS_midas.vel -r=18/30/34/43 -c
  
 after_script: cd ~
