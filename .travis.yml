@@ -22,7 +22,7 @@ matrix:
 before_script:
  - export PYTHONPATH=$PYTHONPATH:/home/travis/virtualenv/python2.7_with_system_site_packages/local/lib/python2.7/site-packages
 install:
- - python pystrain/setup.py install
+ - sudo python pystrain/setup.py install
  - pip install -r test/requirements.txt
 
 script:
