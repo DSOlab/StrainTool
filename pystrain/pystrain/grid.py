@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 from sys  import float_info
-from math import floor, radians, degrees
+from math import floor, radians, degrees, ceil, floor
 import numpy as np
 
 class Grid:
@@ -37,6 +37,7 @@ class Grid:
             ypts  : number of ticks on y-axis
     """
 
+    ## TODO write about ceil/floor and [x|y]_max in documentation
     def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
         """Constructor via x- and y- axis limits.
 
@@ -60,14 +61,14 @@ class Grid:
         self.y_step= y_step
         self.cxi    = 0      # current x-axis tick / index
         self.cyi    = 0      # current y-axis tick / index
-        #  Watch out for the float-to-integer conversion! Python's int is basicaly
-        #+ a floor() so, 7.99999999.... will became a '7' not an '8'.
-        self.xpts   = int((x_max-x_min) / x_step + .49e0)
-        self.ypts   = int((y_max-y_min) / y_step + .49e0)
-        #print('[DEGUB] Grid x-axis details: x_min {}, x_max {}, x_step {}, #pts {}, computed end at {}, diff {}'.format(self.x_min, self.x_max, self.x_step, self.xpts, x_min + self.xpts * x_step, abs(x_min + self.xpts * x_step - x_max)))
-        assert x_min + self.xpts * x_step <= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
-        #print('[DEGUB] Grid y-ayis details: y_min {}, y_max {}, y_step {}, #pts {}, computed end at {}, diff {}'.format(self.y_min, self.y_max, self.y_step, self.ypts, y_min + self.ypts * y_step, abs(y_min + self.ypts * y_step - y_max)))
-        assert y_min + self.ypts * y_step <= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step/float(2)
+        self.xpts   = int(floor((x_max-x_min) / float(x_step)))
+        self.ypts   = int(floor((y_max-y_min) / float(y_step)))
+        # if using ceil for pts number
+        #assert x_min + self.xpts * x_step >= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
+        #assert y_min + self.ypts * y_step >= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step/float(2)
+        # if using floor for pts number
+        assert x_min + self.xpts * x_step <= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step
+        assert y_min + self.ypts * y_step <= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step
         assert self.xpts > 0 and self.ypts > 0
 
     def __iter__(self):
@@ -199,8 +200,6 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
     x_min -= r/2
     x_max += r/2
     # assert divmod(x_max-x_min, x_step)[1] == 0e0
-    #print("\t[DEBUG] Adjusted Easting : from {} to {} with step={} pts={}".format(x_min, x_max, x_step, (x_max-x_min)/x_step))
-    #print("\t[DEBUG] Adjusted Northing: from {} to {} with step={} pts={}".format(y_min, y_max, y_step, (y_max-y_min)/y_step))
     # return a Grid instance
     return Grid(x_min, x_max, x_step, y_min, y_max, y_step)
 
