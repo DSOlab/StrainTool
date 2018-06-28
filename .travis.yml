@@ -13,7 +13,7 @@ matrix:
       dist: trusty
       sudo: required
       virtualenv:
-        system_site_packages: true
+        system_site_packages: false
       addons:
         apt:
           packages:
@@ -26,6 +26,6 @@ install:
  - pip install -r test/requirements.txt
 
 script:
- - sudo python pystrain/setup.py install && bin/StrainTensor.py -i data/CNRS_midas.vel
+ - bin/StrainTensor.py -i data/CNRS_midas.vel
  
 after_script: cd ~
