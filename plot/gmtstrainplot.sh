@@ -209,10 +209,16 @@ do
 	shift
 	;;
     -gtot*)
-	pth2strinfo=${pth2inptf}/${2}
-	GTOTAL=1
 	if [ "${1:5:8}" == "+grd" ]; then
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTAL=1
 	  GRDDAT=1
+	elif [ "${1:5:8}" == "axes" ]; then
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTALAXES=1
+	else
+	  pth2strinfo=${pth2inptf}/${2}
+	  GTOTAL=1
 	fi
 	shift
 	shift
