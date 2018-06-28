@@ -1,7 +1,7 @@
 language: python
 notifications:
   email: false
-sudo: false
+sudo: true
 #python:
 #  - 2.7
 #  - 3.4
@@ -26,6 +26,6 @@ install:
  - pip install -r test/requirements.txt
 
 script:
- - python pystrain/setup.py install && bin/StrainTensor.py -i data/CNRS_midas.vel
+ - sudo python pystrain/setup.py install && bin/StrainTensor.py -i data/CNRS_midas.vel
  
 after_script: cd ~
