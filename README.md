@@ -267,5 +267,5 @@ Disclaimer: the content of this website reflects only the author’s view and th
 
 * Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org
 
-* [The Generic Mappting Tools - GMT](http://gmt.soest.hawaii.edu/)
+* [The Generic Mapping Tools - GMT](http://gmt.soest.hawaii.edu/)
 
