@@ -1,11 +1,11 @@
 {
     "license": "other-open", 
-    "description": "<p>beta version for testing</p>", 
+    "description": "<p>StrainTool allows the estimation of Strain Tensor parameters, on the earth&#39;s crust, given a list of data point, aka points on the earth along with their tectonic velocities.</p>", 
+    "contributors": [], 
     "title": "StrainTool: A software package to estimate strain tensor parameters", 
-    "notes": "StrainTool allows the estimation of Strain Tensor parameters, on the earth's crust, given a list of data point, aka points on the earth along with their tectonic velocities.", 
     "grants": [
         {
-            "id": "676564"
+            "id": "10.13039/501100000780::676564"
         }
     ], 
     "references": [
@@ -19,7 +19,7 @@
         "gnss velocities", 
         "EPOS"
     ], 
-    "publication_date": "2018-06-25", 
+    "publication_date": "2018-06-29", 
     "creators": [
         {
             "orcid": "0000-0002-7680-7076", 
@@ -31,9 +31,9 @@
             "name": "Xanthos Papanikolaou"
         }, 
         {
-            "affiliation": "Institute of Geodynamics - National Obsrvatory of Athens", 
+            "affiliation": "National Obsrvatory of Athens", 
             "name": "Dr. Athanassios Ganas"
-        },
+        }, 
         {
             "affiliation": "Dionysos Satellite Observatory (NTUA)", 
             "name": "Prof. Demitris Paradissis"
@@ -43,7 +43,7 @@
     "related_identifiers": [
         {
             "scheme": "url", 
-            "identifier": "https://github.com/DSOlab/StrainTool/tree/v1.0-beta2.1", 
+            "identifier": "https://github.com/DSOlab/StrainTool/tree/v1.0-beta4.0", 
             "relation": "isSupplementTo"
         }, 
         {
