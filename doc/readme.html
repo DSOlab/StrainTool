@@ -1,0 +1,369 @@
+<!doctype html>
+<meta charset="UTF-8"> 
+<html>
+
+<head>
+    <title>StrainTool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=TeX-MML-AM_CHTML' async></script>
+    <script type="text/javascript" src="straindoc.js"></script>
+    <style>
+        .container {
+            margin: 15px auto;
+            display: flex;
+        }
+        #chart_div {
+            width: 80%;
+        }
+        #dparam_div {
+            width: 20%;
+            vertical-align: middle;
+        }
+        #chart_div2 {
+            width: 80%;
+        }
+        #inline-code {
+            background-color: #eee;
+            display: inline;
+            padding: 10px;
+        }
+        #block-code {
+            background-color: #eee;
+            border: 1px solid #999;
+            display: block;
+            padding: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #block-samp {
+            background-color: #eee;
+            border: 1px solid #999;
+            display: block;
+            padding: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+<h1 id="coulomb2gmtv10rc10">StrainTool</h1>
+
+<p>Software package to calculate strain tensor parameters</p>
+
+<!--
+<p><a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/LICENSE"><img src="http://img.shields.io/badge/license-MIT-brightgreen.svg" alt="License MIT" /></a>
+<a href="https://github.com/DSOlab/StrainTool/releases/latest"><img src="https://img.shields.io/github/release/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/tags"><img src="https://img.shields.io/github/tag/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/stargazers"><img src="https://img.shields.io/github/stars/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/network"><img src="https://img.shields.io/github/forks/DSOlab/StrainTool.svg" alt="" /></a>
+<a href="https://github.com/DSOlab/StrainTool/issues"><img src="https://img.shields.io/github/issues/DSOlab/StrainTool.svg" alt="" /></a></p>
+<a href="https://zenodo.org/badge/latestdoi/106276451"><img src="https://zenodo.org/badge/106276451.svg" alt="DOI"></a>
+-->
+
+        <h1>General</h1>
+        <p>StrainTool allows the estimation of Strain Tensor parameters, on the
+        earth's crust, given a list of data point, aka points on the earth along
+        with their tectonic velocities.</p> 
+        <p>StrainTool has three basic components:
+            <ul>
+            <li>A python package, named <code>pystrain</code></li>
+            <li>The main executable, named <code>StrainTensor.py</code></li>
+            <li>A list of shell scripts to plot results from <code>StrainTensor.py</code></li>
+            </ul>
+        </p>
+        <h2 id="pystrain_pkg">pystrain Package</h2>
+        <p><code>pystrain</code> is a package written in <a href="https://www.python.org/">python</a>,
+        defining a variety of functions, classes, etc to enable the computation of
+        strain tensors.</p>
+        <p>When installing this package, all of its modules will be available to
+        the user. It is the <i>core</i> part of the project and should be installed
+        before the main program (<code>StrainTensor.py</code>) can be used.</p>
+        <p>The package is found under <code>StrainTool/pystrain</code></p2>
+        <h2 id="straintensor_prg">StrainTensor.py</h2>
+        <p>This is the <i>main program</i>, i.e the program that the user will
+        run to produce strain tensor results. It is heavily dependant on the
+        <code>pystrain</code> package (so any change there will affect 
+        <code>StrainTensor.py</code>'s behaviour</p>
+        <p>This program does not need installation; it is just a pyrhon script.
+        The user may only need to change priviledges to make it executable</p>
+        <p><code>StrainTensor.py</code> is located at <code>StrainTool/bin</code></p2>
+        <h2 id="plot_tools_pck">Plot Tools</h2>
+        <p>By 'Plot Tools', we mean an array of shell (<a href="https://www.gnu.org/software/bash/">Bash</a>)
+        scripts that can be used to plot <code>StrainTensor.py</code> results.
+        These scripts actualy use <a href="http://gmt.soest.hawaii.edu/">GMT</a> to
+        perform the plotting. The scripts are an efficient, ready-to-use</p>
+        <p>It is by no means mandatory to use these scripts to plot the results; users
+        can use their own tools and/or scripts to do so. Actualy, this is a totaly
+        independent part of the Project and can be skipped alltogether.</p>
+        <p>These scripts, are found under <code>StrainTool/plot</code></p2>
+        <h1>Installation</h1>
+        <h2>Prerequisites</h2>
+        <p>To install the Project, you will need:
+        <ul>
+            <li><a href="https://www.python.org/downloads/">python</a>; the installation has been
+                tested under Versions 2.7 and 3.6 and both work fine.</li>
+            <li><a href="http://www.numpy.org/">NumPy</a>; NumPy is the fundamental
+                package for scientific computing with Python.</li>
+            <li><a href="https://www.scipy.org/">SciPy</a>; SciPy is a Python-based
+                ecosystem of open-source software for mathematics, science, and engineering.
+                Actualy, we are only using the <a href="https://docs.scipy.org/doc/scipy/reference/linalg.html">SciPy.linalg</a>
+                and <a href="https://docs.scipy.org/doc/scipy/reference/spatial.html">SciPy.spatial</a> modules.</li>
+        </ul>
+        Both <code>NumPy</code> and <code>SciPy</code> have extended installation guides
+        for most, if not all, operating systems.</p> 
+        <p>To use the <a href="#plot_tools_pck">Plot Tools</a> bundle, you must have
+        <a href="http://gmt.soest.hawaii.edu/">GMT</a> (> 5.0.0) installed, allong with a
+        variety of UNIX-based tools. If you are on a UNIX/Linux operating system,
+        most or all of them are pre-installed.</p>
+        <h2>Installation Procedure</h2>
+        <p>To install the Project, you actualy only need to install the
+        <a href="pystrain_pkg">pystrain</a> package. What this means, is that
+        python will see that the package modules are build and extracted to a suitable folder
+        on your local system (something like <code>/usr/lib/python2.7/site-packages/</code> on
+        a UNIX-like system). After this step, you will be able to make use of the
+        modules in the package, both for running <code>StrainTool.py</code> and
+        for any new program you may wish to code. <a href="#straintensor_prg">StrainTensor.py</a>
+        and <a href="#plot_tools_pck">Plot Tools</a> are programs, so you do not
+        to "install" them.</p>
+        <p>To install <a href="#pystrain_pkg">pystrain</a>, do the following:
+        <ol>
+            <li>go to the directory the package is located, i.e. <code>StrainTool/pystrain</code></li>
+            <li>the package comes with a <code>setup.py</code> script, so you only need
+            to run it (as root/administrator): <pre id="inline-code"><code>$> python setup.py install</code></pre></li>
+        </ol>
+        That's it! The package modules should now be in place and you should be able to
+        use the main script, <a href="#straintensor_prg">StrainTensor.py</a></p>
+        <h2 id="straintensor_prg_example">Example</h2>
+        <p>To validate that the installation has succeded, you can run a "test case"
+        scenario. Under the folder <code>data/</code>, you will find a file named
+        <code>CNRS_midas.vel</code>. This ascii file, contains velocity and coordinate information
+        for a large list of GPS/GNSS stations around the globe. We will use it to
+        perform a test run of <code>StrainTensor.py</code>.</p>
+        <p>Go to the <code>bin/</code> folder and execute the command:
+        <pre id="block-code"><code>$> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c</code></pre>
+        <em>(You may not need the ./ part at the begining if you are on a Wnidows system)</em>. This command will
+        compute Strain Tensor parameters for approximately the whole of Greece, using the input file <code>CNRS_midas.vel</code>.
+        The results will be written in a (newly created) file, named <code>strain_info.dat</code>,
+        while station information will be written in the file <code>station_info.dat</code>
+        (this latter file is mainly used for plotting). You should be able to verify that
+        both files have been succesefuly created. </p>
+        <p>Under <code>data/</code> you will find the "reference" output files for checking,
+        named <code>strain_info.dat.ref</code> and <code>station_info.dat.ref</code>.
+        Verify that the files you have just created (placed under <code>bin/</code>)
+        contain the same results as the "reference" files (this can be very easily
+        performed using the <a href="https://www.gnu.org/software/diffutils/">diff</a> command).</p>
+        <h3>TODO: plot example files and compare</h3>
+        <h1>How to use StrainTensor.py</h1>
+        <p><code>StrainTensor.py</code> computes strain tensor parameters on a selcted grid. The
+        program comes with an extended help message, that can be displayed via the
+        <kbd>-h</kbd> or <kbd>--help</kbd> switch (aka <pre id="inline-code"><code>$> ./StrainTensor.py [...] --help</code></pre>
+        will show the help message on screen). Users can controll <code>StrainTensor.py</code>'s
+        behaviour via a variety of available switches.</p>
+        <h2>Basic Usage</h2>
+        <p>To use the program, the only mandatory switch is the <kbd>-i</kbd> or <kbd>--input-file</kbd>,
+        which specifies the input file to be used. All other options will automaticaly
+        assume default values (see <a href="#straintool_prg_opt">Options</a> for a detailed list).
+        Basic usage is described below: <pre id="block-samp"><samp>usage: StrainTensor.py [-h] -i INPUT_FILE [--x-grid-step X_GRID_STEP]
+                       [--y-grid-step Y_GRID_STEP] [-m METHOD] [-r REGION]
+                       [-c] [-b] [--max-beta-angle MAX_BETA_ANGLE]
+                       [-t WEIGHTING_FUNCTION] [--Wt Wt] [--dmin D_MIN]
+                       [--dmax D_MAX] [--dstep D_STEP] [--d-param D_PARAMETER]<samp></pre>
+        <h2 id="straintool_prg_opt">Options</h2>
+        <p>The whole list of available options, is:
+        <pre id="block-samp"><samp>optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input-file INPUT_FILE
+                        The input file. This must be an ascii file containing the columns: 'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.
+  --x-grid-step X_GRID_STEP
+                        The x-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg).
+  --y-grid-step Y_GRID_STEP
+                        The y-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg)
+  -m METHOD, --method METHOD
+                        Choose a method for strain estimation. If 'shen' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If 'veis' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter. Default is 'shen'.
+  -r REGION, --region REGION
+                        Specify a region; any station (in the input file) falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. "[...] --region=21.0/23.5/36.0/38.5 [...]"
+  -c, --cut-excess-stations
+                        This option is only considered if the '-r' option is set. If this this option is enabled, then any station (from the input file) outside the region limit (passed in via the '-r' option) is not considered in the strain estimation.
+  -b, --barycenter      Only estimate one strain tensor, at the region's barycentre.
+  --max-beta-angle MAX_BETA_ANGLE
+                        Only relevant for '--mehod=shen'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid). Default is 180 deg.
+  -t WEIGHTING_FUNCTION, --weighting-function WEIGHTING_FUNCTION
+                        Only relevant for '--mehod=shen'. Choose between a 'gaussian' or a 'quadratic' spatial weighting function. Default is 'gaussian'.
+  --Wt Wt               Only relevant for '--mehod=shen' and if 'd-param' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa. Default is Wt=24.
+  --dmin D_MIN          Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km. Default is dmin=1km.
+  --dmax D_MAX          Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.
+  --dstep D_STEP        Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.
+  --d-param D_PARAMETER
+                        Only relevant for '--mehod=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.</samp></pre></p>
+        <p>For example, the command we used on the <a href="#straintensor_prg_example">Example</a> section:
+        <pre id="block-code"><code>$> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c</code></pre>
+        meant that we are estimating strain tensor parameters for the region within min/max
+        longtitude: 18.75/30.25 degrees and min/max latitude: 32.75/42.25 degrees.
+        We are seperating the region into cells of size 0.5 degrees and estimating one
+        strain tensor in each cell centre (aka the first cell centre is $$lon = lon_{min} + lon_{step}/2 = 18.75 + 0.5/2=19.0deg.$$ and
+        $$lat = lat_{min} + lat_{step}/2 = 32.75 + 0.5/2 = 33.0deg.$$, then next one
+        will be at lon=19.5, lat=33.5, etc...). To estimate each strain tensor, the program will
+        search for a "optimal" D coefficient within the range [1, 500) km with a step of 1km.
+        This "optimal" D will be found when the condition $$W = \sum_{n=1}^{\#sta*2} Z(i)*L(i) \geq W_t$$
+        is met. The stations that will be used for the calculations are only those 
+        that fall within the specified longtitude/latitude range. For more information, see
+        <a href="#bck_and_algorithms">Background and Algorithms</a> section.</p>
+        <h2>Input Files</h2>
+        <p>To perform the computations, <code>StrainTensor.py</code> needs an input file, 
+        that holds input data. Usually, this implies a list of GPS/GNSS stations with 
+        their ellipsoidal coordinates (aka longtitude and latitude) and their respective 
+        tectonic velocities (usually estimated using position time-series) allong with
+        the corresponding standard deviation values. The format of these files,
+        should follow the convention: 
+        <pre id="block-samp"<samp>
+        station-name  longtitude   latitude   Ve     Vn    SigmaVe  SigmaVn  Sne  time-span 
+         string           deg.        deg.   mm/yr  mm/yr   mm/yr    mm/yr    /   dec. years</samp></pre>
+        Station coordinates are provided in longtitude/latitude pairs in decimal degrees.
+        Velocities and velocity standard deviations are provided in mm per years (mm/yr).
+        <code>Sne</code> is the correlation coefficient between East and North velocity components
+        and <code>time-span</code> is the total time span of the station timeseries in decimal
+        degrees. <em>Note that at his point the last two columns (aka <code>Sne</code>
+        and <code>time-span</code>) are not used, so they could have random values.</em></p>
+        <p>There are no strict formating rules on how the individual elements should be
+        printed (i.e. how many fields, decimal places, etc). The only condition is 
+        that fields are seperated by whitespace(s). To see an example of a valid
+        input file, you can check <code>data/CNRS_midas.vel</code>.</p>
+        <h2>Output Files</h2>
+	<p>Results of <code>StrainTensor.py</code> are recorded in the following three files: </p>
+	  <ul>
+	    <li> <b>strain_info.dat :</b> This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.<br>The columns of the file are structured as below:</li>
+		 <pre id="block-samp"<samp>
+Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
+   deg       deg         mm/yr           mm/yr          nrad/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
+	        </samp></pre>
+
+	    <li> <b>station_info.dat :</b>Stations' data used for the calculation of strain tensor are written at htis file. Format is: </li>
+                 <pre id="block-samp"<samp>
+Code Longtitude Latitude Ve Vn
+                </samp></pre>
+
+	    <li> <b>StrainTensor.out :</b> Parameters used to modigy grid, calculate Strain tensors etc. </li>
+	  </ul>
+        <h1>How to use Plot Tools</h1>
+        <p>Plotting scripts are placed under <code>plot/</code> directory. They are:
+        <ul>
+        <li><code>gmtstrainplot.sh</code>, and</li>
+        <li><code>plotall.sh</code></li>
+        </ul>
+        All of the scripts need the file named <code>default-param</code> to be in the
+        same folder.
+        </p>
+        <b>default-param file options</b>
+        <pre id="block-samp"<samp>
+        pth2inptf=../data/  # set default folder for input files (strain_info.dat, station_info.dat)
+	west, east, south, north, projscale, frame, sclength: set region parameters
+        STRSC=0.01 : set principal axis plot scale
+        ROTSC=.7 : set rotational rates plot scale
+        </samp></pre>
+
+        <b>gmtstrainplot.sh options:</b>
+        <pre id="block-samp"<samp>
+Basic Plots & Background :
+     -r | --region : region to plot (default Greece)
+         usage: -r west east south north projscale frame
+
+PLot station and velocitiess:
+    -psta [:=stations] plot only stations from input file
+    -vhor (station_file)[:= horizontal velocities]
+    -vsc [:=velocity scale] change valocity scale default 0.05
+
+Plot strain tensor parameters:
+     -str (strain file)[:= strains] Plot strain rates
+     -rot (strain file)[:= rots] Plot rotational rates
+     -gtot(strain file)[:=shear strain] plot total shear strain rate contours
+     -gtotaxes (strain file) dextral and sinistral max shear strain rates
+     -dil (strainfile)[:= dilatation] Plot dilatation and principal axes
+     -secinv (strain file) [:=2nd invariand] Plot second invariand
+     -strsc [:=strain scale]
+     -rotsc [:=rotational scales]
+
+Other options:
+     -o | --output : name of output files
+     -l | --labels : plot labels
+     -jpg : convert eps file to jpg
+     -h | --help : help menu
+        </samp></pre>
+        <p>For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+        <pre id="block-samp"<samp>
+$>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
+        </samp></pre>
+
+        <h1 id="bck_and_algorithms">TODO: Background and Algorithms</h1>
+    </div>
+    <div class="container"> 
+        <h2>Strain Weighting Functions - Demo</h2>
+        <div id="chart_div">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div id="dparam_div">
+            Parameter D:
+            <input type="number" id="dparam" value="15">
+            <button onclick="submit_data();">Try it</button>
+            <div>
+            <h3>Weighting Functions</h3>
+            <p>The weighting functions are computed as follows:
+            Gaussian  Weighting Function: $$L_i = \exp(-{\Delta}R_i^{2} / D^{2})$$
+            Quadratic Weighting Function: $$L_i = 1/(1 + {\Delta}R_i^{2} / D^{2})$$
+            </p>
+            </div>
+        </div>
+    </div>
+    <div class="container"> 
+        <h2>Azimouthal Weighting Function - Demo</h2>
+        <div id="chart_div2">
+            <canvas id="myChart2"></canvas>
+        </div>
+    </div>
+  <h2 id="contributing">Contributing</h2>
+    <ol>
+      <li>Create an issue and describe your idea</li>
+      <li><a href="https://github.com/demanasta/coulomb2gmt/network#fork-destination-box">Fork it</a></li>
+      <li>Create your feature branch (<code>git checkout -b my-new-idea</code>)</li>
+      <li>Commit your changes (<code>git commit -am 'Add some feature'</code>)</li>
+      <li>Publish the branch (<code>git push origin my-new-idea</code>)</li>
+      <li>Create a new Pull Request</li>
+      <li>Profit! :white<em>check</em>mark:</li>
+    </ol>
+
+  <h1 id="license">License</h2>
+    <p>The work is licensed under <a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/.github/CHANGELOG.md">MIT-license</a></p>
+  
+  <h1 id="authorsbugreports">Authors &amp; Bug Reports</h2>
+    <p><strong>Dimitrios G. Anastasiou</strong></p>
+    <blockquote>
+      <p>Dr.Eng Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:dganastasiou@gmail.com">dganastasiou@gmail.com</p></a>
+    </blockquote>
+
+    <p><strong>Xanthos Papanikolaou</strong></p>
+    <blockquote>
+      <p>Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:xanthos@mail.ntua.gr">xanthos@mail.ntua.gr</a></p>
+    </blockquote>
+
+    <p><strong>Dr. Athanassios Ganas</strong></p>
+    <blockquote>
+      <p>Research Director | Institute of Geodynamics | National Observatory of Athens | <a href="mailto:aganas@gein.noa.gr">aganas@gein.noa.gr</a></p>
+    </blockquote>
+
+  <h1 id="changelog">ChangeLog</h2>
+    <p>The history of releases can be viewed at <a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/.github/CHANGELOG.md">ChangeLog</a></p>
+  
+  <h1 id="acknowlegments">Acknowlegments</h2>
+    <p><strong>EPOS IP - EPOS Implementation Phase</strong></p>
+    <p>This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564</p>
+    <p>Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.</p>
+
+  <h1 id="references">References</h2>
+    <ul>
+      <li><p>Shen, Z.-K., M. Wang, Y. Zeng, and F. Wang, (2015), Strain determination using spatially discrete geodetic data, Bull. Seismol. Soc. Am., 105(4), 2117-2127, doi: 10.1785/0120140247</p></li>
+      <li><p>Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166</p></li>
+      <li><p>Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org</p></li>
+      <li><p><a href="http://gmt.soest.hawaii.edu/">The Generic Mappting Tools - GMT</a></p></li>
+    </ul>
+</body>

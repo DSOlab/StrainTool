@@ -25,3 +25,16 @@ build/
 # (python) enviroment folder
 flask/
 env/
+
+# gmt out
+gmt.*
+*.ps
+*.jpg
+*.png
+*.eps
+
+# output files
+.*.dat
+*.dat
+strain_info.dat
+station_info.dat
