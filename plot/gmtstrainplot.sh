@@ -18,7 +18,7 @@
 #    created        : MAY-2018
 #    usage          :
 #    GMT Modules    : gmtset, makecpt, psbasemap, xyz2grd, grdsample, grdimage,
-#                     pscoast, psscale, psxy, pstext, psvelo, psconvert
+#                     pscoast, psscale, psxy, pstext, psvelo, psconvert, pscontour
 #    UNIX progs     : awk 
 #    exit code(s)   : 0 -> success
 #                   : 1 -> error
@@ -477,30 +477,33 @@ then
     fi
   fi
 
-  awk '{print $2,$3,$4*1e03,$5*1e03,$6*1e03,$7*1e03,0,$1}' $pth2stainfo \
+  awk '{print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
-  awk '{print $2,$3,$4*1e03,$5*1e03,$6*1e03,$7*1e03,0,$1}' $pth2stainfo \
+  awk '{print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
 ###scale
 # plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*5.)")
   velsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
-  velsclon=$sclon
+  velsclon=$(echo print ${sclon} - ${tmp_scrate} | python)
 
-  echo "$velsclon $velsclat 20 0 1 1 0 " \
+  echo "$velsclon $velsclat ${vscmagn} 0 1 1 0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
   
-  echo "$velsclon $velsclat 20 0 5 5 0 " \
+  echo "$velsclon $velsclat ${vscmagn} 0 5 5 0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
   
-  echo "$velsclon $velsclat 9,1,black 0 CB 20 \261 1 mm/y" \
+  echo "$sclon $velsclat 9,1,black 0 CB ${vscmagn} \261 1 mm/y" \
   | gmt pstext -Jm -R -Dj0c/.5c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+  
+  sclat=${velsclat}
+#   sclon=${velsclon}
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -555,58 +558,6 @@ then
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
-fi
-
-# //////////////////////////////////////////////////////////////////////////////
-### PLOT DEXTRAL SINISTRAL AXES OF MAXIMUM SHEAR STRAIN RATES parameters
-if [ "$GTOTALAXES" -eq 1 ]
-then
-  echo "...plot dextral and sinistral maximum shear strain axes..."
-  #   plot delaunay
-  if [ "${DELTR}" -eq 1 ]
-  then
-    gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
-  fi
-  
-# plot stations
-  if [ "$PSTA" -eq 1 ]
-  then
-
-    awk '{print $2,$3}' $pth2sta  \
-    | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
-    if [ "$LABELS" -eq 1 ]
-    then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
-      | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
-    fi
-  fi
-
-# plot strain rates
-  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
-  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
-        -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
-        -O -K -V${VRBLEVM} >> $outfile
-
-# plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
-  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
-  strsclon=$sclon
-
-  echo "$strsclon $strsclat 0 -100 -45" \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
-        -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 100 0 -45" \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
-        -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9,1,black 45 RB dextral" \
-  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9,1,black -45 LB sinistral" \
-  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9,1,black 0 CB 100 nstrain/y" \
-  | gmt pstext -Jm -R -Dj0c/1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -731,18 +682,20 @@ then
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
   
 # plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
   strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
   strsclon=$sclon
 
-  echo "$strsclon $strsclat 0 -100 90" \
+  echo "$strsclon $strsclat 0 -${strscmagn} 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gblue -W1.5p,blue \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 100 0 90" \
+  echo "$strsclon $strsclat ${strscmagn} 0 90" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A10p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9 0 1 CB 100 nstrain/y" \
+  echo "$strsclon $strsclat 9 0 1 CB ${strscmagn} nstrain/y" \
   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
+  
+  sclat=${strasclat}
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -780,21 +733,73 @@ then
 
         
 # plot scale for rotational rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*15.)")
-  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
-  strsclon=$sclon
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
+  rotsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  rotsclon=$sclon
   
-  echo "$strsclon $strsclat 0.00000005 0.00000001" \
+  echo "$rotsclon $rotsclat 0.00000005 0.00000001" \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat -0.00000005 0.00000001" \
+  echo "$rotsclon $rotsclat -0.00000005 0.00000001" \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02 \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$strsclon $strsclat 9 0 1 CB -0.05 / 0.05 ppm" \
+  echo "$rotsclon $rotsclat 9 0 1 CB -0.05 / 0.05 ppm" \
   | gmt pstext -Jm -R -Dj0c/-.6c -Gwhite -O -K -V${VRBLEVM} >> $outfile
+  
+  sclat=${rotsclat}
 fi
 
+# //////////////////////////////////////////////////////////////////////////////
+### PLOT DEXTRAL SINISTRAL AXES OF MAXIMUM SHEAR STRAIN RATES parameters
+if [ "$GTOTALAXES" -eq 1 ]
+then
+  echo "...plot dextral and sinistral maximum shear strain axes..."
+  #   plot delaunay
+  if [ "${DELTR}" -eq 1 ]
+  then
+    gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
+  fi
+  
+# plot stations
+  if [ "$PSTA" -eq 1 ]
+  then
 
+    awk '{print $2,$3}' $pth2sta  \
+    | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
+    
+    if [ "$LABELS" -eq 1 ]
+    then
+      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
+    fi
+  fi
+
+# plot strain rates
+  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
+        -O -K -V${VRBLEVM} >> $outfile
+  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+        -O -K -V${VRBLEVM} >> $outfile
+
+# plot scale of strain rates
+  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
+  totsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  totsclon=$sclon
+
+  echo "$totsclon $totsclat 0 -${strscmagn} -45" \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+        -O -K -V${VRBLEVM} >> $outfile
+  echo "$totsclon $totsclat ${strscmagn} 0 -45" \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
+        -O -K -V${VRBLEVM} >> $outfile
+  echo "$totsclon $totsclat 9,1,black 45 RB dextral" \
+  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+  echo "$totsclon $totsclat 9,1,black -45 LB sinistral" \
+  | gmt pstext -Jm -R -Dj0.2c/0.1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+  echo "$totsclon $totsclat 9,1,black 0 CB ${strscmagn} nstrain/y" \
+  | gmt pstext -Jm -R -Dj0c/1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
+fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # plot legend

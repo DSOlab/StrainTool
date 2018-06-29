@@ -34,6 +34,7 @@ vsclat=37.68
 vscmagn=20
 VSC=0.05
 
+strscmagn=100
 STRSC=.0080
 ROTSC=.7
 strsclon=20.4

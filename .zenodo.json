@@ -1,32 +1,8 @@
 {
     "license": "other-open", 
     "description": "<p>beta version for testing</p>", 
-     "contributors": [
-        {
-            "orcid": "0000-0002-7680-7076", 
-            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
-            "type": "Researcher", 
-            "name": "Dimitrios G. Anastasiou"
-        }, 
-        {
-            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
-            "type": "Editor", 
-            "name": "Xanthos Papanikolaou"
-        }, 
-        {
-            "orcid": "0000-0002-7680-7076", 
-            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
-            "type": "ContactPerson", 
-            "name": "Dimitrios G. Anastasiou"
-        }, 
-        {
-            "affiliation": "National Observatory of Athens", 
-            "type": "ContactPerson", 
-            "name": "Dr. Athanassios Ganas"
-        }
-    ], 
-    "title": "DSOlab/StrainTool: StrainTool v1.0-beta2.0", 
-    "notes": "additional notes", 
+    "title": "StrainTool: A software package to estimate strain tensor parameters", 
+    "notes": "StrainTool allows the estimation of Strain Tensor parameters, on the earth's crust, given a list of data point, aka points on the earth along with their tectonic velocities.", 
     "grants": [
         {
             "id": "676564"
@@ -37,7 +13,7 @@
         "Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166"
     ], 
     "upload_type": "software", 
-    "version": "v1.0-beta2.0", 
+    "version": "v1.0-beta4.0", 
     "keywords": [
         "strain tensor", 
         "gnss velocities", 
@@ -57,6 +33,10 @@
         {
             "affiliation": "National Obsrvatory of Athens", 
             "name": "Dr. Athanassios Ganas"
+        },
+        {
+            "affiliation": "Dionysos Satellite Observatory (NTUA)", 
+            "name": "Prof. Demitris Paradissis"
         }
     ], 
     "access_right": "open", 

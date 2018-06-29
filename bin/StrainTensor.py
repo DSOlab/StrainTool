@@ -35,7 +35,7 @@ def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
 def write_station_info(sta_lst, filename='station_info.dat'):
     with open(filename, 'w') as fout:
         for idx, sta in enumerate(sta_lst):
-            print('{:} {:} {:} {:} {:}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve, sta.vn), file=fout)
+            print('{:} {:} {:} {:} {:} {:} {:}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03, sta.vn*1e03, sta.se*1e03, sta.sn*1e03), file=fout)
     return
 
 parser = argparse.ArgumentParser(
