@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 echo "[PLOTALL] ...plot principal axes of strain rates..."
+./gmtstrainplot.sh -jpg -vhor station_info.dat -psta -l -o output_vel
+echo "[PLOTALL] ...plot principal axes of strain rates..."
 ./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l -o output_str
 echo "[PLOTALL] ...plot rotational rates..."
 ./gmtstrainplot.sh -jpg -rot strain_info.dat -psta -l -o output_rot

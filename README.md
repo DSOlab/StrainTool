@@ -164,8 +164,10 @@ Results of `StrainTensor.py` are recorded in the following three files:
 
 *   **station_info.dat :** Stations' data used for the calculation of strain tensor are written at htis file. Format is:
 
-<pre id="block-samp" <samp="">Code Longtitude Latitude Ve Vn
-                </pre>
+<pre id="block-samp" <samp="">
+Code    Longtitude Latitude  Ve   Vn   dVe  dVn 
+string      deg       deg          mm/yr
+	      </pre>
 
 *   **StrainTensor.out :** Parameters used to modigy grid, calculate Strain tensors etc.
 
@@ -243,6 +245,9 @@ The work is licensed under [MIT-license](LICENSE)
 
 **Dr. Athanassios Ganas**
 > Research Director | Institute of Geodynamics | National Observatory of Athens | [aganas@gein.noa.gr](mailto:aganas@gein.noa.gr)
+
+**Prof. Demitris Paradissis**
+> Professor NTUA |  Dionysos Satellite Observatory - NTUA | [dempar@central.ntua.gr](dempar@central.ntua.gr)
 
 ## ChangeLog
 
