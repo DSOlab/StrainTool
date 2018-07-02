@@ -72,6 +72,17 @@ To install [pystrain](#pystrain_pkg), do the following:
 
 That's it! The package modules should now be in place and you should be able to use the main script, [StrainTensor.py](#straintensor_prg)
 
+### Installation tests
+
+The following scenarios have been tested to validatethe installation procedure
+
+|    OS      |Python 2.7 | Python 3.6 | GMT 5.2.1 |
+|:----------:|:------------------:|:------------------:|:------------------:|
+| Fedora     | :white_check_mark: |                    | :white_check_mark: |
+| Manjaro    |                    | :white_check_mark: | :white_check_mark: |
+| Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Windows 10 | :white_check_mark: |                    |                    |
+
 ## Example
 
 To validate that the installation has succeded, you can run a "test case" scenario. Under the folder `data/`, you will find a file named `CNRS_midas.vel`. This ascii file, contains velocity and coordinate information for a large list of GPS/GNSS stations around the globe. We will use it to perform a test run of `StrainTensor.py`.
