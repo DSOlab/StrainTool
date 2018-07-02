@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+\#!/usr/bin/env bash
 
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
@@ -818,7 +818,12 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 # FINAL SECTION
 #################--- Close ps output file ----##################################
-echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
+#echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
+echo "$west $south 8,0,black 0 LB This image was produced using" \
+  | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
+echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
+  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
+
 
 #################--- Convert to other format ----###############################
 if [ "$OUTJPG" -eq 1 ]
