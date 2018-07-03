@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+\#!/usr/bin/env bash
 
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
@@ -447,12 +447,12 @@ if [ "$PSTA" -eq 1 ] && [ "$STRAIN" -eq 0 ] && [ "$STRROT" -eq 0 ] && [ "$GTOTAL
     && [ "$DILATATION" -eq 0 ] && [ "$GTOTALAXES" -eq 0 ] && [ "$SECINV" -eq 0 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
 fi
@@ -467,21 +467,21 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
 
-  awk '{print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
+  awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
-  awk '{print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
+  awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
 
@@ -549,12 +549,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -595,12 +595,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -639,12 +639,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -665,12 +665,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -713,12 +713,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -764,12 +764,12 @@ then
   if [ "$PSTA" -eq 1 ]
   then
 
-    awk '{print $2,$3}' $pth2sta  \
+    awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
     
     if [ "$LABELS" -eq 1 ]
     then
-      awk '{print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
+      awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
   fi
@@ -818,7 +818,12 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 # FINAL SECTION
 #################--- Close ps output file ----##################################
-echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
+#echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
+echo "$west $south 8,0,black 0 LB This image was produced using" \
+  | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
+echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
+  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
+
 
 #################--- Convert to other format ----###############################
 if [ "$OUTJPG" -eq 1 ]

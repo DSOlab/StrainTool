@@ -26,7 +26,7 @@ frame=1
 # length of plot scale (Km)
 sclength=100
 
-logo_pos="BL/.1c/.1c/StrainTool"
+logo_pos="BL/.1c/.1c"
 
 # scale position parameters for velocities
 vsclon=22.34
