@@ -60,7 +60,7 @@ print('Mean long/lat = {:8.3f}, {:8.3f}'.format(clon, clat))
 brc = Station(lat=cN, lon=cE)
 bre = Station(lon=radians(clon), lat=radians(clat))
 dr_cart = [ x.distance_from(brc)[2] for x in sta_list_utm ]
-dr_ellp = [ x.haversine_distance(bre)[0] for x in sta_list_ell ]
+dr_ellp = [ x.haversine_distance(bre) for x in sta_list_ell ]
 
 for idx, dr in enumerate(dr_cart):
     print('lon={:+10.5f} lat={:10.5f}'.format(degrees(sta_list_ell[idx].lon), degrees(sta_list_ell[idx].lat)))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from math import sqrt, radians, sin, cos, atan2, pi
+from math import sqrt, radians, sin, cos, atan2, pi, asin
 
 # Any Station instance, can have any (or all) of these attributes
 station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
@@ -160,41 +160,58 @@ class Station:
         dlon = sta.lon - self.lon
         dlat = sta.lat - self.lat
         return dlon, dlat, sqrt(dlat*dlat + dlon*dlon)
+    
+    def squared_distance_from(self, sta):
+        '''Squared distance to another station.
 
-    def haversine_distance(self, sta, R=6371008.8e0):
-        """Distance between two point on sphere.
-
-            This function will calculate the distance on a spherical earth
-            (ignoring ellipsoidal effects), via the ‘haversine’ formula 
-            (great-circle distance between two points). Note that  using a 
-            spherical model gives errors typically up to 0.3%. 
-            If the calling station has index i and the station passed in
-            has index j, then the returned value is computed as
-            * δr = sta.lon - self.lon
+            Compute the squared distance of the instance to another instance (of type
+            Station). The algorithm is just an Eucledian norm, so the actual
+            station components must already have been transformed to cartesian.
 
             Args:
                 sta (Station): a station instance
-                R (float): mean Earth's radius in meters
 
             Returns:
-                tuple (float, float): First element is distance in m and second
-                    is the error, computed as 0.3%.
-
+                    #. dr^2
+                If the calling station has index i and the station passed in
+                has index j, then the returned values are computed as
+                    * δlon = lon_j - lon_i
+                    * δlat = lat_j - lat_i
+                    * δr   = δlon**2 + δlat**2
+              
             Warning:
-                It is assumed that the stations's (both calling instance and sta)
-                .lon and .lat components are in radians.
+                For the function to return valid results, the station coordinate
+                component must not be in ellipsoidal coordinates; the station
+                coordinates should have already been transformed to cartesian
+                before calling this function. The function will treat the "lon"
+                attribute as "x" or "Easting" and the "lat" component as "y" or
+                "Northing".
 
+                This function is only useful for optimizing distance_from wrt
+                time, as it does not call the sqrt function. Profile before you
+                use and use with care!
+
+        '''
+        dlon = sta.lon - self.lon
+        dlat = sta.lat - self.lat
+        return dlat*dlat + dlon*dlon
+
+    def haversine_distance(self, sta, R=6372797.560856e0):
+        """Computes the distance, in meters, between two points on a sphere.
+
+            Determine the great-circle distance between two points on a sphere
+            given their longitudes and latitudes (self.lat, self.lon in radians)
+            see https://en.wikipedia.org/wiki/Haversine_formula
         """
-        if self.lon < 0e0 or sta.lon < 0e0:
-            selflon, stalon = self.lon + 2e0*pi, sta.lon  + 2e0*pi
-        else:
-            selflon, stalon = self.lon, sta.lon
-        Df = sta.lat - self.lat
-        Dl = stalon - selflon
-        sinDf2 = sin(Df/2e0)
-        cosDf2 = cos(Df/2e0)
-        a  = sinDf2*sinDf2 + cos(sta.lat)*cos(self.lat)*sinDf2*sinDf2
-        c  = 2e0*atan2(sqrt(a), sqrt(1e0-a))
-        dr = R*c
-        ddr = (dr * 0.3e0) / 100e0
-        return dr, ddr
+        def ArcInRadians(frm, to):
+            """Computes the arc, in radians, between two points on a sphere.
+            """
+            latarc = frm.lat - to.lat
+            lonarc = frm.lon - to.lon
+            lath   = sin(latarc*0.5e0)
+            lath  *= lath
+            lonh   = sin(lonarc*0.5e0)
+            lonh  *= lonh
+            tmp    = cos(frm.lat) * cos(to.lat)
+            return 2e0 * asin(sqrt(lath + tmp*lonh))
+        return R*ArcInRadians(self, sta)

@@ -4,6 +4,7 @@
 from __future__ import print_function
 ############################################## standard libs
 import sys
+import os
 from copy import deepcopy
 from math import degrees, radians, floor, ceil
 ##############################################  numpy & argparse
@@ -179,6 +180,9 @@ vprint = print if args.verbose_mode else lambda *a, **k: None
 ##+ degrees and velocities are in mm/yr.
 ##  After reading, station coordinates are in radians and velocities are in
 ##+ m/yr.
+if not os.path.isfile(args.gps_file):
+    print('[ERROR] Cannot find input file \'{}\'.'.format(args.gps_file), file=sys.stderr)
+    sys.exit(1)
 sta_list_ell = parse_ascii_input(args.gps_file)
 print('[DEBUG] Reading station coordinates and velocities from {}'.format(args.gps_file))
 print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
@@ -200,7 +204,22 @@ if args.region:
             vprint('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     except:
         ## TODO we should exit with error here
-        print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region))
+        print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region), file=sys.stderr)
+
+if args.region and not args.method == 'veis' and not args.cut_outoflim_sta:
+    Napr = len(sta_list_ell)
+    mean_lon = sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell)
+    mean_lat = sum([ x.lat for x in sta_list_ell ]) / len(sta_list_ell)
+    bc =  Station(lon=mean_lon, lat=mean_lat)
+    d = 2e0*(args.d_coef if args.d_coef is not None else args.dmax)
+    cutoffdis = 10e0 * d
+    sta_list_ell = [ s for s in sta_list_ell if s.haversine_distance(bc)/1e3 <= cutoffdis ]
+    for s in sta_list_ell:
+        s.haversine_distance(bc)
+        print('station {} is {}km away'.format(s.name, d/1e3))
+    Npst = len(sta_list_ell)
+    print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
+    Npst = len(sta_list_ell)
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
