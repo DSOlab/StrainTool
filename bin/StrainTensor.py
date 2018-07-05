@@ -154,6 +154,11 @@ parser.add_argument('--d-param',
     required=False,
     help='Only relevant for \'--mehod=shen\'. This is the \'D\' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.')
 
+parser.add_argument('--generate-statistics',
+    dest='generate_stats',
+    help='Only relevant when \'--mehod=shen\' and \'--barycenter\' is not set. This option will create an output file, named \'strain_stats.dat\', where estimation info and statistics will be written.',
+    action='store_true')
+
 parser.add_argument('--verbose',
     dest='verbose_mode',
     help='Run in verbose mode (show debugging messages)',
@@ -206,25 +211,34 @@ if args.region:
         ## TODO we should exit with error here
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region), file=sys.stderr)
 
+##  Filter out stations that are never going to be used. This is an opt!
+"""
 if args.region and not args.method == 'veis' and not args.cut_outoflim_sta:
+    vprint('[DEBG] Filtering stations based on their distance from region barycentre.')
     Napr = len(sta_list_ell)
-    mean_lon = sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell)
-    mean_lat = sum([ x.lat for x in sta_list_ell ]) / len(sta_list_ell)
+    mean_lon, mean_lat = radians(lonmin+(lonmax-lonmin)/2e0), radians(latmin+(latmax-latmin)/2e0)
+    vprint('[DEBG] Barycentre set to {:+10.5f}, {:10.5f}'.format(lonmin+(lonmax-lonmin)/2e0, latmin+(latmax-latmin)/2e0))
     bc =  Station(lon=mean_lon, lat=mean_lat)
     d = 2e0*(args.d_coef if args.d_coef is not None else args.dmax)
     cutoffdis = 10e0 * d
+    vprint('[DEBUG] Using cut-off distance {:10.3f}km'.format(cutoffdis))
+    ## not correct
     sta_list_ell = [ s for s in sta_list_ell if s.haversine_distance(bc)/1e3 <= cutoffdis ]
     for s in sta_list_ell:
-        s.haversine_distance(bc)
-        print('station {} is {}km away'.format(s.name, d/1e3))
+        d = s.haversine_distance(bc)
+        print('station {:} is {:7.1f}km away'.format(s.name, d/1e3))
     Npst = len(sta_list_ell)
     print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     Npst = len(sta_list_ell)
+"""
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
 ##  Note that station ellipsoidal coordinates are in radians while the cartesian
 ##+ coordinates are in meters.
+##
+##  TODO is this mean_lon the optimal?? or should it be the region's mean longtitude
+##
 mean_lon = degrees(sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell))
 utm_zone = floor(mean_lon/6)+31
 utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
@@ -254,6 +268,7 @@ if args.one_tensor:
 
 # strain_list = [] Probably we do not need to keep the tensors ...
 if args.method == 'shen':  ## Going for Shen algorithm ...
+    fstats = open('strain_stats.dat', 'w') if args.generate_stats else None
     ##  Construct the grid, in ellipsoidal coordinates --degrees--. If a region
     ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs 
     ##+ to degrees and produce a grid from extracting min/max crds from the
@@ -284,6 +299,7 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
                 sstr.estimate()
                 vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
+                if fstats: print('{:+8.4f}, {:8.4f} {:5d} {:5.1f} {:7.2f} {:7.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], self.__sigma0__), file=fstats)
                 # strain_list.append(sstr)
                 nodes_estim += 1
             except RuntimeError:

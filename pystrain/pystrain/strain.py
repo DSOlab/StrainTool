@@ -779,6 +779,7 @@ class ShenStrain:
             try:
                 # A-posteriori std. deviation
                 sigma0_post = float(res[0])
+                self.__sigma0__ = sigma0_post
                 # print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
                 bvar = linalg.inv(VcV) * sigma0_post
                 self.__vcv__ = bvar
