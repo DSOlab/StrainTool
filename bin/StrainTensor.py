@@ -5,6 +5,7 @@ from __future__ import print_function
 ############################################## standard libs
 import sys
 import os
+from datetime import datetime
 from copy import deepcopy
 from math import degrees, radians, floor, ceil
 ##############################################  numpy & argparse
@@ -18,7 +19,7 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
-Version = 'StrainTensor.py\nVersion: 1.0-beta (pre-release)'
+Version = 'StrainTensor.py Version: 1.0-beta (pre-release)'
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
@@ -39,6 +40,15 @@ def write_station_info(sta_lst, filename='station_info.dat'):
         print('{:^10s} {:^10s} {:^10s} {:7s} {:7s} {:7s} {:7s}'.format('', 'deg.', 'deg', 'mm/yr', 'mm/yr', 'mm/yr', 'mm/yr'), file=fout)
         for idx, sta in enumerate(sta_lst):
             print('{:10s} {:+10.5f} {:10.5f} {:+7.2f} {:+7.2f} {:+7.3f} {:+7.3f}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03, sta.vn*1e03, sta.se*1e03, sta.sn*1e03), file=fout)
+    return
+
+def print_model_info(fout, cmd, clargs):
+    print('{:}'.format(Version), file=fout)
+    print('Command used:\n\t{:}'.format(' '.join(cmd)), file=fout)
+    print('Run at: {:}'.format(datetime.now().strftime('%c')), file=fout)
+    print('Command line switches/options parsed:', file=fout)
+    for key in clargs:
+        print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
 parser = argparse.ArgumentParser(
@@ -154,7 +164,7 @@ parser.add_argument('--d-param',
     required=False,
     help='Only relevant for \'--mehod=shen\'. This is the \'D\' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.')
 
-parser.add_argument('--generate-statistics',
+parser.add_argument('-g', '--generate-statistics',
     dest='generate_stats',
     help='Only relevant when \'--mehod=shen\' and \'--barycenter\' is not set. This option will create an output file, named \'strain_stats.dat\', where estimation info and statistics will be written.',
     action='store_true')
@@ -173,13 +183,17 @@ parser.add_argument('-v',
 args  = parser.parse_args()
 dargs = vars(args)
 
-##  Wait!! amybe we only want the version
+##  Wait!! maybe we only want the version
 if args.version:
     print('{}'.format(Version))
     sys.exit(0)
 
 ## Verbose print (function only exists in verbose mode)
 vprint = print if args.verbose_mode else lambda *a, **k: None
+
+## If needed, open a file to write model info and statistics
+fstats = open('strain_stats.dat', 'w') if args.generate_stats else None
+if fstats: print_model_info(fstats, sys.argv, dargs)
 
 ##  Parse stations from input file; at input, station coordinates are in decimal
 ##+ degrees and velocities are in mm/yr.
@@ -268,7 +282,6 @@ if args.one_tensor:
 
 # strain_list = [] Probably we do not need to keep the tensors ...
 if args.method == 'shen':  ## Going for Shen algorithm ...
-    fstats = open('strain_stats.dat', 'w') if args.generate_stats else None
     ##  Construct the grid, in ellipsoidal coordinates --degrees--. If a region
     ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs 
     ##+ to degrees and produce a grid from extracting min/max crds from the
@@ -281,6 +294,7 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
     print('[DEBUG]\tLongtitude : from {} to {} with step {} (deg)'.format(grd.x_min, grd.x_max, grd.x_step))
     print('[DEBUG]\tLatitude   : from {} to {} with step {} (deg)'.format(grd.y_min, grd.y_max, grd.y_step))
     print('[DEBUG] Number of Strain Tensors to be estimated: {}'.format(grd.xpts*grd.ypts))
+    if fstats: print('{:8s} {:8s} {:12s} {:12s} {:12s} {:7s}'.format('Longtitude','Latitude','# stations', 'D (optimal)','CutOff dis.', 'Sigma'), file=fstats)
     vprint('[DEBUG] Estimating strain tensor for each cell center:')
     ##  Iterate through the grid (on each cell center). Grid returns cell-centre
     ##+ coordinates in lon/lat pairs, in degrees!
@@ -299,7 +313,7 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
                 sstr.estimate()
                 vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
-                if fstats: print('{:+8.4f}, {:8.4f} {:5d} {:5.1f} {:7.2f} {:7.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], self.__sigma0__), file=fstats)
+                if fstats: print('{:+8.4f}, {:8.4f} {:12d} {:12.2f} {:12.2f} {:7.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
                 # strain_list.append(sstr)
                 nodes_estim += 1
             except RuntimeError:

@@ -161,9 +161,12 @@ class ShenStrain:
         cc = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         if not d: d = self.__options__['d_coef']
         limit = self.__options__['cutoff_dis'] * d
-        # nlst = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
+        ## nlst1 = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
         ## OPT try optimized squared distance
-        nlst = [ s for s in self.__stalst__ if s.squared_distance_from(cc) <= limit*1e6 ]
+        nlst = [ s for s in self.__stalst__ if s.squared_distance_from(cc) <= limit*limit ]
+        #assert len(nlst) == len(nlst1)
+        #for i,s in enumerate(nlst1):
+        #    assert s.name == nlst[i].name
         return nlst
     
     def azimouths(self, other_sta_lst=None):

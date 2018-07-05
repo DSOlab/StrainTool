@@ -167,6 +167,9 @@ class Station:
             Compute the squared distance of the instance to another instance (of type
             Station). The algorithm is just an Eucledian norm, so the actual
             station components must already have been transformed to cartesian.
+            Note that the station coordinates (aka .lon and .lat) are first
+            divided with 1e3, so that the squared distance is not too big a
+            number.
 
             Args:
                 sta (Station): a station instance
@@ -175,8 +178,8 @@ class Station:
                     #. dr^2
                 If the calling station has index i and the station passed in
                 has index j, then the returned values are computed as
-                    * δlon = lon_j - lon_i
-                    * δlat = lat_j - lat_i
+                    * δlon = (lon_j - lon_i)/1e3
+                    * δlat = (lat_j - lat_i)/1e3
                     * δr   = δlon**2 + δlat**2
               
             Warning:
@@ -192,9 +195,9 @@ class Station:
                 use and use with care!
 
         '''
-        dlon = sta.lon - self.lon
-        dlat = sta.lat - self.lat
-        return dlat*dlat + dlon*dlon
+        dlon = (sta.lon - self.lon)/1e3
+        dlat = (sta.lat - self.lat)/1e3
+        return (dlat*dlat + dlon*dlon)
 
     def haversine_distance(self, sta, R=6372797.560856e0):
         """Computes the distance, in meters, between two points on a sphere.
