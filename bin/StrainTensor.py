@@ -5,6 +5,7 @@ from __future__ import print_function
 ############################################## standard libs
 import sys
 import os
+import time
 from datetime import datetime
 from copy import deepcopy
 from math import degrees, radians, floor, ceil
@@ -179,6 +180,9 @@ parser.add_argument('-v',
     help='Display version and exit.',
     action='store_true')
 
+##  Time the program (for opt/ing purpose only)
+start_time = time.time()
+
 ##  Parse command line arguments and stack them in a dictionary
 args  = parser.parse_args()
 dargs = vars(args)
@@ -226,25 +230,25 @@ if args.region:
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region), file=sys.stderr)
 
 ##  Filter out stations that are never going to be used. This is an opt!
-"""
 if args.region and not args.method == 'veis' and not args.cut_outoflim_sta:
-    vprint('[DEBG] Filtering stations based on their distance from region barycentre.')
+    vprint('[DEBUG] Filtering stations based on their distance from region barycentre.')
     Napr = len(sta_list_ell)
     mean_lon, mean_lat = radians(lonmin+(lonmax-lonmin)/2e0), radians(latmin+(latmax-latmin)/2e0)
-    vprint('[DEBG] Barycentre set to {:+10.5f}, {:10.5f}'.format(lonmin+(lonmax-lonmin)/2e0, latmin+(latmax-latmin)/2e0))
+    # print('[DEBUG] Barycentre set to {:+10.5f}, {:10.5f}'.format(lonmin+(lonmax-lonmin)/2e0, latmin+(latmax-latmin)/2e0))
     bc =  Station(lon=mean_lon, lat=mean_lat)
+    endpt = Station(lon=radians(lonmax), lat=radians(latmax))
+    cutoffdis = abs(endpt.haversine_distance(bc)/1e3) # barycentre to endpoint (km)
+    # print('[DEBUG] Distance from barycentre to endpoint is {:10.3f}km'.format(cutoffdis))
     d = 2e0*(args.d_coef if args.d_coef is not None else args.dmax)
-    cutoffdis = 10e0 * d
+    cutoffdis += d * (2.15e0 if args.ltype == 'gaussian' else 10e0) # in km
     vprint('[DEBUG] Using cut-off distance {:10.3f}km'.format(cutoffdis))
-    ## not correct
+    #for s in sta_list_ell:
+    #    d = s.haversine_distance(bc)
+    #    print('station {:} is {:7.1f}km away {:}'.format(s.name, d/1e3, 'Acc' if s.haversine_distance(bc)/1e3 <= cutoffdis else 'Rej'))
     sta_list_ell = [ s for s in sta_list_ell if s.haversine_distance(bc)/1e3 <= cutoffdis ]
-    for s in sta_list_ell:
-        d = s.haversine_distance(bc)
-        print('station {:} is {:7.1f}km away'.format(s.name, d/1e3))
     Npst = len(sta_list_ell)
     print('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
     Npst = len(sta_list_ell)
-"""
 
 ##  Make a new station list (copy of the original one), where all coordinates
 ##+ are in UTM. All points should belong to the same ZONE.
@@ -349,3 +353,4 @@ else:
 
 fout.close()
 write_station_info(sta_list_ell)
+print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))
