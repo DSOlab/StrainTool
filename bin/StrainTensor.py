@@ -298,7 +298,8 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
     print('[DEBUG]\tLongtitude : from {} to {} with step {} (deg)'.format(grd.x_min, grd.x_max, grd.x_step))
     print('[DEBUG]\tLatitude   : from {} to {} with step {} (deg)'.format(grd.y_min, grd.y_max, grd.y_step))
     print('[DEBUG] Number of Strain Tensors to be estimated: {}'.format(grd.xpts*grd.ypts))
-    if fstats: print('{:8s} {:8s} {:12s} {:12s} {:12s} {:7s}'.format('Longtitude','Latitude','# stations', 'D (optimal)','CutOff dis.', 'Sigma'), file=fstats)
+    if fstats: print('{:^10s} {:^10s} {:^10s} {:^12s} {:^12s} {:^12s}'.format('Longtitude','Latitude','# stations', 'D (optimal)','CutOff dis.', 'Sigma'), file=fstats)
+    if fstats: print('{:^10s} {:^10s} {:^10s} {:^12s} {:^12s} {:^12s}'.format('deg.','deg.','#', 'Km','#', '/'), file=fstats)
     vprint('[DEBUG] Estimating strain tensor for each cell center:')
     ##  Iterate through the grid (on each cell center). Grid returns cell-centre
     ##+ coordinates in lon/lat pairs, in degrees!
@@ -315,9 +316,9 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
         if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
             try:
                 sstr.estimate()
-                vprint('[DEBUG] Computed tensor at {:+8.4f}, {:8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
+                vprint('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
                 sstr.print_details(fout, utm_zone)
-                if fstats: print('{:+8.4f}, {:8.4f} {:12d} {:12.2f} {:12.2f} {:7.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
+                if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
                 # strain_list.append(sstr)
                 nodes_estim += 1
             except RuntimeError:
