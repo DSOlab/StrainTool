@@ -15,3 +15,9 @@ echo "[PLOTALL] ...plot dilatation..."
 echo "[PLOTALL] ...plot second invariant..."
 ./gmtstrainplot.sh -jpg -secinv strain_info.dat -psta -l -o output_2inv 
 
+echo "[PLOTALL] ...plot statistics, stations used per cell..."
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
+echo "[PLOTALL] ...plot statistics, optimal smoothing distance..."
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-doptimal -leg -o output_stats-doptimal
+echo "[PLOTALL] ...plot statistics, sigma value..."
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-sigma -leg -o output_stats-sigma

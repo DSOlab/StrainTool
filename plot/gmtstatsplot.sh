@@ -71,6 +71,7 @@ function help {
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
 	echo "     -l | --labels : plot labels"
+	echo "     -leg : plot legends"
 	echo "     -mt | --map_title <title> : title map default none use quotes"
 	echo "     -jpg : convert eps file to jpg"
 	echo "     -h | --help : help menu"
@@ -189,14 +190,17 @@ do
 	;;
     --stats-stations)
 	STATS_STATIONS=1
+	maptitle="Stations used per grid cell"
 	shift
 	;;
     --stats-doptimal)
 	STATS_DOPTIMAL=1
+	maptitle="Optimal Smoothing Distance (D) per grid cell"
 	shift
 	;;
     --stats-sigma)
 	STATS_SIGMA=1
+	maptitle="sigma (@~\s@~) value estimated per grid cell"
 	shift
 	;;
     -topo)
@@ -281,9 +285,53 @@ fi
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
-  stat_x_grid_step=$(grep x_grid_step $pth2stats | awk '{print $3}')
-  stat_y_grid_step=$(grep y_grid_step $pth2stats | awk '{print $3}')
+echo "G 0.2c" > .legend
+echo "H 11 Times-Roman StrainTool parameters" >> .legend
+echo "D 0.3c 1p" >> .legend
+echo "N 1" >> .legend
+
+  stat_version=$(grep Version ../bin/strain_stats.dat |awk -F: '{print $2}')
+echo "T Version: ${stat_version}" >> .legend
+echo "G .5c" >> .legend
+  stat_gps_file=$(grep gps_file $pth2stats | awk '{print $3}')
+echo "T GPS file: ${stat_gps_file}" >> .legend
+echo "G .5c" >> .legend
+
+echo "H 11 Times-Roman Interpolation model" >> .legend
+echo "D 0.3c 1p" >> .legend
+echo "N 1" >> .legend
+  stat_method=$(grep method $pth2stats | awk '{print $3}')
+echo "T method: ${stat_method}" >> .legend
+echo "G .5c" >> .legend
+  stat_ltype=$(grep ltype $pth2stats | awk '{print $3}')
+echo "T ltype: ${stat_ltype}" >> .legend
+echo "G .5c" >> .legend
+  stat_Wt=$(grep Wt $pth2stats | awk '{print $3}')
+echo "T Wt: ${stat_Wt}" >> .legend
+echo "G .5c" >> .legend
+  stat_dmin=$(grep dmin $pth2stats | awk '{print $3}')
+echo "T dmin: ${stat_dmin}" >> .legend
+echo "G .5c" >> .legend
+  stat_dmax=$(grep dmax $pth2stats | awk '{print $3}')
+echo "T dmax: ${stat_dmax}" >> .legend
+echo "G .5c" >> .legend
+  stat_dstep=$(grep dstep $pth2stats | awk '{print $3}')
+echo "T dstep: ${stat_dstep}" >> .legend
+echo "G .5c" >> .legend
+
+echo "H 11 Times-Roman Region parameters" >> .legend
+echo "D 0.3c 1p" >> .legend
+echo "N 1" >> .legend
+  stat_region=$(grep region $pth2stats | awk '{print $3}')
+echo "T region: ${stat_region}" >> .legend
+echo "G .5c" >> .legend
   
+  stat_x_grid_step=$(grep x_grid_step $pth2stats | awk '{print $3}')
+echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
+echo "G .5c" >> .legend
+  stat_y_grid_step=$(grep y_grid_step $pth2stats | awk '{print $3}')
+echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
+echo "G .5c" >> .legend
   
   
 #   calculate new variables
@@ -437,7 +485,7 @@ then
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   
     gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V
-    gmt grdsample tmpstations.grd -I30m -Gtmpstations_sample.grd -V${VRBLEVM}
+    gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
     gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
@@ -476,7 +524,7 @@ then
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   
     gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpdoptimal.grd -I30m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
+    gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
     gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
@@ -515,7 +563,7 @@ then
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
   
     gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpsigma.grd -I30m -Gtmpsigma_sample.grd -V${VRBLEVM}
+    gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
     gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
@@ -543,7 +591,7 @@ fi
 # plot legend
 if [ "$LEGEND" -eq 1 ]
 then
-  gmt pslegend .legend ${legendc} -C0.1c/0.1c -L1.3 -O -K >> $outfile
+  gmt pslegend .legend ${legendc} -C0.1c/0.1c  -O -K >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -558,7 +606,7 @@ fi
 #################--- Close ps output file ----##################################
 #echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
 echo "$west $south 8,0,black 0 LB This image was produced using" \
-  | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
+  | gmt pstext -Jm ${range} -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
   | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
 
@@ -588,7 +636,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history *.legend inx.cpt
+rm -rf tmp* gmt.conf gmt.history .legend inx.cpt
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"

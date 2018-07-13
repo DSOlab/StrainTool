@@ -39,3 +39,5 @@ STRSC=.0080
 ROTSC=.7
 strsclon=20.4
 strsclat=36.3
+
+legendc="-Jx1i -R0/8/0/8 -Dx20.5c/12.6c/4.6c/3.5c/BL"	
