@@ -1,5 +1,37 @@
 # Change Log
 
+## [v1.0-rc1.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc1.0) (2018-07-17)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-beta4.0...v1.0-rc1.0)
+
+**Implemented enhancements:**
+
+- gmt:add stamp that StrainTool used [\#28](https://github.com/DSOlab/StrainTool/issues/28)
+- gmt\_script: plot stations and velocities alone [\#20](https://github.com/DSOlab/StrainTool/issues/20)
+- get DOI and add metadata set [\#16](https://github.com/DSOlab/StrainTool/issues/16)
+- reformat project folders [\#15](https://github.com/DSOlab/StrainTool/issues/15)
+- gmt\_script: add delaunay triangles [\#8](https://github.com/DSOlab/StrainTool/issues/8)
+- License managements [\#4](https://github.com/DSOlab/StrainTool/issues/4)
+- project name [\#2](https://github.com/DSOlab/StrainTool/issues/2)
+- Opt [\#32](https://github.com/DSOlab/StrainTool/pull/32) ([demanasta](https://github.com/demanasta))
+- Dev danast [\#30](https://github.com/DSOlab/StrainTool/pull/30) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#29](https://github.com/DSOlab/StrainTool/pull/29) ([demanasta](https://github.com/demanasta))
+- Dev danast [\#27](https://github.com/DSOlab/StrainTool/pull/27) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#26](https://github.com/DSOlab/StrainTool/pull/26) ([demanasta](https://github.com/demanasta))
+- Travis patch [\#24](https://github.com/DSOlab/StrainTool/pull/24) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#21](https://github.com/DSOlab/StrainTool/pull/21) ([demanasta](https://github.com/demanasta))
+- Docs patch [\#19](https://github.com/DSOlab/StrainTool/pull/19) ([demanasta](https://github.com/demanasta))
+- Pretty code [\#18](https://github.com/DSOlab/StrainTool/pull/18) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- grid.py step conflict [\#22](https://github.com/DSOlab/StrainTool/issues/22)
+- Dev danast [\#30](https://github.com/DSOlab/StrainTool/pull/30) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#29](https://github.com/DSOlab/StrainTool/pull/29) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#25](https://github.com/DSOlab/StrainTool/pull/25) ([demanasta](https://github.com/demanasta))
+- Issue22 [\#23](https://github.com/DSOlab/StrainTool/pull/23) ([demanasta](https://github.com/demanasta))
+- Gmt patch [\#21](https://github.com/DSOlab/StrainTool/pull/21) ([demanasta](https://github.com/demanasta))
+
+
 ## [v1.0-beta4.0](https://github.com/DSOlab/StrainTool/tree/v1.0-beta4.0) (2018-06-29)
 
 [Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-beta2.1...v1.0-beta4.0)
