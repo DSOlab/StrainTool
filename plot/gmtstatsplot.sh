@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=beta
+#                     RELEASE=rc1.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,8 +25,8 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=JUL-2018
-#    contact        : Demitris Anastasiou (dganastasiou@gmail.com)
+#    update list    : LAST_UPDATE=AUG-2018
+#    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
 # ==============================================================================
@@ -34,10 +34,10 @@
 # HELP FUNCTION
 function help {
 	echo "/*****************************************************************/"
-	echo " Program Name : gmtstrainplot.sh"
+	echo " Program Name : gmtstatplot.sh"
 	echo " Version : v-1.0"
-	echo " Purpose : Plot maps for gmtstrainplot"
-	echo " Usage   : gmtstrainplot.sh -r  |  | -o [output] | -jpg "
+	echo " Purpose : Plot statistics generated from straintool"
+	echo " Usage   : gmtstatsplot.sh -stats [input] --stats-<option> -o [output]"
 	echo " Switches: "
 	echo ""
 	echo "/*** Basic Plots & Background ***********************************/"
@@ -48,25 +48,11 @@ function help {
 	echo "     -psta [:=stations] plot only stations from input file"
 	echo "     -deltr [:= delaunay triangles] plot delaunay triangles"
 	echo ""
-	echo "/*** PLOT SSTATISTICS ********************************************/"
+	echo "/*** PLOT STATISTICS ********************************************/"
 	echo "     -stats (input file) set input file"
 	echo "     --stats-stations : plot used stations"
 	echo "     --stats-doptimal : plot optimal distance (D)"
 	echo "     --stats-sigma : plot sigma "
-# 	echo "     -vhor (station_file)[:= horizontal velocities]  "
-# 	echo "     -vsc [:=velocity scale] change velocity scale default 0.05"
-# 	echo ""
-# 	echo "/*** PLOT STRAINS **********************************************/"
-# 	echo "     -str (strain file)[:= strains] Plot strain rates "
-# 	echo "     -rot (strain file)[:= rots] Plot rotational rates "
-# 	echo "     -gtot(strain file)[:=shear strain] plot total shear strain rate contours"
-# 	echo "     -gtotaxes (strain file) dextral and sinistral max shear strain rates"
-# 	echo "     -dil (strainfile)[:= dilatation] Plot dilatation and principal axes"
-# 	echo "     -secinv (strain file) [:=2nd invariand] Plot second invariand"
-# 	echo "     -strsc [:=strain scale]"
-# 	echo "     -rotsc [:=rotational scales]"
-# 	echo "  *for -gtot | -dil | -secinv use +grd to plot gridded data"
-# 	echo "        ex:-gtot+grd "
 	echo ""
 	echo "/*** OTHER OPRTIONS ********************************************/"
 	echo "     -o | --output : name of output files"
@@ -77,7 +63,7 @@ function help {
 	echo "     -h | --help : help menu"
 	echo " Exit Status:    1 -> help message or error"
 	echo " Exit Status:  = 0 -> sucesseful exit"
-	echo " run scr: ./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l"
+	echo " run scr: ./gmtstrainplot.sh -jpg -stats strain_stats.dat --stats-stations"
 	echo "/*************************************************************/"
 	exit 1
 }
@@ -92,7 +78,7 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-beta4.0"
+VERSION="v.1.0-rc1.0"
 
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
@@ -121,15 +107,6 @@ STATS=0
 STATS_STATIONS=0
 STATS_DOPTIMAL=0
 STATS_SIGMA=0
-# VHORIZONTAL=0
-# STRAIN=0
-# STRROT=0
-# GTOTAL=0
-# GTOTALAXES=0
-# DILATATION=0
-# SECINV=0
-# GRDDAT=0
-# MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
 # Check default parameters file
@@ -209,7 +186,7 @@ do
 	shift
 	;;
     -o | --output)
-	outfile=${2}.eps
+	outfile=${2}.ps
 	shift
 	shift
 	;;
@@ -239,7 +216,7 @@ do
 	;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
-      echo "[STATUS] Script Finished Unsuccesful! Exit Status 1"
+      echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
       exit 1
   esac
 done
@@ -257,14 +234,15 @@ then
   fi
 fi
 
+
 ##check inputfiles
-if [ "$PSTA" -eq 1 ]
+if [ "$STATS" -eq 1 ]
 then
-  if [ ! -f $pth2sta ]
+  if [ ! -f $pth2stats ]
   then
-    echo "[WARNING] input file $pth2sta does not exist"
-    echo "          please download it and then use this switch"
-    PSTA=0
+    echo "[ERROR] input file $pth2stats does not exist"
+    echo "          please set the correct path and then use this switch"
+    echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
     exit 1
   fi
 fi
@@ -274,12 +252,26 @@ if [ "$DELTR" -eq 1 ]
 then
   if [ ! -f $pth2deltr ]
   then
-    echo "[WARNING] input file $pth2deltr does not exist"
-    echo "          please download it and then use this switch"
-    PSTA=0
+    echo "[ERROR] input file $pth2deltr does not exist"
+    echo "          please set the correct path and then use this switch"
+    echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
     exit 1
   fi
 fi
+
+##check inputfiles
+if [ "$PSTA" -eq 1 ]
+then
+  if [ ! -f $pth2sta ]
+  then
+    echo "[WARNING] input file $pth2sta does not exist"
+    echo "          Stations will not printed"
+    PSTA=0
+  fi
+fi
+
+
+
 
 # //////////////////////////////////////////////////////////////////////////////
 # READ STATISTICS FILE
@@ -369,40 +361,6 @@ then
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
 
-# if [ "$TOPOGRAPHY" -eq 1 ]
-# then
-#   echo "...plot topography dem..."
-#   # ####################### TOPOGRAPHY ###########################
-#   # bathymetry
-#   gmt makecpt -Cgebco.cpt -T-7000/0/50 -Z > $bathcpt
-#   gmt grdimage $inputTopoB $range $proj -C$bathcpt -K > $outfile
-#   gmt pscoast $proj -P $range -Df -Gc -K -O >> $outfile
-# 	# land
-#   gmt makecpt -Cgray.cpt -T-6000/1800/50 -Z > $landcpt
-#   gmt grdimage $inputTopoL $range $proj -C$landcpt  -K -O >> $outfile
-#   gmt pscoast -R -J -O -K -Q >> $outfile
-# 	#------- coastline -------------------------------------------
-#   gmt psbasemap -R -J -O -K -B$frame:."$maptitle":  $scale >> $outfile
-#   gmt pscoast -J -R -Df -W0.25p,black -K  -O -U$logo_pos >> $outfile
-# fi
-# 
-# # //////////////////////////////////////////////////////////////////////////////
-# #  PLOT NOA CATALOGUE FAULTS Ganas et.al, 2013
-# if [ "$FAULTS" -eq 1 ]
-# then
-#   echo "...plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
-#   gmt psxy $pth2faults -R -J -O -K  -W.5,204/102/0  >> $outfile
-# fi
-# 
-# # //////////////////////////////////////////////////////////////////////////////
-# #  PLOT HARVARD CMT catalogue
-# if [ "$PCMT" -eq 1 ]
-# then
-# # gmt	makecpt -Cseis -T0/150/10 -Z > seis2.cpt
-#   gmt psmeca harvardcat.cmt -R -J -Sm0.3c/0 -G247/207/136 -W0.25p -T0 -O -K >> $outfile
-#   gmt psmeca papazachos.cmt -R -Jm -Sa0.3/0 -h1 -CP0.25 -G110 -K -O -P >> $outfile
-# fi
-
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT ONLY STATIONS ITHOUT ANY OTHER PARAMETER
 
@@ -418,57 +376,6 @@ then
       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
     fi
 fi
-
-# # //////////////////////////////////////////////////////////////////////////////
-# ### PLOT HORIZONTAL VELOCITIES
-# 
-# if [ "$VHORIZONTAL" -eq 1 ]
-# then
-#   echo "...plot horizontal velocities..."
-# # plot stations
-#   if [ "$PSTA" -eq 1 ]
-#   then
-# 
-#     awk 'NR > 2 {print $2,$3}' $pth2sta  \
-#     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-#     
-#     if [ "$LABELS" -eq 1 ]
-#     then
-#       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
-#       | gmt pstext -R -J -Dj0.1c/0.1c -F+f+a+j -O -K -V${VRBLEVM} >> ${outfile}
-#     fi
-#   fi
-# 
-#   awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-#   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
-#     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
-# 
-#   awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
-#   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
-#     -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
-# 
-# ###scale
-# # plot scale of strain rates
-#   tmp_scrate=$(python -c "print((${projscale}/150000000.)*5.)")
-#   velsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
-#   velsclon=$(echo print ${sclon} - ${tmp_scrate} | python)
-# 
-#   echo "$velsclon $velsclat ${vscmagn} 0 1 1 0 " \
-#   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
-#     -O -K -V${VRBLEVM} >> $outfile
-#   
-#   echo "$velsclon $velsclat ${vscmagn} 0 5 5 0 " \
-#   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
-#     -O -K -V${VRBLEVM} >> $outfile
-#   
-#   echo "$sclon $velsclat 9,1,black 0 CB ${vscmagn} \261 1 mm/y" \
-#   | gmt pstext -Jm -R -Dj0c/.5c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
-#   
-#   sclat=${velsclat}
-# #   sclon=${velsclon}
-# fi
-
-
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT STATIONS USED FOR EACH CELL
@@ -510,7 +417,7 @@ then
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
-### PLOTOPTIMAL dISTANCE d
+### PLOT OPTIMAL DISTANCE d
 if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
@@ -591,14 +498,14 @@ fi
 # plot legend
 if [ "$LEGEND" -eq 1 ]
 then
-  gmt pslegend .legend ${legendc} -C0.1c/0.1c  -O -K >> $outfile
+  gmt pslegend .legend ${legendc} -C0.1c/0.1c  -O -K -V${VRBLEVM} >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 #  Plot custom logo
 if [ "$LOGO" -eq 1 ]
 then
-  gmt psimage $pth2logos -O $logo_pos2 -W1.1c -F0.4  -K >>$outfile
+  gmt psimage $pth2logos -O $logo_pos2 -W1.1c -F0.4  -K -V${VRBLEVM} >>$outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////

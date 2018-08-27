@@ -1,4 +1,4 @@
-\#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=beta
+#                     RELEASE=rc1.0
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -25,8 +25,8 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=JUN-2018
-#    contact        : Demitris Anastasiou (dganastasiou@gmail.com)
+#    update list    : LAST_UPDATE=AUG-2018
+#    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
 # ==============================================================================
@@ -87,7 +87,7 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-beta4.0"
+VERSION="v.1.0-rc1.0"
 
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
@@ -266,7 +266,7 @@ do
 	shift
 	;;
     -o | --output)
-	outfile=${2}.eps
+	outfile=${2}.ps
 	shift
 	shift
 	;;
@@ -296,7 +296,7 @@ do
 	;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
-      echo "[STATUS] Script Finished Unsuccesful! Exit Status 1"
+      echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
       exit 1
   esac
 done
@@ -314,14 +314,14 @@ then
   fi
 fi
 
-##check inputfiles
-if [ "$PSTA" -eq 1 ]
+if [ "$STRAIN" -eq 1 ] || [ "$STRROT" -eq 1 ] || [ "$GTOTAL" -eq 1 ] || [ "$DILATATION" -eq 1 ] \
+   || [ "$GTOTALAXES" -eq 1 ] || [ "$SECINV" -eq 1 ]
 then
-  if [ ! -f $pth2sta ]
+  if [ ! -f $pth2strinfo ]
   then
-    echo "[WARNING] input file $pth2sta does not exist"
+    echo "[ERROR] input file $pth2strinfo does not exist"
     echo "          please download it and then use this switch"
-    PSTA=0
+    echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
     exit 1
   fi
 fi
@@ -331,10 +331,21 @@ if [ "$DELTR" -eq 1 ]
 then
   if [ ! -f $pth2deltr ]
   then
-    echo "[WARNING] input file $pth2deltr does not exist"
+    echo "[ERROR] input file $pth2deltr does not exist"
     echo "          please download it and then use this switch"
-    PSTA=0
+    echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
     exit 1
+  fi
+fi
+
+##check inputfiles
+if [ "$PSTA" -eq 1 ]
+then
+  if [ ! -f $pth2sta ]
+  then
+    echo "[WARNING] input file $pth2sta does not exist"
+    echo "          Stations will not printed"
+    PSTA=0
   fi
 fi
 
@@ -343,41 +354,12 @@ then
   if [ ! -f $pth2stainfo ]
   then
     echo "[WARNING] input file $pth2stainfo does not exist"
-    echo "          please download it and then use this switch"
+    echo "          Horizontal velocities will not plotted"
     VHORIZONTAL=0
-    exit 1
   fi
 fi
 
-if [ "$STRAIN" -eq 1 ] || [ "$STRROT" -eq 1 ] || [ "$GTOTAL" -eq 1 ] || [ "$DILATATION" -eq 1 ] \
-   || [ "$GTOTALAXES" -eq 1 ] || [ "$SECINV" -eq 1 ]
-then
-  if [ ! -f $pth2strinfo ]
-  then
-    echo "[WARNING] input file $pth2strinfo does not exist"
-    echo "          please download it and then use this switch"
-    STRAIN=0
-    exit 1
-  fi
-fi
 
-###check NOA FAULT catalogue
-# if [ "$FAULTS" -eq 1 ]
-# then
-#   if [ ! -f $pth2faults ]
-#   then
-#     echo "[WARNING] NOA Faults database does not exist"
-#     echo "          please download it and then use this switch"
-#     FAULTS=0
-#   fi
-# fi
-# 
-# ###check LOGO file
-# if [ ! -f "$pth2logos" ]
-# then
-#   echo "[WARNING] Logo file does not exist"
-#   LOGO=0
-# fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
@@ -421,23 +403,6 @@ fi
 # 	#------- coastline -------------------------------------------
 #   gmt psbasemap -R -J -O -K -B$frame:."$maptitle":  $scale >> $outfile
 #   gmt pscoast -J -R -Df -W0.25p,black -K  -O -U$logo_pos >> $outfile
-# fi
-# 
-# # //////////////////////////////////////////////////////////////////////////////
-# #  PLOT NOA CATALOGUE FAULTS Ganas et.al, 2013
-# if [ "$FAULTS" -eq 1 ]
-# then
-#   echo "...plot NOA FAULTS CATALOGUE Ganas et.al, 2013 ..."
-#   gmt psxy $pth2faults -R -J -O -K  -W.5,204/102/0  >> $outfile
-# fi
-# 
-# # //////////////////////////////////////////////////////////////////////////////
-# #  PLOT HARVARD CMT catalogue
-# if [ "$PCMT" -eq 1 ]
-# then
-# # gmt	makecpt -Cseis -T0/150/10 -Z > seis2.cpt
-#   gmt psmeca harvardcat.cmt -R -J -Sm0.3c/0 -G247/207/136 -W0.25p -T0 -O -K >> $outfile
-#   gmt psmeca papazachos.cmt -R -Jm -Sa0.3/0 -h1 -CP0.25 -G110 -K -O -P >> $outfile
 # fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -801,12 +766,6 @@ then
   | gmt pstext -Jm -R -Dj0c/1c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
 fi
 
-# //////////////////////////////////////////////////////////////////////////////
-# plot legend
-if [ "$LEGEND" -eq 1 ]
-then
-  gmt pslegend .legend ${legendc} -C0.1c/0.1c -L1.3 -O -K >> $outfile
-fi
 
 # //////////////////////////////////////////////////////////////////////////////
 #  Plot custom logo
@@ -850,7 +809,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history *.legend inx.cpt
+rm -rf tmp* gmt.conf gmt.history inx.cpt
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"
