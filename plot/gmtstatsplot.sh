@@ -285,43 +285,43 @@ echo "N 1" >> .legend
   stat_version=$(grep Version ../bin/strain_stats.dat |awk -F: '{print $2}')
 echo "T Version: ${stat_version}" >> .legend
 echo "G .5c" >> .legend
-  stat_gps_file=$(grep gps_file $pth2stats | awk '{print $3}')
+  stat_gps_file=$(tail -n+4 $pth2stats | grep gps_file | awk '{print $3}')
 echo "T GPS file: ${stat_gps_file}" >> .legend
 echo "G .5c" >> .legend
 
 echo "H 11 Times-Roman Interpolation model" >> .legend
 echo "D 0.3c 1p" >> .legend
 echo "N 1" >> .legend
-  stat_method=$(grep method $pth2stats | awk '{print $3}')
+  stat_method=$(tail -n+4 $pth2stats | grep method | awk '{print $3}')
 echo "T method: ${stat_method}" >> .legend
 echo "G .5c" >> .legend
-  stat_ltype=$(grep ltype $pth2stats | awk '{print $3}')
+  stat_ltype=$(tail -n+4 $pth2stats | grep ltype | awk '{print $3}')
 echo "T ltype: ${stat_ltype}" >> .legend
 echo "G .5c" >> .legend
-  stat_Wt=$(grep Wt $pth2stats | awk '{print $3}')
+  stat_Wt=$(tail -n+4 $pth2stats | grep Wt | awk '{print $3}')
 echo "T Wt: ${stat_Wt}" >> .legend
 echo "G .5c" >> .legend
-  stat_dmin=$(grep dmin $pth2stats | awk '{print $3}')
+  stat_dmin=$(tail -n+4 $pth2stats | grep dmin | awk '{print $3}')
 echo "T dmin: ${stat_dmin}" >> .legend
 echo "G .5c" >> .legend
-  stat_dmax=$(grep dmax $pth2stats | awk '{print $3}')
+  stat_dmax=$(tail -n+4 $pth2stats | grep dmax | awk '{print $3}')
 echo "T dmax: ${stat_dmax}" >> .legend
 echo "G .5c" >> .legend
-  stat_dstep=$(grep dstep $pth2stats | awk '{print $3}')
+  stat_dstep=$(tail -n+4 $pth2stats | grep dstep | awk '{print $3}')
 echo "T dstep: ${stat_dstep}" >> .legend
 echo "G .5c" >> .legend
 
 echo "H 11 Times-Roman Region parameters" >> .legend
 echo "D 0.3c 1p" >> .legend
 echo "N 1" >> .legend
-  stat_region=$(grep region $pth2stats | awk '{print $3}')
+  stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
 echo "T region: ${stat_region}" >> .legend
 echo "G .5c" >> .legend
   
-  stat_x_grid_step=$(grep x_grid_step $pth2stats | awk '{print $3}')
+  stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
 echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
 echo "G .5c" >> .legend
-  stat_y_grid_step=$(grep y_grid_step $pth2stats | awk '{print $3}')
+  stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
 echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
 echo "G .5c" >> .legend
   
