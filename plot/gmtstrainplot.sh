@@ -188,6 +188,7 @@ do
 	;;
     -str)
 	pth2strinfo=${pth2inptf}/${2}
+	maptitle="Principal Axes of Strain Rates"
 	STRAIN=1
 	shift
 	shift
@@ -199,6 +200,7 @@ do
 	;;
     -rot)
 	pth2strinfo=${pth2inptf}/${2}
+	maptitle="Rotational Rates"
 	STRROT=1
 	shift
 	shift
@@ -216,9 +218,11 @@ do
 	elif [ "${1:5:8}" == "axes" ]; then
 	  pth2strinfo=${pth2inptf}/${2}
 	  GTOTALAXES=1
+	  maptitle="Axes of dextral/sinistral shear-strain"
 	else
 	  pth2strinfo=${pth2inptf}/${2}
 	  GTOTAL=1
+	  maptitle="Maximum Shear Strain Rates"
 	fi
 	shift
 	shift
@@ -226,12 +230,14 @@ do
     -gtotaxes)
 	pth2strinfo=${pth2inptf}/${2}
 	GTOTALAXES=1
+    maptitle="Axes of dextral/sinistral shear strain"
 	shift
 	shift
 	;;
     -dil*)
 	pth2strinfo=${pth2inptf}/${2}
 	DILATATION=1
+	maptitle="Dilatation"
 	if [ "${1:4:7}" == "+grd" ]; then
 	  GRDDAT=1
 	fi
@@ -241,6 +247,7 @@ do
     -secinv*)
 	pth2strinfo=${pth2inptf}/${2}
 	SECINV=1
+	maptitle="Second invariant of strain rate"
 	if [ "${1:7:10}" == "+grd" ]; then
 	  GRDDAT=1
 	fi
