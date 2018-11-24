@@ -187,13 +187,14 @@ string      deg       deg          mm/yr
 
 Plotting scripts are placed under `plot/` directory. They are:
 
-*   `gmtstrainplot.sh`, and
+*   `gmtstrainplot.sh`,
+*   `gmtstatsplot.sh`, and
 *   `plotall.sh`
 
 All of the scripts need the file named `default-param` to be in the same folder.**default-param file options**
 
 <pre id="block-samp" <samp="">   
-pth2inptf=../data/  # set default folder for input files (strain_info.dat, station_info.dat)
+pth2inptf=../data/  # set default folder for input files (strain_info.dat, strain_stats.dat, station_info.dat)
 west, east, south, north, projscale, frame, sclength: set region parameters
 STRSC=0.01 : set principal axis plot scale
 ROTSC=.7 : set rotational rates plot scale
@@ -206,7 +207,7 @@ Basic Plots & Background :
      -r | --region : region to plot (default Greece)
          usage: -r west east south north projscale frame
 
-PLot station and velocitiess:
+Plot station and velocitiess:
     -psta [:=stations] plot only stations from input file
     -vhor (station_file)[:= horizontal velocities]
     -vsc [:=velocity scale] change valocity scale default 0.05
@@ -232,6 +233,43 @@ For exanple, to plot the principal axis fo strain rates for the example case abo
 
 <pre id="block-samp" <samp="">$>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
         </pre>
+
+**gmtstatsplot.sh options:**
+
+<pre id="block-samp" <samp="">
+Basic Plots & Background :
+     -r | --region : region to plot (default Greece)
+         usage: -r west east south north projscale frame
+
+Plot Stations and triangles:
+     -psta [:=stations] plot only stations from input file
+     -deltr [:= delaunay triangles] plot delaunay triangles
+
+Plot Statistics:
+     -stats (input file) set input file
+     --stats-stations : plot used stations
+     --stats-doptimal : plot optimal distance (D)
+     --stats-sigma : plot sigma 
+
+Other options:
+     -o | --output : name of output files
+     -l | --labels : plot labels
+     -leg : plot legends
+     -mt | --map_title <text> : title map default none use quotes
+     -jpg : convert eps file to jpg
+     -h | --help : help menu
+</pre>
+
+For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+
+<pre id="block-samp" <samp="">$> ./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
+        </pre>
+
+**plotall.sh options:**
+
+## Significant Fixed Bugs
+**v1.0-rc1.1** The calculation of second invariant was corrected due to a mistake in the previous version (v1.0-rc1.0))
+
 
 ## Contributing
 

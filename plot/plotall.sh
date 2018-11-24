@@ -1,30 +1,87 @@
 #!/usr/bin/env bash
+
+function help {
+	echo "/*****************************************************************/"
+	echo " Program Name : plotall.sh"
+	echo " Version : v-1.0"
+	echo " Purpose : Plot alla available maps using prefix/suffix work id"
+	echo " Usage   : plotall.sh "
+	echo " Switches: "
+	echo " no switch produce default output names"
+	echo "   -p | --prefix <workid> add prefix work id to output file"
+	echo "   -s | --suffix <workid> add suffix work id to output file"
+	echo "   -h | --help Q help panel"
+	echo ""
+
+exit 0
+}
+
+prefix=""
+suffix=""
+
 if [ "$#" == "0" ]
 then
-  param=""
+  prefix=""
+  suffix=""
 else
-  param="-${1}"
-echo $param
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -p | --prefix)
+      prefix="${2}-"
+      shift
+      shift
+      ;;
+    -s | --suffix)
+      suffix="-${2}"
+      shift
+      shift
+      ;;
+    -h | --help)
+      help
+      ;;    
+    *)
+      echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
+      echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
+      exit 1
+  esac
+done
 fi
 
+echo "[PLOTALL] ...plot horizontal velocities..."
+./gmtstrainplot.sh -jpg -vhor station_info.dat -psta -l -o ${prefix}output_vel${suffix}
 echo "[PLOTALL] ...plot principal axes of strain rates..."
-./gmtstrainplot.sh -jpg -vhor station_info.dat -psta -l -o output_vel${param}
-echo "[PLOTALL] ...plot principal axes of strain rates..."
-./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l -o output_str${param}
+./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l -o ${prefix}output_str${suffix}
 echo "[PLOTALL] ...plot rotational rates..."
-./gmtstrainplot.sh -jpg -rot strain_info.dat -psta -l -o output_rot${param}
+./gmtstrainplot.sh -jpg -rot strain_info.dat -psta -l -o ${prefix}output_rot${suffix}
 echo "[PLOTALL] ...plot dextral, sinistral maximum shear strain rates..."
-./gmtstrainplot.sh -jpg -gtotaxes strain_info.dat -psta -l -o output_gtotaxes${param}
+./gmtstrainplot.sh -jpg -gtotaxes strain_info.dat -psta -l -o ${prefix}output_gtotaxes${suffix}
 echo "[PLOTALL] ...plot maximum shear strain..."
-./gmtstrainplot.sh -jpg -gtot strain_info.dat -psta -l -o output_gtot${param}
+./gmtstrainplot.sh -jpg -gtot strain_info.dat -psta -l -o ${prefix}output_gtot${suffix}
 echo "[PLOTALL] ...plot dilatation..."
-./gmtstrainplot.sh -jpg -dil strain_info.dat -psta -l -o output_dil${param}
+./gmtstrainplot.sh -jpg -dil strain_info.dat -psta -l -o ${prefix}output_dil${suffix}
 echo "[PLOTALL] ...plot second invariant..."
-./gmtstrainplot.sh -jpg -secinv strain_info.dat -psta -l -o output_2inv${param}
+./gmtstrainplot.sh -jpg -secinv strain_info.dat -psta -l -o ${prefix}output_2inv${suffix}
 
 echo "[PLOTALL] ...plot statistics, stations used per cell..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations${param}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o ${prefix}output_stats-stations${suffix}
 echo "[PLOTALL] ...plot statistics, optimal smoothing distance..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-doptimal -leg -o output_stats-doptimal${param}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-doptimal -leg -o ${prefix}output_stats-doptimal${suffix}
 echo "[PLOTALL] ...plot statistics, sigma value..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-sigma -leg -o output_stats-sigma${param}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-sigma -leg -o ${prefix}output_stats-sigma${suffix}
+
+echo "--------------------------------------------------------------------------"
+echo "[PLOTALL] output file produced from this script:"
+echo "--------------------------------------------------------------------------"
+echo "Horizontal velocities ..................... ${prefix}output_vel${suffix}.jpg"
+echo "Principal axes of strain rates ............ ${prefix}output_str${suffix}.jpg"
+echo "Rotational rates .......................... ${prefix}output_rot${suffix}.jpg"
+echo "Dextral/sinistral maximum shear strain .... ${prefix}output_gtotaxes${suffix}.jpg"
+echo "Maximum shear strain ...................... ${prefix}output_gtot${suffix}.jpg"
+echo "Dilatation ................................ ${prefix}output_dil${suffix}.jpg"
+echo "Second Invariant .......................... ${prefix}output_2inv${suffix}.jpg"
+echo "Statistics, stations used per cell ........ ${prefix}output_stats-stations${suffix}.jpg"
+echo "Statistics, optimal smoothing distance .... ${prefix}output_stats-doptimal${suffix}.jpg"
+echo "Statistics, sigma value : ................. ${prefix}output_stats-sigma${suffix}.jpg"
+echo "--------------------------------------------------------------------------"
+
