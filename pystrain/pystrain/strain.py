@@ -584,7 +584,7 @@ class ShenStrain:
         azim  = 90.0e0+azim
         dexazim = azim+45.0e0-180.0e0
         dilat = x1+x3
-        sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
+        sec_inv = sqrt(x1*x1+2.0e0*x2*x2+x3*x3)
         if params_cov is None:
             staumax, semax, semin, sazim, sdilat = [None] * 5
         else:
