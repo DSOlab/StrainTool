@@ -646,7 +646,7 @@ $>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
          $$ e_{min}  = e_{mean} - \tau_{max} $$
          $$ Az_{e_{max}}  = 90 + \frac{-atan2(\tau_{xy}, e_{diff})}{2} $$
          $$ dilatation = \tau_{x} + \tau_{y} $$
-         $$ second invariant = \sqrt{ {\tau_{x}}^2 + {\tau_{xy}}^2 + {\tau_{y}}^2 }$$
+         $$ second invariant = \sqrt{ {\tau_{x}}^2 + {\tau_{y}}^2 + 2*{\tau_{xy}}^2  }$$
          where,
          $$ e_{mean} = \frac{\tau_{x}+\tau_{y}}{2} $$
          $$ e_{diff} = \frac{\tau_{x}-\tau_{y}}{2} $$
