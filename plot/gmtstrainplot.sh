@@ -696,10 +696,10 @@ then
   fi
 
 # plot rotational rates
-  awk 'NR > 2 { if ($7 >= 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
+  awk 'NR > 2 { if ($7 >= 0) print $2,$1,$7*1e-09/0.206,$8*1e-09/0.206}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 { if ($7 < 0) print $2,$1,$7*1e-09,$8*1e-09}' $pth2strinfo \
+  awk 'NR > 2 { if ($7 < 0) print $2,$1,$7*1e-09/0.206,$8*1e-09/0.206}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
@@ -709,13 +709,13 @@ then
   rotsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
   rotsclon=$sclon
   
-  echo "$rotsclon $rotsclat 0.00000005 0.00000001" \
+  echo "$rotsclon $rotsclat 0.00000004853689 0.000000004853689" \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$rotsclon $rotsclat -0.00000005 0.00000001" \
+  echo "$rotsclon $rotsclat -0.00000004853689 0.000000004853689" \
   | gmt psvelo -Jm $range -Sw${ROTSC}/1.e7 -Gblue -E0/0/0/10 -L -A0.02 \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$rotsclon $rotsclat 9 0 1 CB -0.05 / 0.05 ppm" \
+  echo "$rotsclon $rotsclat 9 0 1 CB 10 \261 1 marcsec/yr" \
   | gmt pstext -Jm -R -Dj0c/-.6c -Gwhite -O -K -V${VRBLEVM} >> $outfile
   
   sclat=${rotsclat}

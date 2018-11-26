@@ -171,7 +171,7 @@ Results of `StrainTensor.py` are recorded in the following three files:
     The columns of the file are structured as below:
 
 <pre id="block-samp" <samp="">Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
-   deg       deg         mm/yr           mm/yr          nrad/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
+   deg       deg         mm/yr           mm/yr          marcsec/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
 	        </pre>
 
 *   **station_info.dat :** Stations' data used for the calculation of strain tensor are written at htis file. Format is:

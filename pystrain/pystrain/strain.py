@@ -664,7 +664,7 @@ class ShenStrain:
             '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
-            self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, \
+            self.value_of('omega')*1e9*0.206e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0, \
             self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, \
             self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
             self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
@@ -678,7 +678,7 @@ class ShenStrain:
             '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
-            self.value_of('omega')*1e9, novar, \
+            self.value_of('omega')*1e9*0.206e0, novar, \
             self.value_of('taux')*1e9, novar, \
             self.value_of('tauxy')*1e9, novar, \
             self.value_of('tauy')*1e9, novar, \
