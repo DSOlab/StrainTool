@@ -20,7 +20,7 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
-Version = 'StrainTensor.py Version: 1.0-beta (pre-release)'
+Version = 'StrainTensor.py Version: 1.0-rc2.0'
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []

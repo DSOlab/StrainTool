@@ -76,12 +76,12 @@ That's it! The package modules should now be in place and you should be able to 
 
 The following scenarios have been tested to validatethe installation procedure
 
-|    OS      |Python 2.7 | Python 3.6 | GMT 5.2.1 |
-|:----------:|:------------------:|:------------------:|:------------------:|
-| Fedora     | :white_check_mark: |                    | :white_check_mark: |
-| Manjaro    |                    | :white_check_mark: | :white_check_mark: |
-| Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Windows 10 | :white_check_mark: |                    |                    |
+|    OS      |Python 2.7 | Python 3.6 | GMT 5.2 | GMT 5.4
+|:----------:|:------------------:|:------------------:|:------------------:|:------------------:|
+| Fedora     | :white_check_mark: |                    | :white_check_mark: |                   |
+| Manjaro    |                    | :white_check_mark: | :white_check_mark: |                   |
+| Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Windows 10 | :white_check_mark: |                    |                    |                    |
 
 
 ## Example
@@ -231,8 +231,7 @@ Other options:
 
 For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
 
-<pre id="block-samp" <samp="">$>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
-        </pre>
+    $> ./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
 
 **gmtstatsplot.sh options:**
 
@@ -262,13 +261,23 @@ Other options:
 
 For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
 
-<pre id="block-samp" <samp="">$> ./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
-        </pre>
+    $> ./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
 
 **plotall.sh options:**
 
-## Significant Fixed Bugs
-**v1.0-rc1.1** The calculation of second invariant was corrected due to a mistake in the previous version (v1.0-rc1.0))
+<pre id="block-samp" <samp="">
+   - no switch produce default output names
+   -p | --prefix <workid>: add prefix work id to output file
+   -s | --suffix <workid>: add suffix work id to output file
+   -h | --help: help panel
+	</pre>
+
+    $> ./plotall.sh -p test -s test2
+
+	
+
+## Significant Bugs Fixed
+**v1.0-rc2.0** The calculation of second invariant was corrected due to a mistake in the previous version (v1.0-rc1.0))
 
 
 ## Contributing

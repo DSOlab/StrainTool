@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# program version
+VERSION="v.1.0-rc2.0"
 
 function help {
 	echo "/*****************************************************************/"
@@ -8,11 +10,10 @@ function help {
 	echo " Usage   : plotall.sh "
 	echo " Switches: "
 	echo " no switch produce default output names"
-	echo "   -p | --prefix <workid> add prefix work id to output file"
-	echo "   -s | --suffix <workid> add suffix work id to output file"
-	echo "   -h | --help Q help panel"
-	echo ""
-
+	echo "   -p | --prefix <workid>: add prefix work id to output file"
+	echo "   -s | --suffix <workid>: add suffix work id to output file"
+	echo "   -h | --help: help panel"
+    echo "/*****************************************************************/"
 exit 0
 }
 
@@ -39,7 +40,12 @@ do
       ;;
     -h | --help)
       help
-      ;;    
+      ;;
+    -v | --version)
+      echo "Version: "$VERSION
+      exit 1
+      shift
+      ;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
       echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
