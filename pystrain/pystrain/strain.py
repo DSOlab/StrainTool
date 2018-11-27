@@ -161,7 +161,12 @@ class ShenStrain:
         cc = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         if not d: d = self.__options__['d_coef']
         limit = self.__options__['cutoff_dis'] * d
-        nlst = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
+        ## nlst1 = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
+        ## OPT try optimized squared distance
+        nlst = [ s for s in self.__stalst__ if s.squared_distance_from(cc) <= limit*limit ]
+        #assert len(nlst) == len(nlst1)
+        #for i,s in enumerate(nlst1):
+        #    assert s.name == nlst[i].name
         return nlst
     
     def azimouths(self, other_sta_lst=None):
@@ -579,7 +584,7 @@ class ShenStrain:
         azim  = 90.0e0+azim
         dexazim = azim+45.0e0-180.0e0
         dilat = x1+x3
-        sec_inv = sqrt(x1*x1+x2*x2+x3*x3)
+        sec_inv = sqrt(x1*x1+2.0e0*x2*x2+x3*x3)
         if params_cov is None:
             staumax, semax, semin, sazim, sdilat = [None] * 5
         else:
@@ -659,7 +664,7 @@ class ShenStrain:
             '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
-            self.value_of('omega')*1e9, sqrt(self.__vcv__[5,5])*1e9, \
+            self.value_of('omega')*1e9*0.206e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0, \
             self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, \
             self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
             self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
@@ -673,7 +678,7 @@ class ShenStrain:
             '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
-            self.value_of('omega')*1e9, novar, \
+            self.value_of('omega')*1e9*0.206e0, novar, \
             self.value_of('taux')*1e9, novar, \
             self.value_of('tauxy')*1e9, novar, \
             self.value_of('tauy')*1e9, novar, \
@@ -777,6 +782,7 @@ class ShenStrain:
             try:
                 # A-posteriori std. deviation
                 sigma0_post = float(res[0])
+                self.__sigma0__ = sigma0_post
                 # print('[DEBUG] A-posteriori std. deviation = {:}'.format(sqrt(sigma0_post)))
                 bvar = linalg.inv(VcV) * sigma0_post
                 self.__vcv__ = bvar
