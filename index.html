@@ -204,8 +204,12 @@
         <div class="alert alert-warning" role="alert">
         <p>To use the <a href="#plot_tools_pck">Plot Tools</a> bundle, you must have
         <a href="http://gmt.soest.hawaii.edu/">GMT</a> (> 5.0.0) installed, allong with a
-        variety of UNIX-based tools. If you are on a UNIX/Linux operating system,
-        most or all of them are pre-installed.</p></div>
+        variety of UNIX-based tools. </p>
+        <ul>
+          <li>If you are on a UNIX/Linux operating system, most or all of them are pre-installed.</li>
+          <li>For Windows OS you can install <a href="https://git-scm.com/">git-bash</a> and <a href="https://www.ghostscript.com/index.html">ghostscript</a> for executing bash scripts.</li>
+        </ul>
+        </div>
         <h2>Installation Procedure</h2>
         <p>To install the Project, you actualy only need to install the
         <a href="pystrain_pkg">pystrain</a> package. What this means, is that
@@ -237,7 +241,8 @@
 	    <th style="text-align: center;">OS</th>
 	    <th style="text-align: center;">Python 2.7</th>
 	    <th style="text-align: center;">Python 3.6</th>
-	    <th style="text-align: center;">GMT 5.2.1</th>
+	    <th style="text-align: center;">GMT 5.2</th>
+            <th style="text-align: center;">GMT 5.4</th>
 	    </tr>
 	    </thead>
 	    <tbody>
@@ -246,24 +251,28 @@
 	    <td style="text-align: center;">&#10004;</td>
 	    <td style="text-align: center;"></td>
 	    <td style="text-align: center;">&#10004;</td>
+            <td style="text-align: center;"></td>
 	    </tr>
 	    <tr class="even">
 	    <td style="text-align: center;">Manjaro</td>
 	    <td style="text-align: center;"></td>
 	    <td style="text-align: center;">&#10004;</td>
 	    <td style="text-align: center;">&#10004;</td>
+            <td style="text-align: center;"></td>
 	    </tr>
 	    <tr class="odd">
 	    <td style="text-align: center;">Ubuntu</td>
 	    <td style="text-align: center;">&#10004;</td>
 	    <td style="text-align: center;">&#10004;</td>
 	    <td style="text-align: center;">&#10004;</td>
+            <td style="text-align: center;">&#10004;</td>
 	    </tr>
 	    <tr class="even">
 	    <td style="text-align: center;">Windows 10</td>
 	    <td style="text-align: center;">&#10004;</td>
-	    <td style="text-align: center;"></td>
-	    <td style="text-align: center;"></td>
+	    <td style="text-align: center;">&#10004;</td>
+	    <td style="text-align: center;">&#10004;</td>
+            <td style="text-align: center;">&#10004;</td>
 	    </tr>
 	    </tbody>
 	</table>
@@ -396,7 +405,7 @@
 	    <li><b>strain_info.dat</b> This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.<br>The columns of the file are structured as below:</li>
 		 <pre id="block-samp"><samp>
 Latitude Longtitude vx+dvx  vy+dvy   w+dw     exx+dexx    exy+dexy    eyy+deyy   emax+demax  emin+demin   shr+dshr  azi+dazi  dilat+ddilat   sec. invariant 
-   deg       deg     mm/yr   mm/yr  nrad/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr    deg.    nstrain/yr    nstrain/yr</samp></pre>
+   deg       deg     mm/yr   mm/yr  marcsec/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr    deg.    nstrain/yr    nstrain/yr</samp></pre>
 	    <li><b>station_info.dat</b> Station's data used for the calculation of strain tensor are written at this file. Format is: </li>
                  <pre id="block-samp"><samp>
 Code    Longtitude Latitude  Ve   Vn   dVe  dVn 
@@ -413,7 +422,8 @@ string      deg       deg          mm/yr</samp></pre>
         <h1>How to use Plot Tools</h1>
         <p>Plotting scripts are placed under <code>plot/</code> directory. They are:
         <ul>
-        <li><code>gmtstrainplot.sh</code>, and</li>
+        <li><code>gmtstrainplot.sh</code>,</li>
+        <li><code>gmtstatsplot.sh</code>,   and</li>
         <li><code>plotall.sh</code></li>
         </ul>
         All of the scripts need the file named <code>default-param</code> to be in the
@@ -458,10 +468,56 @@ Other options:
      -jpg : convert eps file to jpg
      -h | --help : help menu
         </samp></pre>
-        <p>For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+        <p>For example, to plot the principal axis fo strain rates for the example case above you can use the following command:
         <pre id="block-samp"<samp>
 $>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
         </samp></pre>
+
+        <b>gmtstatsplot.sh options:</b>
+        <pre id="block-samp"<samp>
+Basic Plots & Background :
+     -r | --region : region to plot (default Greece)
+         usage: -r west east south north projscale frame
+
+Plot Stations and triangles:
+     -psta [:=stations] plot only stations from input file
+     -deltr [:= delaunay triangles] plot delaunay triangles
+
+Plot Statistics:
+     -stats (input file) set input file
+     --stats-stations : plot used stations
+     --stats-doptimal : plot optimal distance (D)
+     --stats-sigma : plot sigma 
+
+Other options:
+     -o | --output : name of output files
+     -l | --labels : plot labels
+     -leg : plot legends
+     -mt | --map_title  : title map default none use quotes
+     -jpg : convert eps file to jpg
+     -h | --help : help menu
+        </samp></pre>
+        <p>For example, to plot the stations used per cell grid for the example case above you can use the following command:
+        <pre id="block-samp"<samp>
+$> ./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
+        </samp></pre>
+
+
+        <b>plotall.sh options:</b>
+        <pre id="block-samp"<samp>
+   - no switch produce default output names
+   -p | --prefix : add prefix work id to output file
+   -s | --suffix : add suffix work id to output file
+   -h | --help: help panel
+        </samp></pre>
+<p>For example:</p>
+        <pre id="block-samp"<samp>
+$> ./plotall.sh -p test -s test2
+        </samp></pre>
+
+
+
+
 
         <h1 id="bck_and_algorithms">Background and Algorithms</h1>
         <p>Given a set of stations (aka point on earth's surface) with their
@@ -646,12 +702,17 @@ $>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
          $$ e_{min}  = e_{mean} - \tau_{max} $$
          $$ Az_{e_{max}}  = 90 + \frac{-atan2(\tau_{xy}, e_{diff})}{2} $$
          $$ dilatation = \tau_{x} + \tau_{y} $$
-         $$ second invariant = \sqrt{ {\tau_{x}}^2 + {\tau_{y}}^2 + 2*{\tau_{xy}}^2  }$$
+         $$ second invariant = \sqrt{ {\tau_{x}}^2 + {\tau_{y}}^2 + 2{\tau_{xy}}^2  }$$
          where,
          $$ e_{mean} = \frac{\tau_{x}+\tau_{y}}{2} $$
          $$ e_{diff} = \frac{\tau_{x}-\tau_{y}}{2} $$
         </p>
         
+        <h1 id="contributing">Significant Bugs Fixed</h1>
+        <ul>
+          <li><b>v1.0-rc2.0</b> The calculation of second invariant was corrected due to a mistake in the previou version (v1.0-rc1.0)</li>
+        </ul>
+
         <h1 id="contributing">Contributing</h1>
         <ol>
           <li>Create an issue and describe your idea</li>
@@ -667,7 +728,7 @@ $>./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
         <p>The work is licensed under <a href="https://github.com/DSOlab/StrainTool/blob/dev-danast/.github/CHANGELOG.md">MIT-license</a></p>
       
         <h1 id="authorsbugreports">Authors &amp; Bug Reports</h1>
-        <p><strong>Dimitrios G. Anastasiou</strong></p>
+        <p><strong>Dr. Dimitrios G. Anastasiou</strong></p>
         <blockquote>
           <p>Dr.Eng Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:dganastasiou@gmail.com">dganastasiou@gmail.com</p></a>
         </blockquote>
