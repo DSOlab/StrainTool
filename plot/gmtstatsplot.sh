@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc1.0
+#                     RELEASE=rc3.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,11 +25,57 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=AUG-2018
+#    update list    : LAST_UPDATE=NOV-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
 # ==============================================================================
+
+##
+##  Function to resolve system's python version. The major version (aka 2 or 3)
+##+ is stored in a variable called "PYV"
+##
+resolve_py_version() {
+    regex="([1-9])\.[1-9]\.[1-9]+"
+    pyv=$(python -c 'import platform; print(platform.python_version())')
+    if [[ $pyv =~ $regex ]]
+    then
+        if test "${BASH_REMATCH[1]}" = 2
+        then
+            PYV=2
+        elif test "${BASH_REMATCH[1]}" = 3
+        then
+            PYV=3
+        else
+            >&2 echo "[ERROR] Failed to resolve Python version"
+            exit 1
+        fi
+    else
+        >&2 echo "[ERROR] Failed to resolve Python version"
+        exit 1
+    fi
+}
+##
+##  Alias python call! This is actualy an alias to calling: 'python -c'
+##+ depending on the variable PYV; that is if PYV=3, then the call will be
+##+ 'python -c ......', else the call will be
+##+ 'python -c "from __future__ import print_function; .....'
+## ----------------------------------------------------------------------------
+##  So, when using pythonc function, just use the Python v3.x print syntax.
+## ----------------------------------------------------------------------------
+##
+##  e.g
+##  $>foo=$(pythonc "a=5+5.7; print(a)")
+##
+pythonc() {
+    if test ${PYV} = 3
+    then
+        python -c "$@"
+    else
+        python -c "from __future__ import print_function; $@"
+    fi
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -78,8 +124,12 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc1.0"
+VERSION="v.1.0-rc3.0"
 
+# system's Python version
+PYV=99
+resolve_py_version
+echo $PYV
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
 
@@ -327,24 +377,24 @@ echo "G .5c" >> .legend
   
   
 #   calculate new variables
-  west_grd=$(python -c "print(${west} + (${stat_x_grid_step}/2))")
-  south_grd=$(python -c "print(${south} + (${stat_y_grid_step}/2))")
+  west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}/2))")
+  south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}/2))")
   range_grd="-R$west_grd/$east/$south_grd/$north"
 
-  istep_grd=$(python -c "print(${stat_x_grid_step}*60)")
+  istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
 # tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
-sclat=$(echo print ${south} + ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
+sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*27.)")
-sclon=$(echo print ${east} - ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*27.)")
+sclon=$(pythonc "print(${east} - ${tmp_scrate})")
 
-tmp_msclat=$(python -c "print int((${south} + ${north})/2)")
-tmp_msclon=$(python -c "print int((${west} + ${east})/2)")
+tmp_msclat=$(pythonc "print(int((${south} + ${north})/2))")
+tmp_msclon=$(pythonc "print(int((${west} + ${east})/2))")
 export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 # scale="-Lf20/33.5/36:24/100+l+jr"
 range="-R$west/$east/$south/$north"
@@ -386,9 +436,9 @@ then
   awk 'NR > 24 {print $1-.125,$2-.125,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+1)")
+  Tmax=$(pythonc "print(round(${T},-1)+1)")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1)-1)")
+  Tmin=$(pythonc "print(round(${T},-1)-1)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   
     gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V
@@ -396,7 +446,7 @@ then
     gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),0))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),0))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -425,9 +475,9 @@ then
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+1)")
+  Tmax=$(pythonc "print(round(${T},-1)+1)")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1)-1)")
+  Tmin=$(pythonc "print(round(${T},-1)-1)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   
     gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m= -V
@@ -435,7 +485,7 @@ then
     gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -464,9 +514,9 @@ then
   awk 'NR > 24 {print $1,$2,$6}' $pth2stats > tmpsigma
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},3)+.001)")
+  Tmax=$(pythonc "print(round(${T},3)+.001)")
   T=`awk '{print $3}' tmpsigma | gmt info -El `
-  Tmin=$(python -c "print(round(${T},3)-.001)")
+  Tmin=$(pythonc "print(round(${T},3)-.001)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
   
     gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m= -V
@@ -474,7 +524,7 @@ then
     gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(python -c "print(round((${Tmax}/5.),3))")
+  scale_step=$(pythonc "print(round((${Tmax}/5.),3))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"sigma": -I -S \
       -O -K -V${VRBLEVM}>> $outfile

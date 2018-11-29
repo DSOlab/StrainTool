@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc1.0
+#                     RELEASE=rc3.0
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
