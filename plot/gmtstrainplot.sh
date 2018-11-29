@@ -591,7 +591,7 @@ then
   awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
-  Tmax=$(echo "print(round(${T},-1)+10)")
+  Tmax=$(pythonc "print(round(${T},-1)+10)")
   T=`awk '{print $3}' tmpdil | gmt info -El `
   Tmin=$(pythonc "print(round(${T},-1)-10)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
