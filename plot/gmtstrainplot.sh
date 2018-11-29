@@ -133,7 +133,7 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc2.0"
+VERSION="v.1.0-rc3.0"
 
 # system's Python version
 PYV=99

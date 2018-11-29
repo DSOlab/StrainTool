@@ -129,7 +129,7 @@ VERSION="v.1.0-rc3.0"
 # system's Python version
 PYV=99
 resolve_py_version
-echo $PYV
+
 # verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
 export VRBLEVM=n
 
