@@ -320,63 +320,56 @@ then
   fi
 fi
 
-
-
-
 # //////////////////////////////////////////////////////////////////////////////
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
-echo "G 0.2c" > .legend
-echo "H 11 Times-Roman StrainTool parameters" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  echo "G 0.2c" > .legend
+  echo "H 11 Times-Roman StrainTool parameters" >> .legend
+  echo "D 0.3c 1p" >> .legend
+  echo "N 1" >> .legend
 
-  stat_version=$(grep Version ../bin/strain_stats.dat |awk -F: '{print $2}')
-echo "T Version: ${stat_version}" >> .legend
-echo "G .5c" >> .legend
+  stat_version=$(grep Version $pth2stats  |awk -F: '{print $2}')
+  echo "T Version: ${stat_version}" >> .legend
+  echo "G .5c" >> .legend
   stat_gps_file=$(tail -n+4 $pth2stats | grep gps_file | awk '{print $3}')
-echo "T GPS file: ${stat_gps_file}" >> .legend
-echo "G .5c" >> .legend
-
-echo "H 11 Times-Roman Interpolation model" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  echo "T GPS file: ${stat_gps_file}" >> .legend
+  echo "G .5c" >> .legend
+  echo "H 11 Times-Roman Interpolation model" >> .legend
+  echo "D 0.3c 1p" >> .legend
+  echo "N 1" >> .legend
   stat_method=$(tail -n+4 $pth2stats | grep method | awk '{print $3}')
-echo "T method: ${stat_method}" >> .legend
-echo "G .5c" >> .legend
+  echo "T method: ${stat_method}" >> .legend
+  echo "G .5c" >> .legend
   stat_ltype=$(tail -n+4 $pth2stats | grep ltype | awk '{print $3}')
-echo "T ltype: ${stat_ltype}" >> .legend
-echo "G .5c" >> .legend
+  echo "T ltype: ${stat_ltype}" >> .legend
+  echo "G .5c" >> .legend
   stat_Wt=$(tail -n+4 $pth2stats | grep Wt | awk '{print $3}')
-echo "T Wt: ${stat_Wt}" >> .legend
-echo "G .5c" >> .legend
+  echo "T Wt: ${stat_Wt}" >> .legend
+  echo "G .5c" >> .legend
   stat_dmin=$(tail -n+4 $pth2stats | grep dmin | awk '{print $3}')
-echo "T dmin: ${stat_dmin}" >> .legend
-echo "G .5c" >> .legend
+  echo "T dmin: ${stat_dmin}" >> .legend
+  echo "G .5c" >> .legend
   stat_dmax=$(tail -n+4 $pth2stats | grep dmax | awk '{print $3}')
-echo "T dmax: ${stat_dmax}" >> .legend
-echo "G .5c" >> .legend
+  echo "T dmax: ${stat_dmax}" >> .legend
+  echo "G .5c" >> .legend
   stat_dstep=$(tail -n+4 $pth2stats | grep dstep | awk '{print $3}')
-echo "T dstep: ${stat_dstep}" >> .legend
-echo "G .5c" >> .legend
-
-echo "H 11 Times-Roman Region parameters" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  echo "T dstep: ${stat_dstep}" >> .legend
+  echo "G .5c" >> .legend
+  echo "H 11 Times-Roman Region parameters" >> .legend
+  echo "D 0.3c 1p" >> .legend
+  echo "N 1" >> .legend
   stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
-echo "T region: ${stat_region}" >> .legend
-echo "G .5c" >> .legend
-  
+  echo "T region: ${stat_region}" >> .legend
+  echo "G .5c" >> .legend
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
-echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
-echo "G .5c" >> .legend
+  echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
+  echo "G .5c" >> .legend
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
-echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
-echo "G .5c" >> .legend
+  echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
+  echo "G .5c" >> .legend
   
-  
-#   calculate new variables
+  # calculate new variables
   west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}/2))")
   south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}/2))")
   range_grd="-R$west_grd/$east/$south_grd/$north"
@@ -432,20 +425,18 @@ fi
 if [ "$STATS_STATIONS" -eq 1 ]
 then
   echo "...plot stations used for each grid cell..."
-# plot shear strain rates
   awk 'NR > 24 {print $1-.125,$2-.125,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+1)")
+  Tmax=$(pythonc "print(int(round(${T},-1)+1))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(pythonc "print(round(${T},-1)-1)")
+  Tmin=$(pythonc "print(int(round(${T},-1)-1))")
+  while [  $((Tmax-Tmin)) -lt 5 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
-  
-    gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V
-    gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
-
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),0))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
@@ -471,7 +462,6 @@ fi
 if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
-# plot shear strain rates
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
@@ -479,10 +469,9 @@ then
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
   Tmin=$(pythonc "print(round(${T},-1)-1)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
-  
-    gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
@@ -510,7 +499,6 @@ fi
 if [ "$STATS_SIGMA" -eq 1 ]
 then
   echo "...plot sigm estimated for each grid cell..."
-# plot shear strain rates
   awk 'NR > 24 {print $1,$2,$6}' $pth2stats > tmpsigma
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
@@ -519,9 +507,9 @@ then
   Tmin=$(pythonc "print(round(${T},3)-.001)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
   
-    gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),3))")
@@ -593,7 +581,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history .legend inx.cpt
+#rm -rf tmp* gmt.conf gmt.history .legend inx.cpt
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"
