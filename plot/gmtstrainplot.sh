@@ -802,7 +802,7 @@ then
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
   awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G0/204/0 -W1.5p,0/204/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
@@ -811,7 +811,7 @@ then
   totsclon=$sclon
 
   echo "$totsclon $totsclat 0 -${strscmagn} -45" \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G0/204/0 -W1.5p,0/204/0 \
         -O -K -V${VRBLEVM} >> $outfile
   echo "$totsclon $totsclat ${strscmagn} 0 -45" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \

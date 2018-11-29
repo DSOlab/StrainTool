@@ -364,9 +364,15 @@ then
   } >> .legend
   
   # calculate new variables
-  west_grd=$(pythonc "print(${west} - (${stat_x_grid_step}/2))")
-  south_grd=$(pythonc "print(${south} - (${stat_y_grid_step}/2))")
-  range_grd="-R$west_grd/$east/$south_grd/$north"
+#   west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}))")
+#   south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}))")
+#   range_grd="-R$west_grd/$east/$south_grd/$north"
+  west_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -El `
+  east_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -Eh `
+  south_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -El `
+  north_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -Eh `
+  range_grd="-R$west_grd/$east_grd/$south_grd/$north_grd"
+  echo ${range_grd}
   istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
 fi
 
@@ -417,13 +423,13 @@ fi
 if [ "$STATS_STATIONS" -eq 1 ]
 then
   echo "...plot stations used for each grid cell..."
-  awk 'NR > 24 {print $1-.125,$2-.125,$3}' $pth2stats > tmpstations
+  awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
   Tmax=$(pythonc "print(int(round(${T},-1)+1))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
   Tmin=$(pythonc "print(int(round(${T},-1)-1))")
-  while [  $((Tmax-Tmin)) -lt 5 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
+  while [  $((Tmax-Tmin)) -lt 5 ]; do let Tmin=Tmin-2; let Tmax=Tmax+2; done
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
