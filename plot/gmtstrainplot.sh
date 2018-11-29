@@ -123,9 +123,10 @@ function help {
 	exit 1
 }
 # //////////////////////////////////////////////////////////////////////////////
-# #BASH settings
+# BASH settings
 # set -o errexit
-# set -o pipefail
+set -e
+set -o pipefail
 # set -o nounset
 # set -o xtrace
 
@@ -347,7 +348,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: "$VERSION
+	echo "version: $VERSION"
 	exit 1
 	shift
 	;;
@@ -866,7 +867,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history inx.cpt
+rm -rf tmp* gmt.conf gmt.history inx.cpt 2>/dev/null
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"

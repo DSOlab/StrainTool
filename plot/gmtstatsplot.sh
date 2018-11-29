@@ -114,9 +114,10 @@ function help {
 	exit 1
 }
 # //////////////////////////////////////////////////////////////////////////////
-# #BASH settings
+# BASH settings
 # set -o errexit
-# set -o pipefail
+set -e
+set -o pipefail
 # set -o nounset
 # set -o xtrace
 
@@ -231,7 +232,7 @@ do
 	shift
 	;;
     -topo)
-  # switch topo not used in server!
+        # switch topo not used in server!
 	TOPOGRAPHY=1
 	shift
 	;;
@@ -260,7 +261,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: "$VERSION
+	echo "version: $VERSION"
 	exit 1
 	shift
 	;;
@@ -324,62 +325,53 @@ fi
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
-  echo "G 0.2c" > .legend
-  echo "H 11 Times-Roman StrainTool parameters" >> .legend
-  echo "D 0.3c 1p" >> .legend
-  echo "N 1" >> .legend
+  > .legend
+  {
+  globFonts="G .5c"
+  echo "G 0.2c"
+  echo "H 11 Times-Roman StrainTool parameters"
+  echo "D 0.3c 1p"
+  echo "N 1"
 
   stat_version=$(grep Version $pth2stats  |awk -F: '{print $2}')
-  echo "T Version: ${stat_version}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T Version: ${stat_version}\n${globFonts}"
   stat_gps_file=$(tail -n+4 $pth2stats | grep gps_file | awk '{print $3}')
-  echo "T GPS file: ${stat_gps_file}" >> .legend
-  echo "G .5c" >> .legend
-  echo "H 11 Times-Roman Interpolation model" >> .legend
-  echo "D 0.3c 1p" >> .legend
-  echo "N 1" >> .legend
+  echo -e "T GPS file: ${stat_gps_file}\n${globFonts}"
+  echo "H 11 Times-Roman Interpolation model"
+  echo "D 0.3c 1p"
+  echo "N 1"
   stat_method=$(tail -n+4 $pth2stats | grep method | awk '{print $3}')
-  echo "T method: ${stat_method}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T method: ${stat_method}\n${globFonts}"
   stat_ltype=$(tail -n+4 $pth2stats | grep ltype | awk '{print $3}')
-  echo "T ltype: ${stat_ltype}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T ltype: ${stat_ltype}\n${globFonts}"
   stat_Wt=$(tail -n+4 $pth2stats | grep Wt | awk '{print $3}')
-  echo "T Wt: ${stat_Wt}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T Wt: ${stat_Wt}\n${globFonts}"
   stat_dmin=$(tail -n+4 $pth2stats | grep dmin | awk '{print $3}')
-  echo "T dmin: ${stat_dmin}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T dmin: ${stat_dmin}\n${globFonts}"
   stat_dmax=$(tail -n+4 $pth2stats | grep dmax | awk '{print $3}')
-  echo "T dmax: ${stat_dmax}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T dmax: ${stat_dmax}\n${globFonts}"
   stat_dstep=$(tail -n+4 $pth2stats | grep dstep | awk '{print $3}')
-  echo "T dstep: ${stat_dstep}" >> .legend
-  echo "G .5c" >> .legend
-  echo "H 11 Times-Roman Region parameters" >> .legend
-  echo "D 0.3c 1p" >> .legend
-  echo "N 1" >> .legend
+  echo -e "T dstep: ${stat_dstep}\n${globFonts}"
+  echo "H 11 Times-Roman Region parameters"
+  echo "D 0.3c 1p"
+  echo "N 1"
   stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
-  echo "T region: ${stat_region}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T region: ${stat_region}\n${globFonts}"
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
-  echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
-  echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
-  echo "G .5c" >> .legend
+  echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
+  } >> .legend
   
   # calculate new variables
-  west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}/2))")
-  south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}/2))")
+  west_grd=$(pythonc "print(${west} - (${stat_x_grid_step}/2))")
+  south_grd=$(pythonc "print(${south} - (${stat_y_grid_step}/2))")
   range_grd="-R$west_grd/$east/$south_grd/$north"
-
   istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
-# tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
 tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
 sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
@@ -581,7 +573,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-#rm -rf tmp* gmt.conf gmt.history .legend inx.cpt
+rm -rf tmp* gmt.conf gmt.history .legend inx.cpt 2>/dev/null
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"
