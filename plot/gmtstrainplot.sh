@@ -800,10 +800,12 @@ then
   fi
 
 # plot strain rates
-  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  # dextral 
+  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
+  # sinistral
+  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G0/204/0 -W1.5p,0/204/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
