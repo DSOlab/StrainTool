@@ -189,6 +189,12 @@ parser.add_argument('-v',
     help='Display version and exit.',
     action='store_true')
 
+##  Wait!! maybe the user just paseed in "-v" without an input file. Do not
+##+ resolve the parser yet (it ll cause an error)
+if len(sys.argv[1:]) == 1 and sys.argv[1] == "-v":
+    print('{}'.format(Version))
+    sys.exit(0)
+
 ##  Time the program (for opt/ing purpose only)
 start_time = time.time()
 
