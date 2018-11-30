@@ -140,7 +140,9 @@ VERSION="v.1.0-rc3.0"
 PYV=99
 resolve_py_version
 
-# verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##  verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##+ q - Complete silence. n - Normal. c - compatibility warnings. v - progress messages
+##+ l - detailed progress messages. d - debugging messages.
 export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////

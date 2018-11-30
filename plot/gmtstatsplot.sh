@@ -131,7 +131,9 @@ VERSION="v.1.0-rc3.0"
 PYV=99
 resolve_py_version
 
-# verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##  verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##+ q - Complete silence. n - Normal. c - compatibility warnings. v - progress messages
+##+ l - detailed progress messages. d - debugging messages.
 export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -372,7 +374,6 @@ then
   south_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -El `
   north_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -Eh `
   range_grd="-R$west_grd/$east_grd/$south_grd/$north_grd"
-  echo ${range_grd}
   istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
 fi
 
@@ -426,10 +427,10 @@ then
   awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(pythonc "print(int(round(${T},-1)+1))")
+  Tmax=$(pythonc "print(int(round(${T},0)+1))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(pythonc "print(int(round(${T},-1)-1))")
-  while [  $((Tmax-Tmin)) -lt 5 ]; do let Tmin=Tmin-2; let Tmax=Tmax+2; done
+  Tmin=$(pythonc "print(int(round(${T},0)-1))")
+  while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}

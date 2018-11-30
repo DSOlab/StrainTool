@@ -70,11 +70,11 @@ echo "[PLOTALL] ...plot second invariant..."
 ./gmtstrainplot.sh -jpg -secinv strain_info.dat -psta -l -o ${prefix}output_2inv${suffix}
 
 echo "[PLOTALL] ...plot statistics, stations used per cell..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -psta -leg -o ${prefix}output_stats-stations${suffix}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -psta -l -leg -o ${prefix}output_stats-stations${suffix}
 echo "[PLOTALL] ...plot statistics, optimal smoothing distance..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-doptimal -psta -leg -o ${prefix}output_stats-doptimal${suffix}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-doptimal -psta -l -leg -o ${prefix}output_stats-doptimal${suffix}
 echo "[PLOTALL] ...plot statistics, sigma value..."
-./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-sigma -psta -leg -o ${prefix}output_stats-sigma${suffix}
+./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-sigma -psta -l -leg -o ${prefix}output_stats-sigma${suffix}
 
 echo "--------------------------------------------------------------------------"
 echo "[PLOTALL] output file produced from this script:"
