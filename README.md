@@ -123,7 +123,7 @@ The whole list of available options, is:
 <pre id="block-samp"><samp>optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_FILE, --input-file INPUT_FILE
-                        The input file. This must be an ascii file containing the columns: 'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.
+                        The input file. This must be an ascii file containing the columns: 'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at this point the last two columns (aka Sne and time-span) are not used, so they could have random values.
   --x-grid-step X_GRID_STEP
                         The x-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg).
   --y-grid-step Y_GRID_STEP
@@ -131,20 +131,20 @@ The whole list of available options, is:
   -m METHOD, --method METHOD
                         Choose a method for strain estimation. If 'shen' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If 'veis' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter. Default is 'shen'.
   -r REGION, --region REGION
-                        Specify a region; any station (in the input file) falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. "[...] --region=21.0/23.5/36.0/38.5 [...]"
+                        Specify a region; any station (in the input file) falling outside will be omitted. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. "[...] --region=21.0/23.5/36.0/38.5 [...]"
   -c, --cut-excess-stations
-                        This option is only considered if the '-r' option is set. If this this option is enabled, then any station (from the input file) outside the region limit (passed in via the '-r' option) is not considered in the strain estimation.
+                        This option is only considered if the '-r' option is set. If this option is enabled, then any station (from the input file) outside the region limit (passed in via the '-r' option) is not considered in the strain estimation.
   -b, --barycenter      Only estimate one strain tensor, at the region's barycentre.
   --max-beta-angle MAX_BETA_ANGLE
-                        Only relevant for '--mehod=shen'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid). Default is 180 deg.
+                        Only relevant for '--method=shen'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is omitted (aka no tensor is computed). This option is used to exclude points from the computation that only have limited geometric coverage (e.g. the edges of the grid). Default is 180 deg.
   -t WEIGHTING_FUNCTION, --weighting-function WEIGHTING_FUNCTION
-                        Only relevant for '--mehod=shen'. Choose between a 'gaussian' or a 'quadratic' spatial weighting function. Default is 'gaussian'.
-  --Wt Wt               Only relevant for '--mehod=shen' and if 'd-param' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa. Default is Wt=24.
-  --dmin D_MIN          Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km. Default is dmin=1km.
-  --dmax D_MAX          Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.
-  --dstep D_STEP        Only relevant for '--mehod=shen' and if 'd-param' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.
+                        Only relevant for '--method=shen'. Choose between a 'gaussian' or a 'quadratic' spatial weighting function. Default is 'gaussian'.
+  --Wt Wt               Only relevant for '--method=shen' and if 'd-param' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa. Default is Wt=24.
+  --dmin D_MIN          Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km. Default is dmin=1km.
+  --dmax D_MAX          Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.
+  --dstep D_STEP        Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.
   --d-param D_PARAMETER
-                        Only relevant for '--mehod=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.</samp></pre>
+                        Only relevant for '--method=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.</samp></pre>
 
 For example, the command we used on the [Example](#straintensor_prg_example) section:
 
@@ -159,7 +159,7 @@ To perform the computations, `StrainTensor.py` needs an input file, that holds i
 <pre id="block-samp" <samp="">        station-name  longtitude   latitude   Ve     Vn    SigmaVe  SigmaVn  Sne  time-span 
          string           deg.        deg.   mm/yr  mm/yr   mm/yr    mm/yr    /   dec. years</pre>
 
-Station coordinates are provided in longtitude/latitude pairs in decimal degrees. Velocities and velocity standard deviations are provided in mm per years (mm/yr). `Sne` is the correlation coefficient between East and North velocity components and `time-span` is the total time span of the station timeseries in decimal degrees. _Note that at his point the last two columns (aka `Sne` and `time-span`) are not used, so they could have random values._
+Station coordinates are provided in longtitude/latitude pairs in decimal degrees. Velocities and velocity standard deviations are provided in mm per years (mm/yr). `Sne` is the correlation coefficient between East and North velocity components and `time-span` is the total time span of the station timeseries in decimal degrees. _Note that at this point the last two columns (aka `Sne` and `time-span`) are not used, so they could have random values._
 
 There are no strict formating rules on how the individual elements should be printed (i.e. how many fields, decimal places, etc). The only condition is that fields are seperated by whitespace(s). To see an example of a valid input file, you can check `data/CNRS_midas.vel`.
 

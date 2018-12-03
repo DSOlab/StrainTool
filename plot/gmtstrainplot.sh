@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc1.0
+#                     RELEASE=rc3.0
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -25,11 +25,57 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=AUG-2018
+#    update list    : LAST_UPDATE=NOV-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
 # ==============================================================================
+
+##
+##  Function to resolve system's python version. The major version (aka 2 or 3)
+##+ is stored in a variable called "PYV"
+##
+resolve_py_version() {
+    regex="([1-9])\.[1-9]\.[1-9]+"
+    pyv=$(python -c 'import platform; print(platform.python_version())')
+    if [[ $pyv =~ $regex ]]
+    then
+        if test "${BASH_REMATCH[1]}" = 2
+        then
+            PYV=2
+        elif test "${BASH_REMATCH[1]}" = 3
+        then
+            PYV=3
+        else
+            >&2 echo "[ERROR] Failed to resolve Python version"
+            exit 1
+        fi
+    else
+        >&2 echo "[ERROR] Failed to resolve Python version"
+        exit 1
+    fi
+}
+##
+##  Alias python call! This is actualy an alias to calling: 'python -c'
+##+ depending on the variable PYV; that is if PYV=3, then the call will be
+##+ 'python -c ......', else the call will be
+##+ 'python -c "from __future__ import print_function; .....'
+## ----------------------------------------------------------------------------
+##  So, when using pythonc function, just use the Python v3.x print syntax.
+## ----------------------------------------------------------------------------
+##
+##  e.g
+##  $>foo=$(pythonc "a=5+5.7; print(a)")
+##
+pythonc() {
+    if test ${PYV} = 3
+    then
+        python -c "$@"
+    else
+        python -c "from __future__ import print_function; $@"
+    fi
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -77,9 +123,10 @@ function help {
 	exit 1
 }
 # //////////////////////////////////////////////////////////////////////////////
-# #BASH settings
+# BASH settings
 # set -o errexit
-# set -o pipefail
+set -e
+set -o pipefail
 # set -o nounset
 # set -o xtrace
 
@@ -87,9 +134,15 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc1.0"
+VERSION="v.1.0-rc3.0"
 
-# verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+# system's Python version
+PYV=99
+resolve_py_version
+
+##  verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##+ q - Complete silence. n - Normal. c - compatibility warnings. v - progress messages
+##+ l - detailed progress messages. d - debugging messages.
 export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -297,7 +350,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: "$VERSION
+	echo "version: $VERSION"
 	exit 1
 	shift
 	;;
@@ -370,15 +423,15 @@ fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
-# tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
-sclat=$(echo print ${south} + ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
+sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*27.)")
-sclon=$(echo print ${east} - ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*27.)")
+sclon=$(pythonc "print(${east} - ${tmp_scrate})")
 
-tmp_msclat=$(python -c "print int((${south} + ${north})/2)")
-tmp_msclon=$(python -c "print int((${west} + ${east})/2)")
+tmp_msclat=$(pythonc "print(int((${south} + ${north})/2))")
+tmp_msclon=$(pythonc "print(int((${west} + ${east})/2))")
+
 export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 # scale="-Lf20/33.5/36:24/100+l+jr"
 range="-R$west/$east/$south/$north"
@@ -459,9 +512,9 @@ then
 
 ###scale
 # plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*5.)")
-  velsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
-  velsclon=$(echo print ${sclon} - ${tmp_scrate} | python)
+  tmp_scrate=$(pythonc "print((${projscale}/150000000.)*5.)")
+  velsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
+  velsclon=$(pythonc "print(${sclon} - ${tmp_scrate})")
 
   echo "$velsclon $velsclat ${vscmagn} 0 1 1 0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
@@ -487,7 +540,7 @@ then
   awk 'NR > 2 {print $2,$1,$19}' $pth2strinfo > tmpgtot
   # find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+10)")
+  Tmax=$(pythonc "print(round(${T},-1)+10)")
   gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
@@ -512,7 +565,7 @@ then
 #   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
+  scale_step=$(pythonc "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -541,9 +594,9 @@ then
   awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+10)")
+  Tmax=$(pythonc "print(round(${T},-1)+10)")
   T=`awk '{print $3}' tmpdil | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1)-10)")
+  Tmin=$(pythonc "print(round(${T},-1)-10)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
 
   if [ "${GRDDAT}" -eq 0 ]
@@ -558,7 +611,7 @@ then
   
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -587,7 +640,7 @@ then
   awk 'NR > 2 {print $2,$1, $25}' $pth2strinfo >tmp2inv
   # find min max and create cpt file
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+10)")
+  Tmax=$(pythonc "print(round(${T},-1)+10)")
   gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
@@ -602,7 +655,7 @@ then
   
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(python -c "print(round((${Tmax}/5.),-1))")
+  scale_step=$(pythonc "print(round((${Tmax}/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -654,8 +707,8 @@ then
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
   
 # plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
-  strsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
+  strsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   strsclon=$sclon
 
   echo "$strsclon $strsclat 0 -${strscmagn} 90" \
@@ -705,8 +758,8 @@ then
 
         
 # plot scale for rotational rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
-  rotsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
+  rotsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   rotsclon=$sclon
   
   echo "$rotsclon $rotsclat 0.00000004853689 0.000000004853689" \
@@ -747,20 +800,22 @@ then
   fi
 
 # plot strain rates
-  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  # dextral 
+  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
-  awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+  # sinistral
+  awk 'NR > 2 {print $2,$1,$19,0,$21-45+90}' $pth2strinfo \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G0/204/0 -W1.5p,0/204/0 \
         -O -K -V${VRBLEVM} >> $outfile
 
 # plot scale of strain rates
-  tmp_scrate=$(python -c "print((${projscale}/150000000.)*20.)")
-  totsclat=$(echo print ${sclat} + ${tmp_scrate} | python)
+  tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
+  totsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   totsclon=$sclon
 
   echo "$totsclon $totsclat 0 -${strscmagn} -45" \
-  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G255/153/0 -W1.5p,255/153/0 \
+  | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -G0/204/0 -W1.5p,0/204/0 \
         -O -K -V${VRBLEVM} >> $outfile
   echo "$totsclon $totsclat ${strscmagn} 0 -45" \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
@@ -816,7 +871,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history inx.cpt
+rm -rf tmp* gmt.conf gmt.history inx.cpt 2>/dev/null
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"
