@@ -515,16 +515,18 @@ then
   tmp_scrate=$(pythonc "print((${projscale}/150000000.)*5.)")
   velsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   velsclon=$(pythonc "print(${sclon} - ${tmp_scrate})")
+  vscmagn_sd=$(pythonc "print(${vscmagn}/20.e0)")
+echo "[DEBUG] vscmagn_sd " ${vscmagn_sd}
 
-  echo "$velsclon $velsclat ${vscmagn} 0 1 1 0 " \
+  echo "$velsclon $velsclat ${vscmagn} 0 ${vscmagn_sd} ${vscmagn_sd}  0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
   
-  echo "$velsclon $velsclat ${vscmagn} 0 5 5 0 " \
+  echo "$velsclon $velsclat ${vscmagn} 0 0 0 0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
   
-  echo "$sclon $velsclat 9,1,black 0 CB ${vscmagn} \261 1 mm/y" \
+  echo "$sclon $velsclat 9,1,black 0 CB ${vscmagn} \261 ${vscmagn_sd} mm/y" \
   | gmt pstext -Jm -R -Dj0c/.5c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
   
   sclat=${velsclat}

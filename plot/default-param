@@ -28,9 +28,9 @@ sclength=100
 
 logo_pos="BL/.1c/.1c"
 
-# scale position parameters for velocities
-vsclon=22.34
-vsclat=37.68
+# scale parameters for velocities
+# vsclon=22.34 #delete
+# vsclat=37.68 #delete
 vscmagn=20
 VSC=0.05
 
@@ -38,7 +38,7 @@ strscmagn=100
 STRSC=.0080
 ROTSC=.7
 ROT_wedge_mag=2  #(marcsec/yr)
-strsclon=20.4
-strsclat=36.3
+# strsclon=20.4 #delete
+# strsclat=36.3 #delete
 
 legendc="-Jx1i -R0/8/0/8 -Dx20.5c/12.6c+w5c/4.6c+jBL"	
