@@ -20,7 +20,7 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
-Version = 'StrainTensor.py Version: 1.0-rc2.0'
+Version = 'StrainTensor.py Version: 1.0-rc3.0'
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
@@ -52,8 +52,16 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
+##  If only the formatter_class could be:
+##+ argparse.RawTextHelpFormatter|ArgumentDefaultsHelpFormatter ....
+##  Seems to work with multiple inheritance!
+class myFormatter(
+        argparse.ArgumentDefaultsHelpFormatter,
+        argparse.RawTextHelpFormatter):
+    pass
+
 parser = argparse.ArgumentParser(
-    formatter_class=argparse.RawTextHelpFormatter,
+    formatter_class=myFormatter,
     description='Estimate Strain Tensor(s) from GNSS derived velocities.',
     epilog=('''National Technical University of Athens,
     Dionysos Satellite Observatory\n
@@ -63,7 +71,7 @@ Send bug reports to:
 November, 2017'''))
 
 parser.add_argument('-i', '--input-file',
-    default=None,
+    default=argparse.SUPPRESS,
     metavar='INPUT_FILE',
     dest='gps_file',
     required=True,
@@ -75,7 +83,7 @@ parser.add_argument('--x-grid-step',
     dest='x_grid_step',
     type=float,
     required=False,
-    help='The x-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg).')
+    help='The x-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors.')
 
 parser.add_argument('--y-grid-step',
     default=0.5,
@@ -83,7 +91,7 @@ parser.add_argument('--y-grid-step',
     dest='y_grid_step',
     type=float,
     required=False,
-    help='The y-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors. Default is 0.5(deg)')
+    help='The y-axis grid step size in degrees. This option is only relevant if the program computes more than one strain tensors.')
 
 parser.add_argument('-m', '--method',
     default='shen',
@@ -91,9 +99,10 @@ parser.add_argument('-m', '--method',
     dest='method',
     choices=['shen', 'veis'],
     required=False,
-    help='Choose a method for strain estimation. If \'shen\' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If \'veis\' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter. Default is \'shen\'.')
+    help='Choose a method for strain estimation. If \'shen\' is passed in, the estimation will follow the algorithm described in Shen et al, 2015, using a weighted least squares approach. If \'veis\' is passed in, then the region is going to be split into delaneuy triangles and a strain estimated in each barycenter.')
 
 parser.add_argument('-r', '--region',
+    default=argparse.SUPPRESS,
     metavar='REGION',
     dest='region',
     help='Specify a region; any station (in the input file) falling outside will be ommited. The region should be given as a rectangle, specifying min/max values in longtitude and latitude (using decimal degrees). E.g. \"[...] --region=21.0/23.5/36.0/38.5 [...]\"',
@@ -115,7 +124,7 @@ parser.add_argument('--max-beta-angle',
     dest='max_beta_angle',
     type=float,
     required=False,
-    help='Only relevant for \'--mehod=shen\'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid). Default is 180 deg.')
+    help='Only relevant for \'--mehod=shen\'. Before estimating a tensor, the angles between consecutive points are computed. If the max angle is larger than max_beta_angle (in degrees), then the point is ommited (aka no tensor is computed). This option is used to exclude points from the computation tha only have limited geometric coverage (e.g. the edges of the grid).')
 
 parser.add_argument('-t', '--weighting-function',
     default='gaussian',
@@ -123,7 +132,7 @@ parser.add_argument('-t', '--weighting-function',
     dest='ltype',
     choices=['gaussian', 'quadratic'],
     required=False,
-    help='Only relevant for \'--mehod=shen\'. Choose between a \'gaussian\' or a \'quadratic\' spatial weighting function. Default is \'gaussian\'.')
+    help='Only relevant for \'--mehod=shen\'. Choose between a \'gaussian\' or a \'quadratic\' spatial weighting function.')
 
 parser.add_argument('--Wt',
     default=24,
@@ -131,7 +140,7 @@ parser.add_argument('--Wt',
     dest='Wt',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa. Default is Wt=24.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. Let W=Σ_i*G_i, the total reweighting coefficients of the data, and let Wt be the threshold of W. For a given Wt, the smoothing constant D is determined by Wd=Wt . It should be noted that W is a function of the interpolation coordinate, therefore for the same Wt assigned, D varies spatially based on the in situ data strength; that is, the denser the local data array is, the smaller is D, and vice versa.')
 
 parser.add_argument('--dmin',
     default=1,
@@ -139,7 +148,7 @@ parser.add_argument('--dmin',
     dest='dmin',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the lower limit for searching for an optimal d-param value. Unit is km. Default is dmin=1km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the lower limit for searching for an optimal D-parameter value. Unit is km.')
 
 parser.add_argument('--dmax',
     default=500,
@@ -147,7 +156,7 @@ parser.add_argument('--dmax',
     dest='dmax',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km.')
 
 parser.add_argument('--dstep',
     default=2,
@@ -155,7 +164,7 @@ parser.add_argument('--dstep',
     dest='dstep',
     type=int,
     required=False,
-    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.')
+    help='Only relevant for \'--mehod=shen\' and if \'d-param\' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km.')
 
 parser.add_argument('--d-param',
     default=None,
@@ -179,6 +188,12 @@ parser.add_argument('-v',
     dest='version',
     help='Display version and exit.',
     action='store_true')
+
+##  Wait!! maybe the user just paseed in "-v" without an input file. Do not
+##+ resolve the parser yet (it ll cause an error)
+if len(sys.argv[1:]) == 1 and sys.argv[1] == "-v":
+    print('{}'.format(Version))
+    sys.exit(0)
 
 ##  Time the program (for opt/ing purpose only)
 start_time = time.time()

@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc1.0
+#                     RELEASE=rc3.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,11 +25,57 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=AUG-2018
+#    update list    : LAST_UPDATE=NOV-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
 # ==============================================================================
+
+##
+##  Function to resolve system's python version. The major version (aka 2 or 3)
+##+ is stored in a variable called "PYV"
+##
+resolve_py_version() {
+    regex="([1-9])\.[1-9]\.[1-9]+"
+    pyv=$(python -c 'import platform; print(platform.python_version())')
+    if [[ $pyv =~ $regex ]]
+    then
+        if test "${BASH_REMATCH[1]}" = 2
+        then
+            PYV=2
+        elif test "${BASH_REMATCH[1]}" = 3
+        then
+            PYV=3
+        else
+            >&2 echo "[ERROR] Failed to resolve Python version"
+            exit 1
+        fi
+    else
+        >&2 echo "[ERROR] Failed to resolve Python version"
+        exit 1
+    fi
+}
+##
+##  Alias python call! This is actualy an alias to calling: 'python -c'
+##+ depending on the variable PYV; that is if PYV=3, then the call will be
+##+ 'python -c ......', else the call will be
+##+ 'python -c "from __future__ import print_function; .....'
+## ----------------------------------------------------------------------------
+##  So, when using pythonc function, just use the Python v3.x print syntax.
+## ----------------------------------------------------------------------------
+##
+##  e.g
+##  $>foo=$(pythonc "a=5+5.7; print(a)")
+##
+pythonc() {
+    if test ${PYV} = 3
+    then
+        python -c "$@"
+    else
+        python -c "from __future__ import print_function; $@"
+    fi
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -68,9 +114,10 @@ function help {
 	exit 1
 }
 # //////////////////////////////////////////////////////////////////////////////
-# #BASH settings
+# BASH settings
 # set -o errexit
-# set -o pipefail
+set -e
+set -o pipefail
 # set -o nounset
 # set -o xtrace
 
@@ -78,9 +125,15 @@ function help {
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc1.0"
+VERSION="v.1.0-rc3.0"
 
-# verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+# system's Python version
+PYV=99
+resolve_py_version
+
+##  verbosity level for GMT, see http://gmt.soest.hawaii.edu/doc/latest/gmt.html#v-full
+##+ q - Complete silence. n - Normal. c - compatibility warnings. v - progress messages
+##+ l - detailed progress messages. d - debugging messages.
 export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -181,7 +234,7 @@ do
 	shift
 	;;
     -topo)
-  # switch topo not used in server!
+        # switch topo not used in server!
 	TOPOGRAPHY=1
 	shift
 	;;
@@ -210,7 +263,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: "$VERSION
+	echo "version: $VERSION"
 	exit 1
 	shift
 	;;
@@ -270,81 +323,70 @@ then
   fi
 fi
 
-
-
-
 # //////////////////////////////////////////////////////////////////////////////
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
-echo "G 0.2c" > .legend
-echo "H 11 Times-Roman StrainTool parameters" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  > .legend
+  {
+  globFonts="G .5c"
+  echo "G 0.2c"
+  echo "H 11 Times-Roman StrainTool parameters"
+  echo "D 0.3c 1p"
+  echo "N 1"
 
-  stat_version=$(grep Version ../bin/strain_stats.dat |awk -F: '{print $2}')
-echo "T Version: ${stat_version}" >> .legend
-echo "G .5c" >> .legend
+  stat_version=$(grep Version $pth2stats  |awk -F: '{print $2}')
+  echo -e "T Version: ${stat_version}\n${globFonts}"
   stat_gps_file=$(tail -n+4 $pth2stats | grep gps_file | awk '{print $3}')
-echo "T GPS file: ${stat_gps_file}" >> .legend
-echo "G .5c" >> .legend
-
-echo "H 11 Times-Roman Interpolation model" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  echo -e "T GPS file: ${stat_gps_file}\n${globFonts}"
+  echo "H 11 Times-Roman Interpolation model"
+  echo "D 0.3c 1p"
+  echo "N 1"
   stat_method=$(tail -n+4 $pth2stats | grep method | awk '{print $3}')
-echo "T method: ${stat_method}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T method: ${stat_method}\n${globFonts}"
   stat_ltype=$(tail -n+4 $pth2stats | grep ltype | awk '{print $3}')
-echo "T ltype: ${stat_ltype}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T ltype: ${stat_ltype}\n${globFonts}"
   stat_Wt=$(tail -n+4 $pth2stats | grep Wt | awk '{print $3}')
-echo "T Wt: ${stat_Wt}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T Wt: ${stat_Wt}\n${globFonts}"
   stat_dmin=$(tail -n+4 $pth2stats | grep dmin | awk '{print $3}')
-echo "T dmin: ${stat_dmin}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T dmin: ${stat_dmin}\n${globFonts}"
   stat_dmax=$(tail -n+4 $pth2stats | grep dmax | awk '{print $3}')
-echo "T dmax: ${stat_dmax}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T dmax: ${stat_dmax}\n${globFonts}"
   stat_dstep=$(tail -n+4 $pth2stats | grep dstep | awk '{print $3}')
-echo "T dstep: ${stat_dstep}" >> .legend
-echo "G .5c" >> .legend
-
-echo "H 11 Times-Roman Region parameters" >> .legend
-echo "D 0.3c 1p" >> .legend
-echo "N 1" >> .legend
+  echo -e "T dstep: ${stat_dstep}\n${globFonts}"
+  echo "H 11 Times-Roman Region parameters"
+  echo "D 0.3c 1p"
+  echo "N 1"
   stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
-echo "T region: ${stat_region}" >> .legend
-echo "G .5c" >> .legend
-  
+  echo -e "T region: ${stat_region}\n${globFonts}"
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
-echo "T x_grid_step: ${stat_x_grid_step}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
-echo "T y_grid_step: ${stat_y_grid_step}" >> .legend
-echo "G .5c" >> .legend
+  echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
+  } >> .legend
   
-  
-#   calculate new variables
-  west_grd=$(python -c "print(${west} + (${stat_x_grid_step}/2))")
-  south_grd=$(python -c "print(${south} + (${stat_y_grid_step}/2))")
-  range_grd="-R$west_grd/$east/$south_grd/$north"
-
-  istep_grd=$(python -c "print(${stat_x_grid_step}*60)")
+  # calculate new variables
+#   west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}))")
+#   south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}))")
+#   range_grd="-R$west_grd/$east/$south_grd/$north"
+  west_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -El `
+  east_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -Eh `
+  south_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -El `
+  north_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -Eh `
+  range_grd="-R$west_grd/$east_grd/$south_grd/$north_grd"
+  istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
-# tmp_scrate=$(python -c "print((${prjscale}/150000000.)*10.)")
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*10.)")
-sclat=$(echo print ${south} + ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
+sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
-tmp_scrate=$(python -c "print((${projscale}/150000000.)*27.)")
-sclon=$(echo print ${east} - ${tmp_scrate} | python)
+tmp_scrate=$(pythonc "print((${projscale}/150000000.)*27.)")
+sclon=$(pythonc "print(${east} - ${tmp_scrate})")
 
-tmp_msclat=$(python -c "print int((${south} + ${north})/2)")
-tmp_msclon=$(python -c "print int((${west} + ${east})/2)")
+tmp_msclat=$(pythonc "print(int((${south} + ${north})/2))")
+tmp_msclon=$(pythonc "print(int((${west} + ${east})/2))")
 export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 # scale="-Lf20/33.5/36:24/100+l+jr"
 range="-R$west/$east/$south/$north"
@@ -382,21 +424,19 @@ fi
 if [ "$STATS_STATIONS" -eq 1 ]
 then
   echo "...plot stations used for each grid cell..."
-# plot shear strain rates
-  awk 'NR > 24 {print $1-.125,$2-.125,$3}' $pth2stats > tmpstations
+  awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+1)")
+  Tmax=$(pythonc "print(int(round(${T},0)+1))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1)-1)")
+  Tmin=$(pythonc "print(int(round(${T},0)-1))")
+  while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
-  
-    gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V
-    gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
-
-  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),0))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),0))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -421,21 +461,19 @@ fi
 if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
-# plot shear strain rates
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},-1)+1)")
+  Tmax=$(pythonc "print(round(${T},-1)+1)")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
-  Tmin=$(python -c "print(round(${T},-1)-1)")
+  Tmin=$(pythonc "print(round(${T},-1)-1)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
-  
-    gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(python -c "print(round(((${Tmax}-${Tmin})/5.),-1))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -460,21 +498,20 @@ fi
 if [ "$STATS_SIGMA" -eq 1 ]
 then
   echo "...plot sigm estimated for each grid cell..."
-# plot shear strain rates
   awk 'NR > 24 {print $1,$2,$6}' $pth2stats > tmpsigma
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
-  Tmax=$(python -c "print(round(${T},3)+.001)")
+  Tmax=$(pythonc "print(round(${T},3)+.001)")
   T=`awk '{print $3}' tmpsigma | gmt info -El `
-  Tmin=$(python -c "print(round(${T},3)-.001)")
+  Tmin=$(pythonc "print(round(${T},3)-.001)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
   
-    gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m= -V
-    gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
-    gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
+  gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
+  gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
+  gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(python -c "print(round((${Tmax}/5.),3))")
+  scale_step=$(pythonc "print(round((${Tmax}/5.),3))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"sigma": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -543,7 +580,7 @@ fi
 
 # clear all teporary files
 echo "...remove temporary files..."
-rm -rf tmp* gmt.conf gmt.history .legend inx.cpt
+rm -rf tmp* gmt.conf gmt.history .legend inx.cpt 2>/dev/null
 
 # Print exit status
 echo "[STATUS] Finished. Exit status: $?"
