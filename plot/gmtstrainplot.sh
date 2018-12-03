@@ -749,11 +749,14 @@ then
   fi
 
 # plot rotational rates
+  ROT_wmag_sc=$(pythonc "print(0.206e0/${ROT_wedge_mag})")
+  echo "[DEBUG] ROT_wmag_sc "${ROT_wmag_sc}
+  
   awk 'NR > 2 { if ($7 >= 0) print $2,$1,$7,$8}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sw${ROTSC}/0.103e0 -Gred -E0/0/0/10 -L -A0.02  \
+  | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
   awk 'NR > 2 { if ($7 < 0) print $2,$1,$7,$8}' $pth2strinfo \
-  | gmt psvelo -Jm $range -Sw${ROTSC}/0.103e0 -Gblue -E0/0/0/10 -L -A0.02  \
+  | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gblue -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
 
         
@@ -762,13 +765,15 @@ then
   rotsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   rotsclon=$sclon
   
-  echo "$rotsclon $rotsclat 10 2" \
-  | gmt psvelo -Jm $range -Sw${ROTSC}/0.103e0 -Gred -E0/0/0/10 -L -A0.02  \
+  ROT_wmagf=$(pythonc "print(${ROT_wedge_mag}*3)")
+  ROT_wmagf_sd=$(pythonc "print(${ROT_wedge_mag})")
+  echo "$rotsclon $rotsclat ${ROT_wmagf} ${ROT_wmagf_sd}" \
+  | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gred -E0/0/0/10 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$rotsclon $rotsclat -10 2" \
-  | gmt psvelo -Jm $range -Sw${ROTSC}/0.103e0 -Gblue -E0/0/0/10 -L -A0.02 \
+  echo "$rotsclon $rotsclat -${ROT_wmagf} ${ROT_wmagf_sd}" \
+  | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gblue -E0/0/0/10 -L -A0.02 \
         -O -K -V${VRBLEVM} >> $outfile
-  echo "$rotsclon $rotsclat 9 0 1 CB 10 \261 1 marcsec/yr" \
+  echo "$rotsclon $rotsclat 9 0 1 CB ${ROT_wmagf} \261 ${ROT_wmagf_sd} marcsec/yr" \
   | gmt pstext -Jm -R -Dj0c/-.6c -Gwhite -O -K -V${VRBLEVM} >> $outfile
   
   sclat=${rotsclat}

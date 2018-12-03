@@ -37,7 +37,7 @@ VSC=0.05
 strscmagn=100
 STRSC=.0080
 ROTSC=.7
-# ROT_wedge_mag=2  #(marcsec/yr)
+ROT_wedge_mag=2  #(marcsec/yr)
 strsclon=20.4
 strsclat=36.3
 
