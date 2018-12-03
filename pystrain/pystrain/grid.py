@@ -180,13 +180,13 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
         else:
             slon = s.lon
             slat = s.lat
-        if   slon > x_max:
+        if slon > x_max:
             x_max = slon
-        elif slon < x_min:
+        if slon < x_min:
             x_min = slon
-        if   slat > y_max:
+        if slat > y_max:
             y_max = slat
-        elif slat < y_min:
+        if slat < y_min:
            y_min = slat
     # Adjust max and min to step.
     #print("\t[DEBUG] Region: Easting: {:}/{:} Northing: {:}/{:}".format(x_min, x_max, y_min, y_max))
