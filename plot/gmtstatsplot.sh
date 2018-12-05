@@ -125,7 +125,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc3.0"
+VERSION="v.1.0-rc4.0"
 
 # system's Python version
 PYV=99
