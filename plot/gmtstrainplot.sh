@@ -126,7 +126,7 @@ function help {
 
 # //////////////////////////////////////////////////////////////////////////////
 # create Tmax scale variables
-function scalevar_Tmax() 
+function scalevar_T() 
 {
  if [ $(echo " ${T} <= 1 " | bc -l) == 1 ]
   then
@@ -136,16 +136,16 @@ function scalevar_Tmax()
     scale_step_r=1
   elif [ $(echo " ${T} > 1 " | bc -l) == 1 ] && [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
   then
-    Tmax_r=1
-    Tmax_r_marg=0.5
+    Tmax_r=0
+    Tmax_r_marg=1
     cpt_step=0.01
-    scale_step_r=1
+    scale_step_r=0
   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
   then
-    Tmax_r=0
-    Tmax_r_marg=5
+    Tmax_r=-1
+    Tmax_r_marg=10
     cpt_step=0.01
-    scale_step_r=5
+    scale_step_r=-1
   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] 
   then
     Tmax_r=-1
@@ -157,6 +157,7 @@ function scalevar_Tmax()
     exit 1
   fi
 }
+
 
 # //////////////////////////////////////////////////////////////////////////////
 # BASH settings
@@ -502,7 +503,7 @@ fi
 # fi
 
 # //////////////////////////////////////////////////////////////////////////////
-### PLOT ONLY STATIONS ITHOUT ANY OTHER PARAMETER
+### PLOT ONLY STATIONS WITHOUT ANY OTHER PARAMETER
 
 if [ "$PSTA" -eq 1 ] && [ "$STRAIN" -eq 0 ] && [ "$STRROT" -eq 0 ] && [ "$GTOTAL" -eq 0 ] \
     && [ "$DILATATION" -eq 0 ] && [ "$GTOTALAXES" -eq 0 ] && [ "$SECINV" -eq 0 ]
@@ -579,7 +580,7 @@ then
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
 echo "[DEBUG] T" ${T}
 # set variables for scale plot
-  scalevar_Tmax
+  scalevar_T
  
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})") #Tmax_r Tmax_r_marg
 echo "[DEBUG] Tmax " ${Tmax}
@@ -635,13 +636,15 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
+  awk 'NR > 2 {print $2,$1,$23*1}' $pth2strinfo >tmpdil
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+10)")
+  # set variables for scale plot
+  scalevar_T
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdil | gmt info -El `
-  Tmin=$(pythonc "print(round(${T},-1)-10)")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
+  Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt
 
   if [ "${GRDDAT}" -eq 0 ]
   then
@@ -655,7 +658,7 @@ then
   
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -685,7 +688,7 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
 # set variables for scale plot
-  scalevar_Tmax
+  scalevar_T
   
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
