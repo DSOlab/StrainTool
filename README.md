@@ -81,7 +81,7 @@ The following scenarios have been tested to validate the installation procedure
 | Fedora     | :white_check_mark: |                    | :white_check_mark: |                   |
 | Manjaro    |                    | :white_check_mark: | :white_check_mark: |                   |
 | Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Windows 10 | :white_check_mark: |                    |                    |                    |
+| Windows 10 | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 
 ## Example
@@ -148,7 +148,7 @@ The whole list of available options, is:
 
 For example, the command we used on the [Example](#straintensor_prg_example) section:
 
-    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c
+    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c -g
 
 meant that we are estimating strain tensor parameters for the region within min/max longtitude: 18.75/30.25 degrees and min/max latitude: 32.75/42.25 degrees. We are seperating the region into cells of size 0.5 degrees and estimating one strain tensor in each cell centre (aka the first cell centre is $lon = lon_{min} + lon_{step}/2 = 18.75 + 0.5/2=19.0deg.$ and $lat = lat_{min} + lat_{step}/2 = 32.75 + 0.5/2 = 33.0deg.$, then next one will be at lon=19.5, lat=33.5, etc...). To estimate each strain tensor, the program will search for a "optimal" D coefficient within the range [1, 500) km with a step of 1km. This "optimal" D will be found when the condition $W = \sum_{n=1}^{\#sta*2} Z(i)*L(i) \geq W_t$ is met. The stations that will be used for the calculations are only those that fall within the specified longtitude/latitude range. For more information, see [Background and Algorithms](#bck_and_algorithms) section.
 
@@ -171,7 +171,7 @@ Results of `StrainTensor.py` are recorded in the following three files:
     The columns of the file are structured as below:
 
 <pre id="block-samp" <samp="">Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
-   deg       deg         mm/yr           mm/yr          marcsec/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
+   deg       deg         mm/yr           mm/yr          deg/Myr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
 	        </pre>
 
 *   **station_info.dat :** Stations' data used for the calculation of strain tensor are written at htis file. Format is:
@@ -196,8 +196,15 @@ All of the scripts need the file named `default-param` to be in the same folder.
 <pre id="block-samp" <samp="">   
 pth2inptf=../data/  # set default folder for input files (strain_info.dat, strain_stats.dat, station_info.dat)
 west, east, south, north, projscale, frame, sclength: set region parameters
+
+vscmagn=20 : magnitude of horizontal arrow scale
+VSC=0.05 : Horizontal velocity scale
+
+strscmagn=100 : set magnitude of principal axes scale
 STRSC=0.01 : set principal axis plot scale
+
 ROTSC=.7 : set rotational rates plot scale
+ROT_wedge_mag=1 : set magnitude of rotational 1-wedge.
 </pre>
 
 **gmtstrainplot.sh options:**
