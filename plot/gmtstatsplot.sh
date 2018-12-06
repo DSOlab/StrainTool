@@ -427,16 +427,39 @@ then
   awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(pythonc "print(int(round(${T},0)+1))")
+  # set variables for scale
+  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=1
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=5
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=1
+    scale_step_r=-1
+  else
+    echo "ERROR"
+    exit 1
+  fi
+  Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(pythonc "print(int(round(${T},0)-1))")
-  while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
+  Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
+#   while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
   gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),0))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -464,16 +487,38 @@ then
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+1)")
+  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=1
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=5
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=1
+    scale_step_r=-1
+  else
+    echo "ERROR"
+    exit 1
+  fi
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
-  Tmin=$(pythonc "print(round(${T},-1)-1)")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
+  Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
   gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
   gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -502,6 +547,28 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
+#   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=0
+#     Tmax_r_marg=1
+#     cpt_step=1
+#     scale_step_r=0
+#   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=0
+#     Tmax_r_marg=5
+#     cpt_step=1
+#     scale_step_r=0
+#   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=-1
+#     Tmax_r_marg=10
+#     cpt_step=1
+#     scale_step_r=-1
+#   else
+#     echo "ERROR"
+#     exit 1
+#   fi
   T=`awk '{print $3}' tmpsigma | gmt info -El `
   Tmin=$(pythonc "print(round(${T},3)-.001)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  

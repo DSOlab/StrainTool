@@ -578,12 +578,9 @@ then
   awk 'NR > 2 {print $2,$1,$19*1}' $pth2strinfo > tmpgtot
   # find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
-echo "[DEBUG] T" ${T}
 # set variables for scale plot
   scalevar_T
- 
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})") #Tmax_r Tmax_r_marg
-echo "[DEBUG] Tmax " ${Tmax}
   
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt # cpt_step
 # cat inx.cpt
