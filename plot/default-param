@@ -36,8 +36,8 @@ VSC=0.05
 
 strscmagn=100
 STRSC=.0080
-ROTSC=.7
-ROT_wedge_mag=2  #(marcsec/yr)
+ROTSC=.65
+ROT_wedge_mag=1 #(deg/My)
 # strsclon=20.4 #delete
 # strsclat=36.3 #delete
 
