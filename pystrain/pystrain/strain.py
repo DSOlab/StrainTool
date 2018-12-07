@@ -14,6 +14,8 @@ from pystrain.strain import *
 from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 
+DEBUG_MODE = True
+
 def barycenter(sta_list):
     ''' Compute the barycenter from a list of stations. The function will use
         each station's self.lat and self.lon components.
@@ -27,6 +29,8 @@ def barycenter(sta_list):
                                   longtitude, while the second is the average
                                   latitude.
     '''
+    if len(sta_list) == 0:
+        raise ValueError("[ERROR] Cannot compute barycentre for empty list of stations")
     y_mean = sta_list[0].lat
     x_mean = sta_list[0].lon
     for i in range(1, len(sta_list)):
@@ -76,26 +80,27 @@ class ShenStrain:
     """
 
     def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
-        """ShenStrain constructor
+        """ ShenStrain constructor.
 
             Args:
                 x (float): x coordinate (could also be easting)
                 y (float): y coordinate (could also be northing)
                 station_list (list of Station): a list of stations to be used
-                    for strain estimation. Some of them may be filtered out.
+                           for strain estimation. Some of them may be filtered out.
                 **kwargs: a dictionary containing any of the keys:
-                    * ltype (str): gaussian or quadratic; this is the function
-                                   to be used for distance weight computation.
+                    * ltype (str): 'gaussian' or 'quadratic'; this is the
+                                   function to be used for distance weight
+                                   computation.
                     * Wt (float): parameter for finding optimal D value (km)
                     * dmin (float): min D value for finding optimal D (km)
                     * dmax (float): max D value for finding optimal D (km)
                     * dstep (float): step for range dmin, dmax (km)
                     * d_coef (float): optimal D value (km)
-                    * cutoff_dis (float): cut off distance (km)
-                    * weighting_function (str): can be shen (to use shen 
-                      weighting algorithm), or equal_weights (to use equal 
+                    * cutoff_dis (float): cut off distance (km) --see Warning--
+                    * weighting_function (str): can be 'shen' (to use shen 
+                      weighting algorithm), or 'equal_weights' (to use equal 
                       weights for all stations)
-                    * verbose_mode (bool): sets verbose mde on if True; i.e.
+                    * verbose_mode (bool): sets verbose mode on if True; i.e.
                       print debugging messages.
 
             Warning:
@@ -110,12 +115,25 @@ class ShenStrain:
         self.__ycmp__   = y
         self.__zweights__ = None
         self.__lweights__ = None
-        self.__options__  = {'ltype': 'gaussian', 'Wt': 24, 
-            'dmin': 1, 'dmax': 500, 'dstep': 2, 'd_coef': None,
-            'cutoff_dis': None, 'weighting_function': 'shen',
-            'verbose_mode': False}
-        self.__parameters__ = {'Ux':0e0, 'Uy':0e0, 'omega':0e0, 
-            'taux':0e0, 'tauxy':0e0, 'tauy':0e0}
+        self.__options__  = {
+            'ltype': 'gaussian',
+            'Wt': 24, 
+            'dmin': 1,
+            'dmax': 500,
+            'dstep': 2,
+            'd_coef': None,
+            'cutoff_dis': None,
+            'weighting_function': 'shen',
+            'verbose_mode': False
+        }
+        self.__parameters__ = {
+            'Ux':0e0,
+            'Uy':0e0,
+            'omega':0e0, 
+            'taux':0e0,
+            'tauxy':0e0,
+            'tauy':0e0
+        }
         self.__vcv__ = None
         ## Resolve the dictionary passed in (if any)
         for key in kwargs:
@@ -125,52 +143,63 @@ class ShenStrain:
             self.__options__['cutoff_dis'] = 2.15e0
         else:
             self.__options__['cutoff_dis'] = 10e0
-        ##  If in verbose_mode, set the vprint function to print; else vprint is
-        ##+ a noop
+        ##  If in verbose_mode, set the vprint function to print; else vprint
+        ##+ is a noop
         self.vprint = print if self.__options__['verbose_mode'] else lambda *a, **k: None
 
     def clean_weight_matrices(self):
-        """Set both distance and spatial weight lists to None
+        """ Set both distance and spatial weight lists (aka zweights and 
+            lweigts) to None.
         """
         self.__zweights__ = None
         self.__lweights__ = None
 
     def filter_sta_wrt_distance(self, d=None):
-        """Filter station list wrt the cutoof distance.
+        """ Filter instance's station list wrt the cutof distance.
             
             This function will compute a cut-off distance:
-                cod = self.__options__['cutoff_dis'] * D
+                COD = self.__options__['cutoff_dis'] * D
             and filter all stations in the instance's __stalst__ list. A new
             station list will be returned, containing only stations that are
-            less (or equal to) than cod km apart from the instance's 
-            __xcmp__, __ycmp__ point.
+            less (or equal to) COD km apart from the instance's centre (aka
+            __xcmp__, __ycmp__) point.
             If the input parameter d is provided, then the function will use
             that as D, else the function will use self.__options__['d_coef']
-            as D (in cod computation).
+            as D (in COD computation).
 
             Args:
                 d (float): parameter for computing the cut-off distance. If not
-                    provided, __options__['d_coef'] will be used. d should be
-                    provided in km.
+                           provided, __options__['d_coef'] will be used. d 
+                           should be provided in km.
 
             Returns:
                 list of Station: a list of Station instances, where each station
-                    is less than cut-off distance away from the instance.
+                                 is less than cut-off distance away from the
+                                 instance.
+            Note:
+                The returned list is not assigned to the instance's __stalst__.
+                If you want that, then do it manually.
 
         """
+        if not self.__options__['cutoff_dis']:
+            raise ValueError("[ERROR] Cannot filter station list; cutoff_dis is None!")
         cc = Station(lon=self.__xcmp__, lat=self.__ycmp__)
         if not d: d = self.__options__['d_coef']
         limit = self.__options__['cutoff_dis'] * d
-        ## nlst1 = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
-        ## OPT try optimized squared distance
+        ##  OPT try optimized squared distance (aka remove the square roots).
+        ##+ That is instead of filtering based on sqrt(Δx^2 + Δy^2) < limit*1e3
+        ##+ we will use (Δx^2 + Δy^2) < limit*limit
         nlst = [ s for s in self.__stalst__ if s.squared_distance_from(cc) <= limit*limit ]
-        #assert len(nlst) == len(nlst1)
-        #for i,s in enumerate(nlst1):
-        #    assert s.name == nlst[i].name
+        ## In debug mode, check that we have the correct results
+        if DEBUG_MODE:
+            nlst1 = [ s for s in self.__stalst__ if s.distance_from(cc)[2] <= limit*1e3 ]
+            assert len(nlst) == len(nlst1)
+            for i,s in enumerate(nlst1):
+                assert s.name == nlst[i].name
         return nlst
     
     def azimouths(self, other_sta_lst=None):
-        """Azimouth of line containing the Strain Tensor centre and each point.
+        """ Azimouth of line containing the Strain Tensor centre and each point.
             
             Get the azimouth of each line from central point (__xcmp__, __ycmp__) 
             to each point in the other_sta_lst list. The computed azimouths 
@@ -182,6 +211,7 @@ class ShenStrain:
             are computed as:
                 ΔX = sta.lon-self.__xcmp__
                 ΔY = sta.lat-self.__ycmp__
+                az = atan2(ΔX, ΔY), normalized to [0, 2π)
             Obviously, all of these quantities **should** be in a cartesian RF.
             For example, if the instance's station list is:
             [ankr, buku, dion, ...] and the function returns: 
@@ -194,8 +224,8 @@ class ShenStrain:
             the function will use the isntance's __stalst__.
 
             Args:
-                other_sta_lst (list of Station): a list of Station instances. If
-                    not provided, __stalst__ will be used.
+                other_sta_lst (list of Station): a list of Station instances.
+                    If not provided, __stalst__ will be used.
 
            Returns:
                 (sorted) list: This list is made up of dictionary elements, 
@@ -211,15 +241,16 @@ class ShenStrain:
         azimouths = []
         for idx, sta in enumerate(stalst):
             az = atan2(sta.lon-self.__xcmp__, sta.lat-self.__ycmp__)
-            azimouths.append({'az': az+int(az<0e0)*2*pi, 'nr': idx}) # normalize to [0, 2pi]
+            azimouths.append({'az': az+int(az<0e0)*(2e0*pi), 'nr': idx})
         azimouths = sorted(azimouths, key=operator.itemgetter('az'))
-        #  Confirm that all azimouths are in the range [0,2*pi)
-        for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
+        if DEBUG_MODE:
+            ##  if in debug mode, confirm that all azimouths are in the range
+            ##+ [0,2*pi)
+            for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
         return azimouths
 
-    ## TODO documentation in the following function needs update!!!
     def ls_matrices(self):
-        """Construct Least Squares Matrices (A and b) to be solved for.
+        """ Construct Least Squares Matrices (A and b) to be solved for.
         
             The function will first evaluate the covariance matrix C, where:
             W(i) = C(i) * G(i)**(-1), where G(i) = L(i) * Z(i) and C(i) the
@@ -242,13 +273,13 @@ class ShenStrain:
             b(i*2)     = [ Veast  ] * cx
             b(i+1)     = [ Vnorth ] * cy
         """
-        # std. deviation (a-priori)
+        ## std. deviation (a-priori)
         sigma0 = 1e-3
-        # number of rows (observations)
+        ## number of rows (observations)
         N = len(self.__stalst__)*2
-        # number of columns (parameters)
+        ## number of columns (parameters)
         M = 6
-        # the weights, i.e. W(i)
+        ## the weights, i.e. W(i)
         """
         if self.__options__['weighting_function'] == 'shen':
             if not self.__zweights__ or not self.__lweights__:
@@ -288,35 +319,47 @@ class ShenStrain:
         # numpy.linalg.lstsq(A,b)
         return A, b
 
-    ## TODO documentation in the following function needs update!!!
-    def make_weight_matrix(self):
-        """Construct the weight matrix.
+    def make_weight_matrix(self, sigma0=1e-3):
+        """ Construct the weight matrix.
 
             This function will construct the weight matrix to be used for
-            strain estimation (in LSE). The weight matrix will be formed according
-            to the option in __options['weighting_function']__.
+            strain estimation (via LSE). The weight matrix will be formed
+            according to the option in __options['weighting_function']__.
             Note that the returned matrix is actually an array(!!) of shape
-            (N,1), where N = len(self.__stalst__)*2. Each element in the returned
-            matrix, will be the weight for the corresponding station's lon and
-            lat component. E.g., if __stalst__ = ['dyng', 'ankr', ...], then
-            W[0] is the x-weight of dyng, W[1] is the y-weight of dyng, W[2]
-            is the x-weight of ankr, W[3] is the y-weight of ankr ....
+            (N,1), where N = len(self.__stalst__)*2. Each element in the
+            returned matrix, will be the weight for the corresponding station's
+            lon and lat component. E.g., if __stalst__ = ['dyng', 'ankr', ...],
+            then W[0] is the x-weight of dyng, W[1] is the y-weight of dyng,
+            W[2] is the x-weight of ankr, W[3] is the y-weight of ankr ....
+
+            If weighting scheme is 'shen', then the function will:
+                * read z- and l- weights from the instance's __zweights__ and
+                  __lweights__ lists
+                * compute for each station a pair of sigmas, as:
+                  w_x = (σ0/σe) * sqrt(Z(i)*L(i))
+                  w_y = (σ0/σn) * sqrt(Z(i)*L(i))
+            If weighting scheme is 'equal weights', then the function will
+            return a weight matrix with all elements equal to 1.
 
             Returns:
-                The weight matrix computed, of size (2*len(__stalst__),1), where
+                numpy matrix (Nx1): The weight matrix computed, of size 
+                (2*len(__stalst__),1), where
                 W[0] <- weight of __stalst__[0] x component
                 W[1] <- weight of __stalst__[0] y component
                 W[2] <- weight of __stalst__[1] x component
                 [ ... ]
+            
+            Note:
+                If using the 'shen' weighting scheme, then the L and Z weights
+                should have already been computed.
         """
-        # std. deviation (a-priori)
-        sigma0 = 1e-3
-        # number of rows (observations)
+        ## number of rows (observations)
         N = len(self.__stalst__)*2
         W = numpy.ones(shape=(N,1))
+        ## Use Shen's weighting scheme
         if self.__options__['weighting_function'] == 'shen':
             if not self.__zweights__ or not self.__lweights__:
-                raise RuntimeError
+                raise RuntimeError("[ERROR] Z or L weights not set; cannot compute weight matrices")
             d_coef = self.__options__['d_coef']
             zw = self.__zweights__
             lw = self.__lweights__
@@ -330,11 +373,12 @@ class ShenStrain:
             self.vprint('[DEBUG] Using equal-weight covar matrix!')
             #pass
         else:
-            raise RuntimeError
+            raise RuntimeError("[ERROR] Invalid weighting function option")
         return W
 
     def z_weights(self, other_sta_lst=None):
-        """Compute spatial (i.e. azimouthal coverage) weights.
+        """ Compute spatial (i.e. azimouthal coverage) weights, accordin to
+            Shen et al, 2015
         
             Given a list of Stations, compute and return the function:
             Z(i) = n*θ(i) / 4π
@@ -349,32 +393,33 @@ class ShenStrain:
             component and Station.lat is considered the 'y' component.
 
             Args:
-            other_sta_lst: list
-                    A list of Station instances. For each one a weight will be
-                    computed and returned. If not given, the instance's
-                    __stalst__ list will be used.
+            other_sta_lst (list of Station) : A list of Station instances. For
+                each one a weight will be computed and returned. If not given,
+                the instance's __stalst__ list will be used.
 
             Returns:
-            list of floats
-                Each element in the list is the weight of the respective
-                station in the input station list (aka 
+            list of floats: Each element in the list is the weight of the
+                respective station in the input station list (aka 
                 len(list) == len(other_sta_lst))
 
-            Todo:
+            Warning:
                 The weighting function is NOT Z(i) = n*θ(i) / 4π, but it is
-                extracted from VISR
+                extracted from VISR. So actualy, the formula is:
+                Z(i) = (.5 * θ(deg.) + azi_avrg) * n / azi_tot,
+                where azi_avrg = 0.25 * 360 / n
+                and azi_tot = (1+0.25)*3600
         """
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
         n = len(stalst)
         thetas = self.compute_theta_angles(stalst)
         assert len(thetas) == n
         wt_az = 0.25e0
-        azi_avrg = wt_az * 360.0e0 / n
-        azi_tot = (1.0e0+wt_az)*360.0e0
+        azi_avrg = wt_az * 360e0 / n
+        azi_tot = (1e0+wt_az)*360e0
         return [ (0.5e0*degrees(a)+azi_avrg)*n/azi_tot for a in thetas ]
 
     def compute_theta_angles(self, other_sta_lst=None):
-        """Compute θ angles, aka next minus the previous point.
+        """ Compute θ angles, aka next minus the previous point.
 
             Make a list of the 'theta' angles; for each point i, the theta angle
             is an azimouth difference, of the previous (i-1) minus the next 
@@ -394,7 +439,7 @@ class ShenStrain:
         azimouths = self.azimouths(stalst)
         assert len(azimouths) == n
         thetas = []
-        #  Special care for the first and last elements (theta angles).
+        ##  Special care for the first and last elements (theta angles).
         thetas.append({'w' : 2e0*pi+(azimouths[1]['az'] - azimouths[n-1]['az']),\
                        'nr': azimouths[0]['nr']})
         for j in range(1, n-1):
@@ -402,16 +447,18 @@ class ShenStrain:
                           'nr':azimouths[j]['nr']})
         thetas.append({'w': 2e0*pi+(azimouths[0]['az'] - azimouths[n-2]['az']),\
                       'nr':azimouths[n-1]['nr']})
-        #  Double-check !! All theta angles must be in the range [0, 2*π)
-        for angle in thetas: assert angle['w'] >= 0 and angle['w'] <= 2*pi
+        ##  Double-check !! All theta angles must be in the range [0, 2*π)
+        if DEBUG_MODE:
+            for angle in thetas: assert angle['w'] >= 0 and angle['w'] <= 2*pi
         return [ i['w'] for i in sorted(thetas, key=operator.itemgetter('nr')) ]
 
     def l_weights(self, other_sta_lst=None):
-        """Compute distance-dependent weights.
+        """ Compute distance-dependent weights.
         
-            Compute L(i) for each of the points in the station list sta_lst, where
-            L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
-            L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
+            Compute L(i) for each of the points in the station list sta_lst,
+            where
+                L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
+                L(i) = 1/(1+ΔR(i)**2/D**2) -- Quadratic
             It is assumed, that the coordinates of every point in the list and
             the __xcmp__, __ycmp__coordinates, are given in a Cartesian RF and
             are in meters.
@@ -433,16 +480,16 @@ class ShenStrain:
                 float is the D value used to compute the weights.
 
         """
-        #  Note: d and dri must be in the same units (here km).
+        ##  Note: d and dri must be in the same units (here km).
         def gaussian(dri, d):  return exp(-pow(dri/d,2))
         def quadratic(dri, d): return 1e0/(1e0+pow(dri/d,2))
-
+        ## assign the correct weighting formula
         if self.__options__['ltype'] == 'gaussian':
             l_i = gaussian
         elif self.__options__['ltype'] == 'quadratic':
             l_i = quadratic
         else:
-            raise RuntimeError
+            raise RuntimeError("[ERROR] Invalid distance-dependent weighting function")
         
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
 
@@ -450,22 +497,42 @@ class ShenStrain:
         dr = [ sqrt((x.lon-self.__xcmp__)*(x.lon-self.__xcmp__)+\
                     (x.lat-self.__ycmp__)*(x.lat-self.__ycmp__))/1000e0 \
                     for x in stalst ]
-        d  = float(self.__options__['d_coef'])
+        d = float(self.__options__['d_coef'])
+        if not d:
+            raise RuntimeError("[ERROR] D-coefficient ton set; cannot compute distance-dependent weights")
         return [ l_i(dri,d) for dri in dr ], d
 
     def find_optimal_d(self):
-        """Find optimal D coefficient, for distance weighting.
+        """ Find optimal D coefficient, for distance weighting.
 
             This function will test the range [dmin, dstep) with a step of
             dstep (km) for an optimal D coefficient (aka the coefficient used
             to compute the distance-dependent weighting).
             The optimal D is that for which:
-            int(w) >= int(W_t), where:
+            int(W) >= int(W_t), where:
             W = Σ{L(i)*Z(i)} for i in 1,2,...,len(stations)*2
             Note that when testing the individual D coefficients, the stations
             list used may not be the instance's __stalst__. That is because,
             for every D selected, the __stalst__ is filtered using:
-            self.filter_sta_wrt_distance(d).
+            self.filter_sta_wrt_distance(D).
+
+            In summary, the function will:
+                - loop through D=[dmin:dmax:dstep]
+                    * make new station list (newstalst) filtering the instance's
+                      station list, using D
+                    * compute Z-weights
+                    * compute L-weights
+                    * compute W = Sum{l(i)*z(i)} for i=1, ..., len(newstalst)
+                    * if int(W) >= Wt stop
+            
+            Note:
+                The function will use the instance's:
+                    __options__['dmin']
+                    __options__['dmax']
+                    __options__['dstep']
+                    __options__['Wt']
+                and set the instance's parameter:
+                    __options__['dcoef']
 
             Returns:
                 a tuple with elements:
@@ -520,8 +587,8 @@ class ShenStrain:
         for j in range(0, n-1):
             betas.append(azimouths[j+1]['az'] - azimouths[j]['az'])
         #  Double-check !! All theta angles must be in the range [0, 2*π)
-        for angle in betas:
-            assert angle >= 0 and angle <= 2*pi
+        if DEBUG_MODE:
+            for angle in betas: assert angle >= 0 and angle <= 2*pi
         assert len(betas) == n
         return betas
 
