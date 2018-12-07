@@ -186,13 +186,6 @@ export VRBLEVM=n
 # Source function files
 
 # //////////////////////////////////////////////////////////////////////////////
-# GMT parameters
-gmt gmtset MAP_FRAME_TYPE fancy
-gmt gmtset PS_PAGE_ORIENTATION portrait
-gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
-gmt gmtset PS_MEDIA 30cx30c
-
-# //////////////////////////////////////////////////////////////////////////////
 # Pre-defined parameters for bash script
 FAULTS=0
 PCMT=0
@@ -474,13 +467,20 @@ export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 range="-R$west/$east/$south/$north"
 proj="-Jm24/37/1:$projscale"
 
+# //////////////////////////////////////////////////////////////////////////////
+# GMT parameters
+gmt gmtset MAP_FRAME_TYPE fancy
+gmt gmtset PS_PAGE_ORIENTATION portrait
+gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
+gmt gmtset PS_MEDIA ${PAPER_SIZE}
+
 # ####################### TOPOGRAPHY ###########################
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
-  echo "...plot coatlines..."
+  echo "...plot coastlines..."
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
-  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale -U$logo_pos >> $outfile
+  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
 # 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
@@ -894,7 +894,7 @@ fi
 echo "$west $south 8,0,black 0 LB This image was produced using" \
   | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
-  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
+  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -U$logo_pos -O -V${VRBLEVM} >> $outfile
 
 
 #################--- Convert to other format ----###############################
