@@ -12,7 +12,7 @@ outfile=output.ps
 # #colormaps
 # landcpt=land_man.cpt
 # bathcpt=bath_man.cpt
-
+PAPER_SIZE="30cx30c" # width x height
 
 # //////////////////////////////////////////////////////////////////////////////
 # Set default REGION 

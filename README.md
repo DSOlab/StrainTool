@@ -197,6 +197,8 @@ All of the scripts need the file named `default-param` to be in the same folder.
 pth2inptf=../data/  # set default folder for input files (strain_info.dat, strain_stats.dat, station_info.dat)
 west, east, south, north, projscale, frame, sclength: set region parameters
 
+PAPER_SIZE="30cx30c" : set custom paper size (width x height)
+
 vscmagn=20 : magnitude of horizontal arrow scale
 VSC=0.05 : Horizontal velocity scale
 

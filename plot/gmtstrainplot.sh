@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc3.0
+#                     RELEASE=rc4.0
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=NOV-2018
+#    update list    : LAST_UPDATE=DEC-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -122,6 +122,43 @@ function help {
 	echo "/*************************************************************/"
 	exit 1
 }
+
+
+# //////////////////////////////////////////////////////////////////////////////
+# create Tmax scale variables
+function scalevar_T() 
+{
+ if [ $(echo " ${T} <= 1 " | bc -l) == 1 ]
+  then
+    Tmax_r=1
+    Tmax_r_marg=0.1
+    cpt_step=0.01
+    scale_step_r=1
+  elif [ $(echo " ${T} > 1 " | bc -l) == 1 ] && [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=1
+    cpt_step=0.01
+    scale_step_r=0
+  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=0.01
+    scale_step_r=-1
+  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] 
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=0.1
+    scale_step_r=-1
+  else
+    echo "ERROR"
+    exit 1
+  fi
+}
+
+
 # //////////////////////////////////////////////////////////////////////////////
 # BASH settings
 # set -o errexit
@@ -147,13 +184,6 @@ export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
 # Source function files
-
-# //////////////////////////////////////////////////////////////////////////////
-# GMT parameters
-gmt gmtset MAP_FRAME_TYPE fancy
-gmt gmtset PS_PAGE_ORIENTATION portrait
-gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
-gmt gmtset PS_MEDIA 30cx30c
 
 # //////////////////////////////////////////////////////////////////////////////
 # Pre-defined parameters for bash script
@@ -230,6 +260,7 @@ do
 	;;
     -vhor)
 	pth2stainfo=${pth2inptf}/$2
+	maptitle="Velocity field"
 	VHORIZONTAL=1
 	shift
 	shift
@@ -350,7 +381,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: $VERSION"
+	echo "version: ${VERSION}"
 	exit 1
 	shift
 	;;
@@ -437,13 +468,20 @@ export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 range="-R$west/$east/$south/$north"
 proj="-Jm24/37/1:$projscale"
 
+# //////////////////////////////////////////////////////////////////////////////
+# GMT parameters
+gmt gmtset MAP_FRAME_TYPE fancy
+gmt gmtset PS_PAGE_ORIENTATION portrait
+gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
+gmt gmtset PS_MEDIA ${PAPER_SIZE}
+
 # ####################### TOPOGRAPHY ###########################
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
-  echo "...plot coatlines..."
+  echo "...plot coastlines..."
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
-  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale -U$logo_pos >> $outfile
+  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
 # 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
@@ -466,7 +504,7 @@ fi
 # fi
 
 # //////////////////////////////////////////////////////////////////////////////
-### PLOT ONLY STATIONS ITHOUT ANY OTHER PARAMETER
+### PLOT ONLY STATIONS WITHOUT ANY OTHER PARAMETER
 
 if [ "$PSTA" -eq 1 ] && [ "$STRAIN" -eq 0 ] && [ "$STRROT" -eq 0 ] && [ "$GTOTAL" -eq 0 ] \
     && [ "$DILATATION" -eq 0 ] && [ "$GTOTALAXES" -eq 0 ] && [ "$SECINV" -eq 0 ]
@@ -538,11 +576,15 @@ if [ "$GTOTAL" -eq 1 ]
 then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
-  awk 'NR > 2 {print $2,$1,$19}' $pth2strinfo > tmpgtot
+  awk 'NR > 2 {print $2,$1,$19*1}' $pth2strinfo > tmpgtot
   # find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+10)")
-  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+# set variables for scale plot
+  scalevar_T
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})") #Tmax_r Tmax_r_marg
+  
+  gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt # cpt_step
+# cat inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
   then
@@ -566,8 +608,8 @@ then
 #   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(pythonc "print(round((${Tmax}/5.),-1))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))") #scale_step_r
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -592,13 +634,15 @@ if [ "$DILATATION" -eq 1 ]
 then
   echo "...plot dilatation..."
 # plot shear strain rates
-  awk 'NR > 2 {print $2,$1,$23}' $pth2strinfo >tmpdil
+  awk 'NR > 2 {print $2,$1,$23*1}' $pth2strinfo >tmpdil
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+10)")
+  # set variables for scale plot
+  scalevar_T
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdil | gmt info -El `
-  Tmin=$(pythonc "print(round(${T},-1)-10)")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt
+  Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt
 
   if [ "${GRDDAT}" -eq 0 ]
   then
@@ -612,8 +656,8 @@ then
   
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na  >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
@@ -638,11 +682,14 @@ if [ "$SECINV" -eq 1 ]
 then
   echo "...plot 2nd invariant..."
 # plot shear strain rates
-  awk 'NR > 2 {print $2,$1, $25}' $pth2strinfo >tmp2inv
+  awk 'NR > 2 {print $2,$1, $25*1}' $pth2strinfo >tmp2inv
   # find min max and create cpt file
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+10)")
-  gmt makecpt -Cjet -T0/${Tmax}/1 > inx.cpt
+# set variables for scale plot
+  scalevar_T
+  
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
+  gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
   then
@@ -656,8 +703,8 @@ then
   
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(pythonc "print(round((${Tmax}/5.),-1))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
+  scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))")
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
@@ -848,7 +895,7 @@ fi
 echo "$west $south 8,0,black 0 LB This image was produced using" \
   | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
-  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
+  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -U$logo_pos -O -V${VRBLEVM} >> $outfile
 
 
 #################--- Convert to other format ----###############################

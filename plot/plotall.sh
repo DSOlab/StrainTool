@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # program version
-VERSION="v.1.0-rc2.0"
+VERSION="v.1.0-rc4.0"
 
 function help {
 	echo "/*****************************************************************/"
