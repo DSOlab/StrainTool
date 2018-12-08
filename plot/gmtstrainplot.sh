@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc3.0
+#                     RELEASE=rc4.0
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=NOV-2018
+#    update list    : LAST_UPDATE=DEC-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -260,6 +260,7 @@ do
 	;;
     -vhor)
 	pth2stainfo=${pth2inptf}/$2
+	maptitle="Velocity field"
 	VHORIZONTAL=1
 	shift
 	shift
@@ -380,7 +381,7 @@ do
 	help
 	;;
     -v | --version)
-	echo "version: $VERSION"
+	echo "version: ${VERSION}"
 	exit 1
 	shift
 	;;
@@ -608,7 +609,7 @@ then
 #   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))") #scale_step_r
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -656,7 +657,7 @@ then
 #   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na  >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 
@@ -703,7 +704,7 @@ then
 #   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos >> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na >> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
 

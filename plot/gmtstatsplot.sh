@@ -9,11 +9,11 @@
 #    |**  National Technical University of Athens  **|
 #    |===============================================|
 #
-#    filename       : gmtsttatsnplot.sh
+#    filename       : gmtstatsnplot.sh
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc3.0
+#                     RELEASE=rc4.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=NOV-2018
+#    update list    : LAST_UPDATE=DEC-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -320,6 +320,17 @@ fi
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
+  # calculate grid size
+  west_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $1}' | gmt info -El)
+  east_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $1}' | gmt info -Eh)
+  south_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $2}' | gmt info -El)
+  north_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $2}' | gmt info -Eh)
+  range_grd="-R${west_grd}/${east_grd}/${south_grd}/${north_grd}"
+    
   > .legend
   {
   globFonts="G .5c"
@@ -350,24 +361,15 @@ then
   echo "H 11 Times-Roman Region parameters"
   echo "D 0.3c 1p"
   echo "N 1"
-  stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
-  echo -e "T region: ${stat_region}\n${globFonts}"
+  echo -e "T @_Grid limits@_:\n${globFonts}"
+  echo -e "T west / east: ${west_grd} / ${east_grd}\n${globFonts}"
+  echo -e "T south / north: ${south_grd} / ${north_grd}\n${globFonts}"
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
   echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
   echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
   } >> .legend
-  
-  # calculate new variables
-#   west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}))")
-#   south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}))")
-#   range_grd="-R$west_grd/$east/$south_grd/$north"
-  west_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -El `
-  east_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -Eh `
-  south_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -El `
-  north_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -Eh `
-  range_grd="-R$west_grd/$east_grd/$south_grd/$north_grd"
-  istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
+  istep_grd=$(pythonc "print(${stat_x_grid_step}*60.)")
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -399,7 +401,7 @@ then
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
-# 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
+# 	pscoast -Jm -R -Df -W0.25p,black -G195  -K -O -V >> $outfile
 # 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
 
@@ -460,7 +462,7 @@ then
   gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -519,7 +521,7 @@ then
 	-O -K -V${VRBLEVM}>> $outfile
 
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -580,7 +582,7 @@ then
 	-O -K -V${VRBLEVM}>> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),3))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"sigma": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
