@@ -1,6 +1,35 @@
 #!/usr/bin/env bash
 # program version
 VERSION="v.1.0-rc4.0"
+# //////////////////////////////////////////////////////////////////////////////
+# ==============================================================================
+#
+#    |===============================================|
+#    |**       DIONYSOS SATELLITE OBSERVATORY      **|
+#    |**          HIGHER GEODESY LABORATORY        **|
+#    |**  National Technical University of Athens  **|
+#    |===============================================|
+#
+#    filename       : plotall.sh
+#                     NAME=plotall
+#    version        : v-1.0
+#                     VERSION=v1.0
+#                     RELEASE=rc4.0
+#    licence        : MIT
+#    created        : SEP-2018
+#    usage          :
+#    GMT Modules    : 
+#    UNIX progs     : 
+#    exit code(s)   : 0 -> success
+#                   : 1 -> error
+#    discription    : Plot all maps for StrainTool
+#    uses           : 
+#    notes          :
+#    update list    : LAST_UPDATE=DEC-2018
+#    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
+#                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
+#    ----------------------------------------------------------------------
+# ==============================================================================
 
 function help {
 	echo "/*****************************************************************/"
@@ -16,6 +45,14 @@ function help {
     echo "/*****************************************************************/"
 exit 0
 }
+
+# //////////////////////////////////////////////////////////////////////////////
+# BASH settings
+# set -o errexit
+set -e
+set -o pipefail
+# set -o nounset
+# set -o xtrace
 
 prefix=""
 suffix=""
@@ -91,3 +128,5 @@ echo "Statistics, optimal smoothing distance .... ${prefix}output_stats-doptimal
 echo "Statistics, sigma value : ................. ${prefix}output_stats-sigma${suffix}.jpg"
 echo "--------------------------------------------------------------------------"
 
+# Print exit status
+echo "[STATUS] Finished. Exit status: $?"

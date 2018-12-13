@@ -19,7 +19,7 @@
 #    usage          :
 #    GMT Modules    : gmtset, makecpt, psbasemap, xyz2grd, grdsample, grdimage,
 #                     pscoast, psscale, psxy, pstext, psvelo, psconvert, pscontour
-#    UNIX progs     : awk 
+#    UNIX progs     : awk, tail
 #    exit code(s)   : 0 -> success
 #                   : 1 -> error
 #    discription    : 
@@ -82,7 +82,7 @@ function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : gmtstrainplot.sh"
 	echo " Version : v-1.0"
-	echo " Purpose : Plot maps for gmtstrainplot"
+	echo " Purpose : Plot strain maps for StrainTool results"
 	echo " Usage   : gmtstrainplot.sh -r  |  | -o [output] | -jpg "
 	echo " Switches: "
 	echo ""
@@ -205,7 +205,6 @@ GTOTALAXES=0
 DILATATION=0
 SECINV=0
 GRDDAT=0
-# MAX_STR_VALUE=1000000
 
 # //////////////////////////////////////////////////////////////////////////////
 # Check default parameters file
@@ -229,162 +228,144 @@ while [ $# -gt 0 ]
 do
   case "$1" in
     -r | --region)
-	west=$2
-	east=$3
-	south=$4
-	north=$5
-	projscale=$6
-	frame=$7
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	;;
+      west=$2
+      east=$3
+      south=$4
+      north=$5
+      projscale=$6
+      frame=$7
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      ;;
     -mt)
-	maptitle=$2
-	shift
-	shift
-	;;
+      maptitle=$2
+      shift
+      shift
+      ;;
     -psta)
-	pth2sta=${pth2inptf}/station_info.dat
-	PSTA=1
-	shift
-	;;
+      pth2sta=${pth2inptf}/station_info.dat
+      PSTA=1
+      shift
+      ;;
     -deltr)
-	pth2deltr=${pth2inptf}/delaunay_info.dat
-	DELTR=1
-	shift
-	;;
+      pth2deltr=${pth2inptf}/delaunay_info.dat
+      DELTR=1
+      shift
+      ;;
     -vhor)
-	pth2stainfo=${pth2inptf}/$2
-	maptitle="Velocity field"
-	VHORIZONTAL=1
-	shift
-	shift
-	;;
+      pth2stainfo=${pth2inptf}/$2
+      maptitle="Velocity field"
+      VHORIZONTAL=1
+      shift
+      shift
+      ;;
     -vsc)
-	VSC=$2
-	shift
-	shift
-	;;
+      VSC=$2
+      shift
+      shift
+      ;;
     -str)
-	pth2strinfo=${pth2inptf}/${2}
-	maptitle="Principal Axes of Strain Rates"
-	STRAIN=1
-	shift
-	shift
-	;;
+      pth2strinfo=${pth2inptf}/${2}
+      maptitle="Principal Axes of Strain Rates"
+      STRAIN=1
+      shift
+      shift
+      ;;
     -strsc)
-	STRSC=$2
-	shift
-	shift
-	;;
+      STRSC=$2
+      shift
+      shift
+      ;;
     -rot)
-	pth2strinfo=${pth2inptf}/${2}
-	maptitle="Rotational Rates"
-	STRROT=1
-	shift
-	shift
-	;;
+      pth2strinfo=${pth2inptf}/${2}
+      maptitle="Rotational Rates"
+      STRROT=1
+      shift
+      shift
+      ;;
     -rotsc)
-	ROTSC=${2}
-	shift
-	shift
-	;;
+      ROTSC=${2}
+      shift
+      shift
+      ;;
     -gtot*)
-	if [ "${1:5:8}" == "+grd" ]; then
-	  pth2strinfo=${pth2inptf}/${2}
-	  GTOTAL=1
-	  GRDDAT=1
-	elif [ "${1:5:8}" == "axes" ]; then
-	  pth2strinfo=${pth2inptf}/${2}
-	  GTOTALAXES=1
-	  maptitle="Axes of dextral/sinistral shear-strain"
-	else
-	  pth2strinfo=${pth2inptf}/${2}
-	  GTOTAL=1
-	  maptitle="Maximum Shear Strain Rates"
-	fi
-	shift
-	shift
-	;;
+      if [ "${1:5:8}" == "+grd" ]; then
+        pth2strinfo=${pth2inptf}/${2}
+        GTOTAL=1
+        GRDDAT=1
+      elif [ "${1:5:8}" == "axes" ]; then
+        pth2strinfo=${pth2inptf}/${2}
+        GTOTALAXES=1
+        maptitle="Axes of dextral/sinistral shear-strain"
+      else
+        pth2strinfo=${pth2inptf}/${2}
+        GTOTAL=1
+        maptitle="Maximum Shear Strain Rates"
+      fi
+      shift
+      shift
+      ;;
     -gtotaxes)
-	pth2strinfo=${pth2inptf}/${2}
-	GTOTALAXES=1
-    maptitle="Axes of dextral/sinistral shear strain"
-	shift
-	shift
-	;;
+      pth2strinfo=${pth2inptf}/${2}
+      GTOTALAXES=1
+      maptitle="Axes of dextral/sinistral shear strain"
+      shift
+      shift
+      ;;
     -dil*)
-	pth2strinfo=${pth2inptf}/${2}
-	DILATATION=1
-	maptitle="Dilatation"
-	if [ "${1:4:7}" == "+grd" ]; then
-	  GRDDAT=1
-	fi
-	shift
-	shift
-	;;
+      pth2strinfo=${pth2inptf}/${2}
+      DILATATION=1
+      maptitle="Dilatation"
+      if [ "${1:4:7}" == "+grd" ]; then
+        GRDDAT=1
+      fi
+      shift
+      shift
+      ;;
     -secinv*)
-	pth2strinfo=${pth2inptf}/${2}
-	SECINV=1
-	maptitle="Second invariant of strain rate"
-	if [ "${1:7:10}" == "+grd" ]; then
-	  GRDDAT=1
-	fi
-	shift
-	shift
-	;;
-#     -max_str_value)
-# 	MAX_STR_VALUE=$2
-# 	shift
-# 	shift
-# 	;;
-    -topo)
-  # switch topo not used in server!
-	TOPOGRAPHY=1
-	shift
-	;;
-    -faults)
-	FAULTS=1
-	shift
-	;;	
-    -pcmt)
-	PCMT=1
-	shift
-	;;
+      pth2strinfo=${pth2inptf}/${2}
+      SECINV=1
+      maptitle="Second invariant of strain rate"
+      if [ "${1:7:10}" == "+grd" ]; then
+        GRDDAT=1
+      fi
+      shift
+      shift
+      ;;
     -o | --output)
-	outfile=${2}.ps
-	shift
-	shift
-	;;
+      outfile=${2}.ps
+      shift
+      shift
+      ;;
     -l | --labels)
-	LABELS=1
-	shift
-	;;
+      LABELS=1
+      shift
+      ;;
     -leg)
-	LEGEND=1
-	shift
-	;;
+      LEGEND=1
+      shift
+      ;;
     -logo)
-	LOGO=1
-	shift
-	;;
+      LOGO=1
+      shift
+      ;;
     -jpg)
-	OUTJPG=1
-	shift
-	;;
+      OUTJPG=1
+      shift
+      ;;
     -h | --help)
-	help
-	;;
+      help
+      ;;
     -v | --version)
-	echo "version: ${VERSION}"
-	exit 1
-	shift
-	;;
+      echo "version: ${VERSION}"
+      exit 1
+      shift
+      ;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
       echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
@@ -395,16 +376,7 @@ done
 # //////////////////////////////////////////////////////////////////////////////
 # check if files exist
 
-###check dems
-if [ "$TOPOGRAPHY" -eq 1 ]
-then
-  if [ ! -f $inputTopoB ]
-  then
-    echo "[WARNING] grd file for topography toes not exist, var turn to coastline"
-    TOPOGRAPHY=0
-  fi
-fi
-
+# Check strain info file exist
 if [ "$STRAIN" -eq 1 ] || [ "$STRROT" -eq 1 ] || [ "$GTOTAL" -eq 1 ] || [ "$DILATATION" -eq 1 ] \
    || [ "$GTOTALAXES" -eq 1 ] || [ "$SECINV" -eq 1 ]
 then
@@ -417,7 +389,7 @@ then
   fi
 fi
 
-##check inputfiles
+# check delaunay info file
 if [ "$DELTR" -eq 1 ]
 then
   if [ ! -f $pth2deltr ]
@@ -429,7 +401,7 @@ then
   fi
 fi
 
-##check inputfiles
+# check station input files
 if [ "$PSTA" -eq 1 ]
 then
   if [ ! -f $pth2sta ]
@@ -440,6 +412,7 @@ then
   fi
 fi
 
+# Check velocity file
 if [ "$VHORIZONTAL" -eq 1 ]
 then
   if [ ! -f $pth2stainfo ]
@@ -476,32 +449,13 @@ gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18
 gmt gmtset PS_MEDIA ${PAPER_SIZE}
 
 # ####################### TOPOGRAPHY ###########################
-if [ "$TOPOGRAPHY" -eq 0 ]
+if [ "$TOPOGRAPHY" -eq 0 ]  # For v1.0 var $TOPOGRAPHY set only 0
 then
   echo "...plot coastlines..."
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
-# 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
-# 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
-
-# if [ "$TOPOGRAPHY" -eq 1 ]
-# then
-#   echo "...plot topography dem..."
-#   # ####################### TOPOGRAPHY ###########################
-#   # bathymetry
-#   gmt makecpt -Cgebco.cpt -T-7000/0/50 -Z > $bathcpt
-#   gmt grdimage $inputTopoB $range $proj -C$bathcpt -K > $outfile
-#   gmt pscoast $proj -P $range -Df -Gc -K -O >> $outfile
-# 	# land
-#   gmt makecpt -Cgray.cpt -T-6000/1800/50 -Z > $landcpt
-#   gmt grdimage $inputTopoL $range $proj -C$landcpt  -K -O >> $outfile
-#   gmt pscoast -R -J -O -K -Q >> $outfile
-# 	#------- coastline -------------------------------------------
-#   gmt psbasemap -R -J -O -K -B$frame:."$maptitle":  $scale >> $outfile
-#   gmt pscoast -J -R -Df -W0.25p,black -K  -O -U$logo_pos >> $outfile
-# fi
 
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT ONLY STATIONS WITHOUT ANY OTHER PARAMETER
@@ -542,13 +496,12 @@ then
 
   awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
-    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+    -O -K -V${VRBLEVM} >> $outfile
 
   awk 'NR > 2 {print $2,$3,$4,$5,$6,$7,0,$1}' $pth2stainfo \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
-    -O -K -V${VRBLEVM} >> $outfile  # 205/133/63.
+    -O -K -V${VRBLEVM} >> $outfile
 
-###scale
 # plot scale of strain rates
   tmp_scrate=$(pythonc "print((${projscale}/150000000.)*5.)")
   velsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
@@ -577,38 +530,26 @@ then
   echo "...plot maximum shear strain rates..."
 # plot shear strain rates
   awk 'NR > 2 {print $2,$1,$19*1}' $pth2strinfo > tmpgtot
-  # find min max and create cpt file
+# find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
 # set variables for scale plot
   scalevar_T
-  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})") #Tmax_r Tmax_r_marg
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   
-  gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt # cpt_step
-# cat inx.cpt
+  gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
   
   if [ "${GRDDAT}" -eq 0 ]
   then
-#   gmt surface tmpgtot -R -I1 -Gdata.nc
-# gmt grdcontour data.nc -J  -C10 -A50 -Gd3i -S4 -O -K -V${VRBLEVM} >> ${outfile}
-
     gmt pscontour tmpgtot -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
-#     gmt surface tmpgtot -R -I0.1 -Gtmpraws0.nc -T0.5
-#     gmt grdview tmpraws0.nc -R -J  -Cinx.cpt -Qs -O -K -V${VRBLEVM} >> ${outfile}
-    
-#     gmt triangulate tmpgtot -Grawt.nc -R -I0.1
-# gmt grdfilter rawt.nc -Gfiltered.nc -D0 -Fc1
-# gmt grdview filtered.nc -R -J -B -Cinx.cpt -Ts -O -K -V${VRBLEVM} >> ${outfile}
   else
     gmt xyz2grd tmpgtot -Gtmpgtot.grd ${range} -I40m= -V
     gmt grdsample tmpgtot.grd -I4s -Gtmpgtot_sample.grd -V${VRBLEVM}
     gmt grdimage tmpgtot_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
   fi
-#   gmt pscontour tmpgtot -R -J  -Wthin -Cinx.cpt -Lthinnest,- -Gd1i -O -K -V${VRBLEVM} >> ${outfile}
-#   gmt pscontour tmpgtot -R -J  -Cinx.cpt -I -O -K -V${VRBLEVM} >> ${outfile}
-#   gmt grdcontour tmpgtot_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
-  scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))") #scale_step_r
+# PLot scale
+  scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
@@ -653,8 +594,6 @@ then
     gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -V${VRBLEVM} -K >> $outfile
   fi
-  
-#   gmt grdcontour tmpdil_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na  >> $outfile
@@ -700,8 +639,6 @@ then
     gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -V${VRBLEVM} -K >> $outfile
   fi
-  
-#   gmt grdcontour tmp2inv_sample.grd -J -C25 -A50 -Gd3i/1 -S4 -O -K >> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),${scale_step_r}))")
   gmt pscoast -R -J -O -K -W0.25 -Df -Na >> $outfile
@@ -776,7 +713,7 @@ fi
 if [ "$STRROT" -eq 1 ]
 then
   echo "...plot rotational rates..."
-  #   plot delaunay
+#   plot delaunay triangles
   if [ "${DELTR}" -eq 1 ]
   then
     gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
@@ -805,7 +742,6 @@ then
   awk 'NR > 2 { if ($7 < 0) print $2,$1,$7,$8}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gblue -E255/255/220 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-
         
 # plot scale for rotational rates
   tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
@@ -890,8 +826,7 @@ fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # FINAL SECTION
-#################--- Close ps output file ----##################################
-#echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
+# add stamp for StrainTool
 echo "$west $south 8,0,black 0 LB This image was produced using" \
   | gmt pstext -Jm -R -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
@@ -905,21 +840,6 @@ then
 #   gs -sDEVICE=jpeg -dJPEGQ=100 -dNOPAUSE -dBATCH -dSAFER -r300 -sOutputFile=test.jpg ${outfile}
   gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM} 
 fi
-# if [ "$OUTPNG" -eq 1 ]
-# then
-#   echo "...adjust and convert to PNG format..."
-#   gmt psconvert ${outfile} -A0.2c -TG -V${VRBLEVM} 	
-# fi
-# if [ "$OUTEPS" -eq 1 ]
-# then
-#   echo "...adjust and convert to EPS format..."
-#   gmt psconvert ${outfile} -A0.2c -Te -V${VRBLEVM} 
-# fi
-# if [ "$OUTPDF" -eq 1 ]
-# then
-#   echo "...adjust and convert to PDF format..."
-#   gmt psconvert ${outfile} -A0.2c -Tf -V${VRBLEVM} 
-# fi
 
 # clear all teporary files
 echo "...remove temporary files..."

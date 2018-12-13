@@ -176,90 +176,85 @@ while [ $# -gt 0 ]
 do
   case "$1" in
     -r | --region)
-	west=$2
-	east=$3
-	south=$4
-	north=$5
-	projscale=$6
-	frame=$7
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	;;
+      west=$2
+      east=$3
+      south=$4
+      north=$5
+      projscale=$6
+      frame=$7
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      ;;
     -mt)
-	maptitle=$2
-	shift
-	shift
-	;;
+      maptitle=$2
+      shift
+      shift
+      ;;
     -psta)
-	pth2sta=${pth2inptf}/station_info.dat
-	PSTA=1
-	shift
-	;;
+      pth2sta=${pth2inptf}/station_info.dat
+      PSTA=1
+      shift
+      ;;
     -deltr)
-	pth2deltr=${pth2inptf}/delaunay_info.dat
-	DELTR=1
-	shift
-	;;
+      pth2deltr=${pth2inptf}/delaunay_info.dat
+      DELTR=1
+      shift
+      ;;
     -stats)
-	pth2stats=${pth2inptf}/$2
-	STATS=1
-	shift
-	shift
-	;;
+      pth2stats=${pth2inptf}/$2
+      STATS=1
+      shift
+      shift
+      ;;
     --stats-stations)
-	STATS_STATIONS=1
-	maptitle="Stations used per grid cell"
-	shift
-	;;
+      STATS_STATIONS=1
+      maptitle="Stations used per grid cell"
+      shift
+      ;;
     --stats-doptimal)
-	STATS_DOPTIMAL=1
-	maptitle="Optimal Smoothing Distance (D) per grid cell"
-	shift
-	;;
+      STATS_DOPTIMAL=1
+      maptitle="Optimal Smoothing Distance (D) per grid cell"
+      shift
+      ;;
     --stats-sigma)
-	STATS_SIGMA=1
-	maptitle="sigma (@~\s@~) value estimated per grid cell"
-	shift
-	;;
-    -topo)
-        # switch topo not used in server!
-	TOPOGRAPHY=1
-	shift
-	;;
+      STATS_SIGMA=1
+      maptitle="sigma (@~\s@~) value estimated per grid cell"
+      shift
+      ;;
     -o | --output)
-	outfile=${2}.ps
-	shift
-	shift
-	;;
+      outfile=${2}.ps
+      shift
+      shift
+      ;;
     -l | --labels)
-	LABELS=1
-	shift
-	;;
+      LABELS=1
+      shift
+      ;;
     -leg)
-	LEGEND=1
-	shift
-	;;
+      LEGEND=1
+      shift
+      ;;
     -logo)
-	LOGO=1
-	shift
-	;;
+      LOGO=1
+      shift
+      ;;
     -jpg)
-	OUTJPG=1
-	shift
-	;;
+      OUTJPG=1
+      shift
+      ;;
     -h | --help)
-	help
-	;;
+      help
+      ;;
     -v | --version)
-	echo "version: $VERSION"
-	exit 1
-	shift
-	;;
+      echo "version: $VERSION"
+      exit 1
+      shift
+      ;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
       echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
@@ -270,18 +265,7 @@ done
 # //////////////////////////////////////////////////////////////////////////////
 # check if files exist
 
-###check dems
-if [ "$TOPOGRAPHY" -eq 1 ]
-then
-  if [ ! -f $inputTopoB ]
-  then
-    echo "[WARNING] grd file for topography toes not exist, var turn to coastline"
-    TOPOGRAPHY=0
-  fi
-fi
-
-
-##check inputfiles
+##check statistics input file
 if [ "$STATS" -eq 1 ]
 then
   if [ ! -f $pth2stats ]
@@ -293,7 +277,7 @@ then
   fi
 fi
 
-##check inputfiles
+##check delaunay triangles file
 if [ "$DELTR" -eq 1 ]
 then
   if [ ! -f $pth2deltr ]
@@ -305,7 +289,7 @@ then
   fi
 fi
 
-##check inputfiles
+##check stations info file
 if [ "$PSTA" -eq 1 ]
 then
   if [ ! -f $pth2sta ]
@@ -401,8 +385,6 @@ then
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
-# 	pscoast -Jm -R -Df -W0.25p,black -G195  -K -O -V >> $outfile
-# 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -455,7 +437,6 @@ then
   Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
   Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
-#   while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
@@ -487,7 +468,7 @@ if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
-  # find min max and create cpt file
+# find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
   then
@@ -618,7 +599,6 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 # FINAL SECTION
 #################--- Close ps output file ----##################################
-#echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
 echo "$west $south 8,0,black 0 LB This image was produced using" \
   | gmt pstext -Jm ${range} -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
@@ -629,24 +609,8 @@ echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
 if [ "$OUTJPG" -eq 1 ]
 then
   echo "...adjust and convert to JPEG format..."
-#   gs -sDEVICE=jpeg -dJPEGQ=100 -dNOPAUSE -dBATCH -dSAFER -r300 -sOutputFile=test.jpg ${outfile}
   gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM} 
 fi
-# if [ "$OUTPNG" -eq 1 ]
-# then
-#   echo "...adjust and convert to PNG format..."
-#   gmt psconvert ${outfile} -A0.2c -TG -V${VRBLEVM} 	
-# fi
-# if [ "$OUTEPS" -eq 1 ]
-# then
-#   echo "...adjust and convert to EPS format..."
-#   gmt psconvert ${outfile} -A0.2c -Te -V${VRBLEVM} 
-# fi
-# if [ "$OUTPDF" -eq 1 ]
-# then
-#   echo "...adjust and convert to PDF format..."
-#   gmt psconvert ${outfile} -A0.2c -Tf -V${VRBLEVM} 
-# fi
 
 # clear all teporary files
 echo "...remove temporary files..."
