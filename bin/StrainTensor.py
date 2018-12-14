@@ -20,7 +20,7 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
-Version = 'StrainTensor.py Version: 1.0-rc3.0'
+Version = 'StrainTensor.py Version: 1.0-rc4.0'
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
@@ -229,7 +229,7 @@ print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 ##+ If cutting out-of-limits stations option is set, or method is veis, then 
 ##+ only keep the stations that fall within it.
 ##  The region coordinates (min/max pairs) should be given in decimal degrees.
-if args.region:
+if 'region' in args:
     try:
         lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
         if args.cut_outoflim_sta or args.method == 'veis':
@@ -245,7 +245,7 @@ if args.region:
         print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region), file=sys.stderr)
 
 ##  Filter out stations that are never going to be used. This is an opt!
-if args.region and not args.method == 'veis' and not args.cut_outoflim_sta:
+if 'region' in args and not args.method == 'veis' and not args.cut_outoflim_sta:
     vprint('[DEBUG] Filtering stations based on their distance from region barycentre.')
     Napr = len(sta_list_ell)
     mean_lon, mean_lat = radians(lonmin+(lonmax-lonmin)/2e0), radians(latmin+(latmax-latmin)/2e0)
@@ -288,7 +288,7 @@ vprint('[DEBUG] Station list transformed to UTM.')
 fout = open('strain_info.dat', 'w')
 vprint('[DEBUG] Strain info written in file: {}'.format('strain_info.dat'))
 print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
-print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'marcsec/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
+print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'deg/Myr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 
 ##  Compute only one Strain Tensor, at the region's barycenter; then exit.
 if args.one_tensor:
@@ -305,7 +305,7 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
     ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs 
     ##+ to degrees and produce a grid from extracting min/max crds from the
     ##+ station list.
-    if args.region:
+    if 'region' in args:
         grd = pystrain.grid.Grid(lonmin, lonmax, args.x_grid_step, latmin, latmax, args.y_grid_step)
     else:
         grd = pystrain.grid.generate_grid(sta_list_ell, args.x_grid_step, args.y_grid_step, True)

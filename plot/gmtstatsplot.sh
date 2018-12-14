@@ -9,11 +9,11 @@
 #    |**  National Technical University of Athens  **|
 #    |===============================================|
 #
-#    filename       : gmtsttatsnplot.sh
+#    filename       : gmtstatsnplot.sh
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc3.0
+#                     RELEASE=rc4.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=NOV-2018
+#    update list    : LAST_UPDATE=DEC-2018
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -125,7 +125,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc3.0"
+VERSION="v.1.0-rc4.0"
 
 # system's Python version
 PYV=99
@@ -138,13 +138,6 @@ export VRBLEVM=n
 
 # //////////////////////////////////////////////////////////////////////////////
 # Source function files
-
-# //////////////////////////////////////////////////////////////////////////////
-# GMT parameters
-gmt gmtset MAP_FRAME_TYPE fancy
-gmt gmtset PS_PAGE_ORIENTATION portrait
-gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
-gmt gmtset PS_MEDIA 30cx30c
 
 # //////////////////////////////////////////////////////////////////////////////
 # Pre-defined parameters for bash script
@@ -183,90 +176,85 @@ while [ $# -gt 0 ]
 do
   case "$1" in
     -r | --region)
-	west=$2
-	east=$3
-	south=$4
-	north=$5
-	projscale=$6
-	frame=$7
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	shift
-	;;
+      west=$2
+      east=$3
+      south=$4
+      north=$5
+      projscale=$6
+      frame=$7
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      shift
+      ;;
     -mt)
-	maptitle=$2
-	shift
-	shift
-	;;
+      maptitle=$2
+      shift
+      shift
+      ;;
     -psta)
-	pth2sta=${pth2inptf}/station_info.dat
-	PSTA=1
-	shift
-	;;
+      pth2sta=${pth2inptf}/station_info.dat
+      PSTA=1
+      shift
+      ;;
     -deltr)
-	pth2deltr=${pth2inptf}/delaunay_info.dat
-	DELTR=1
-	shift
-	;;
+      pth2deltr=${pth2inptf}/delaunay_info.dat
+      DELTR=1
+      shift
+      ;;
     -stats)
-	pth2stats=${pth2inptf}/$2
-	STATS=1
-	shift
-	shift
-	;;
+      pth2stats=${pth2inptf}/$2
+      STATS=1
+      shift
+      shift
+      ;;
     --stats-stations)
-	STATS_STATIONS=1
-	maptitle="Stations used per grid cell"
-	shift
-	;;
+      STATS_STATIONS=1
+      maptitle="Stations used per grid cell"
+      shift
+      ;;
     --stats-doptimal)
-	STATS_DOPTIMAL=1
-	maptitle="Optimal Smoothing Distance (D) per grid cell"
-	shift
-	;;
+      STATS_DOPTIMAL=1
+      maptitle="Optimal Smoothing Distance (D) per grid cell"
+      shift
+      ;;
     --stats-sigma)
-	STATS_SIGMA=1
-	maptitle="sigma (@~\s@~) value estimated per grid cell"
-	shift
-	;;
-    -topo)
-        # switch topo not used in server!
-	TOPOGRAPHY=1
-	shift
-	;;
+      STATS_SIGMA=1
+      maptitle="sigma (@~\s@~) value estimated per grid cell"
+      shift
+      ;;
     -o | --output)
-	outfile=${2}.ps
-	shift
-	shift
-	;;
+      outfile=${2}.ps
+      shift
+      shift
+      ;;
     -l | --labels)
-	LABELS=1
-	shift
-	;;
+      LABELS=1
+      shift
+      ;;
     -leg)
-	LEGEND=1
-	shift
-	;;
+      LEGEND=1
+      shift
+      ;;
     -logo)
-	LOGO=1
-	shift
-	;;
+      LOGO=1
+      shift
+      ;;
     -jpg)
-	OUTJPG=1
-	shift
-	;;
+      OUTJPG=1
+      shift
+      ;;
     -h | --help)
-	help
-	;;
+      help
+      ;;
     -v | --version)
-	echo "version: $VERSION"
-	exit 1
-	shift
-	;;
+      echo "version: $VERSION"
+      exit 1
+      shift
+      ;;
     *)
       echo "[ERROR] Bad argument structure. argument \"${1}\" is not right"
       echo "[STATUS] Script Finished Unsuccesfully! Exit Status 1"
@@ -277,18 +265,7 @@ done
 # //////////////////////////////////////////////////////////////////////////////
 # check if files exist
 
-###check dems
-if [ "$TOPOGRAPHY" -eq 1 ]
-then
-  if [ ! -f $inputTopoB ]
-  then
-    echo "[WARNING] grd file for topography toes not exist, var turn to coastline"
-    TOPOGRAPHY=0
-  fi
-fi
-
-
-##check inputfiles
+##check statistics input file
 if [ "$STATS" -eq 1 ]
 then
   if [ ! -f $pth2stats ]
@@ -300,7 +277,7 @@ then
   fi
 fi
 
-##check inputfiles
+##check delaunay triangles file
 if [ "$DELTR" -eq 1 ]
 then
   if [ ! -f $pth2deltr ]
@@ -312,7 +289,7 @@ then
   fi
 fi
 
-##check inputfiles
+##check stations info file
 if [ "$PSTA" -eq 1 ]
 then
   if [ ! -f $pth2sta ]
@@ -327,6 +304,17 @@ fi
 # READ STATISTICS FILE
 if [ "$STATS" -eq 1 ]
 then
+  # calculate grid size
+  west_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $1}' | gmt info -El)
+  east_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $1}' | gmt info -Eh)
+  south_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $2}' | gmt info -El)
+  north_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
+  | awk ' {printf "%+0.3f\n", $2}' | gmt info -Eh)
+  range_grd="-R${west_grd}/${east_grd}/${south_grd}/${north_grd}"
+    
   > .legend
   {
   globFonts="G .5c"
@@ -357,24 +345,15 @@ then
   echo "H 11 Times-Roman Region parameters"
   echo "D 0.3c 1p"
   echo "N 1"
-  stat_region=$(tail -n+4 $pth2stats | grep region | awk '{print $3}')
-  echo -e "T region: ${stat_region}\n${globFonts}"
+  echo -e "T @_Grid limits@_:\n${globFonts}"
+  echo -e "T west / east: ${west_grd} / ${east_grd}\n${globFonts}"
+  echo -e "T south / north: ${south_grd} / ${north_grd}\n${globFonts}"
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
   echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
   echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
   } >> .legend
-  
-  # calculate new variables
-#   west_grd=$(pythonc "print(${west} + (${stat_x_grid_step}))")
-#   south_grd=$(pythonc "print(${south} + (${stat_y_grid_step}))")
-#   range_grd="-R$west_grd/$east/$south_grd/$north"
-  west_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -El `
-  east_grd=`awk 'NR > 24 {print $1}' $pth2stats | gmt info -Eh `
-  south_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -El `
-  north_grd=`awk 'NR > 24 {print $2}' $pth2stats | gmt info -Eh `
-  range_grd="-R$west_grd/$east_grd/$south_grd/$north_grd"
-  istep_grd=$(pythonc "print(${stat_x_grid_step}*60)")
+  istep_grd=$(pythonc "print(${stat_x_grid_step}*60.)")
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -392,15 +371,20 @@ export scale=-Lf${sclon}/${sclat}/${tmp_msclat}:${tmp_msclon}/${sclength}+l+jr
 range="-R$west/$east/$south/$north"
 proj="-Jm24/37/1:$projscale"
 
+# //////////////////////////////////////////////////////////////////////////////
+# GMT parameters
+gmt gmtset MAP_FRAME_TYPE fancy
+gmt gmtset PS_PAGE_ORIENTATION portrait
+gmt gmtset FONT_ANNOT_PRIMARY 8 FONT_LABEL 8 MAP_FRAME_WIDTH 0.12c FONT_TITLE 18p,Palatino-BoldItalic
+gmt gmtset PS_MEDIA ${PAPER_SIZE}
+
 # ####################### TOPOGRAPHY ###########################
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
-  echo "...plot coatlines..."
+  echo "...plot coastlines..."
   ################## Plot coastlines only ######################	
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
-  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale -U$logo_pos >> $outfile
-# 	pscoast -Jm -R -Df -W0.25p,black -G195  -U$logo_pos -K -O -V >> $outfile
-# 	psbasemap -R -J -O -K --FONT_ANNOT_PRIMARY=10p $scale --FONT_LABEL=10p >> $outfile
+  gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
 fi
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -427,17 +411,39 @@ then
   awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
-  Tmax=$(pythonc "print(int(round(${T},0)+1))")
+  # set variables for scale
+  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=1
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=5
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=1
+    scale_step_r=-1
+  else
+    echo "ERROR"
+    exit 1
+  fi
+  Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
-  Tmin=$(pythonc "print(int(round(${T},0)-1))")
-  while [  $((Tmax-Tmin)) -lt 3 ]; do let Tmin=Tmin-1; let Tmax=Tmax+1; done
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
+  Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
   gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),0))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -462,19 +468,41 @@ if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
-  # find min max and create cpt file
+# find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  Tmax=$(pythonc "print(round(${T},-1)+1)")
+  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=1
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  then
+    Tmax_r=0
+    Tmax_r_marg=5
+    cpt_step=1
+    scale_step_r=0
+  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  then
+    Tmax_r=-1
+    Tmax_r_marg=10
+    cpt_step=1
+    scale_step_r=-1
+  else
+    echo "ERROR"
+    exit 1
+  fi
+  Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
-  Tmin=$(pythonc "print(round(${T},-1)-1)")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/1 > inx.cpt  
+  Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
   gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
   gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
 	-O -K -V${VRBLEVM}>> $outfile
 
-  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),-1))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  scale_step=$(pythonc "print(round(((${Tmax}-${Tmin})/5.),${scale_step_r}))")
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -502,6 +530,29 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
+## comm. I am not sure that this check needed for sigma value
+#   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=0
+#     Tmax_r_marg=1
+#     cpt_step=1
+#     scale_step_r=0
+#   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=0
+#     Tmax_r_marg=5
+#     cpt_step=1
+#     scale_step_r=0
+#   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+#   then
+#     Tmax_r=-1
+#     Tmax_r_marg=10
+#     cpt_step=1
+#     scale_step_r=-1
+#   else
+#     echo "ERROR"
+#     exit 1
+#   fi
   T=`awk '{print $3}' tmpsigma | gmt info -El `
   Tmin=$(pythonc "print(round(${T},3)-.001)")
   gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
@@ -512,7 +563,7 @@ then
 	-O -K -V${VRBLEVM}>> $outfile
 
   scale_step=$(pythonc "print(round((${Tmax}/5.),3))")
-  gmt pscoast -R -J -O -K -W0.25 -Df -Na -U$logo_pos -V${VRBLEVM}>> $outfile
+  gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"sigma": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
   
@@ -548,35 +599,18 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 # FINAL SECTION
 #################--- Close ps output file ----##################################
-#echo "909 909" | gmt psxy -Sc.1 -Jm -R  -W1,red -O -V${VRBLEVM} >> ${outfile}
 echo "$west $south 8,0,black 0 LB This image was produced using" \
   | gmt pstext -Jm ${range} -Dj0.1c/1.1c -F+f+a+j -K  -O -V${VRBLEVM} >> $outfile
 echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
-  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -O -V${VRBLEVM} >> $outfile
+  | gmt pstext -Jm -R -Dj0.2c/.65c -F+f+a+j -G165/0/236 -U$logo_pos -O -V${VRBLEVM} >> $outfile
 
 
 #################--- Convert to other format ----###############################
 if [ "$OUTJPG" -eq 1 ]
 then
   echo "...adjust and convert to JPEG format..."
-#   gs -sDEVICE=jpeg -dJPEGQ=100 -dNOPAUSE -dBATCH -dSAFER -r300 -sOutputFile=test.jpg ${outfile}
   gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM} 
 fi
-# if [ "$OUTPNG" -eq 1 ]
-# then
-#   echo "...adjust and convert to PNG format..."
-#   gmt psconvert ${outfile} -A0.2c -TG -V${VRBLEVM} 	
-# fi
-# if [ "$OUTEPS" -eq 1 ]
-# then
-#   echo "...adjust and convert to EPS format..."
-#   gmt psconvert ${outfile} -A0.2c -Te -V${VRBLEVM} 
-# fi
-# if [ "$OUTPDF" -eq 1 ]
-# then
-#   echo "...adjust and convert to PDF format..."
-#   gmt psconvert ${outfile} -A0.2c -Tf -V${VRBLEVM} 
-# fi
 
 # clear all teporary files
 echo "...remove temporary files..."

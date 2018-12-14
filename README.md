@@ -39,9 +39,9 @@ This program does not need installation; it is just a pyrhon script. The user ma
 
 ## Plot Tools
 
-By 'Plot Tools', we mean an array of shell ([Bash](https://www.gnu.org/software/bash/)) scripts that can be used to plot `StrainTensor.py` results. These scripts actualy use [GMT](http://gmt.soest.hawaii.edu/) to perform the plotting. The scripts are an efficient, ready-to-use
+By 'Plot Tools', we mean an array of shell ([Bash](https://www.gnu.org/software/bash/)) scripts that can be used to plot `StrainTensor.py` results. These scripts actualy use [GMT](http://gmt.soest.hawaii.edu/) to perform the plotting. The scripts are efficient, ready-to-use.
 
-It is by no means mandatory to use these scripts to plot the results; users can use their own tools and/or scripts to do so. Actualy, this is a totaly independent part of the Project and can be skipped alltogether.
+It is by no means mandatory to use these scripts to plot the results; users can use their own tools and/or scripts to do so. Actually, this is a totaly independent part of the Project and can be skipped alltogether.
 
 These scripts, are found under `StrainTool/plot`
 
@@ -53,11 +53,11 @@ To install the Project, you will need:
 
 *   [python](https://www.python.org/downloads/); the installation has been tested under Versions 2.7 and 3.6 and both work fine.
 *   [NumPy](http://www.numpy.org/); NumPy is the fundamental package for scientific computing with Python.
-*   [SciPy](https://www.scipy.org/); SciPy is a Python-based ecosystem of open-source software for mathematics, science, and engineering. Actualy, we are only using the [SciPy.linalg](https://docs.scipy.org/doc/scipy/reference/linalg.html) and [SciPy.spatial](https://docs.scipy.org/doc/scipy/reference/spatial.html) modules.
+*   [SciPy](https://www.scipy.org/); SciPy is a Python-based ecosystem of open-source software for mathematics, science, and engineering. Actually, we are only using the [SciPy.linalg](https://docs.scipy.org/doc/scipy/reference/linalg.html) and [SciPy.spatial](https://docs.scipy.org/doc/scipy/reference/spatial.html) modules.
 
 Both `NumPy` and `SciPy` have extended installation guides for most, if not all, operating systems.
 
-To use the [Plot Tools](#plot_tools_pck) bundle, you must have [GMT](http://gmt.soest.hawaii.edu/) (> 5.0.0) installed, allong with a variety of UNIX-based tools. If you are on a UNIX/Linux operating system, most or all of them are pre-installed.
+To use the [Plot Tools](#plot_tools_pck) bundle, you must have [GMT](http://gmt.soest.hawaii.edu/) (> 5.0.0) installed, along with a variety of UNIX-based tools. If you are on a UNIX/Linux operating system, most or all of them are pre-installed.
 
 ## Installation Procedure
 
@@ -74,14 +74,14 @@ That's it! The package modules should now be in place and you should be able to 
 
 ### Installation tests
 
-The following scenarios have been tested to validatethe installation procedure
+The following scenarios have been tested to validate the installation procedure
 
 |    OS      |Python 2.7 | Python 3.6 | GMT 5.2 | GMT 5.4
 |:----------:|:------------------:|:------------------:|:------------------:|:------------------:|
 | Fedora     | :white_check_mark: |                    | :white_check_mark: |                   |
 | Manjaro    |                    | :white_check_mark: | :white_check_mark: |                   |
 | Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Windows 10 | :white_check_mark: |                    |                    |                    |
+| Windows 10 | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 
 ## Example
@@ -104,7 +104,7 @@ Under `data/` you will find the "reference" output files for checking, named `st
 
     $> ./StrainTensor.py [...] --help
 
-will show the help message on screen). Users can controll `StrainTensor.py`'s behaviour via a variety of available switches.
+will show the help message on screen). Users can control `StrainTensor.py`'s behaviour via a variety of available switches.
 
 ## Basic Usage
 
@@ -148,13 +148,13 @@ The whole list of available options, is:
 
 For example, the command we used on the [Example](#straintensor_prg_example) section:
 
-    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c
+    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c -g
 
 meant that we are estimating strain tensor parameters for the region within min/max longtitude: 18.75/30.25 degrees and min/max latitude: 32.75/42.25 degrees. We are seperating the region into cells of size 0.5 degrees and estimating one strain tensor in each cell centre (aka the first cell centre is $lon = lon_{min} + lon_{step}/2 = 18.75 + 0.5/2=19.0deg.$ and $lat = lat_{min} + lat_{step}/2 = 32.75 + 0.5/2 = 33.0deg.$, then next one will be at lon=19.5, lat=33.5, etc...). To estimate each strain tensor, the program will search for a "optimal" D coefficient within the range [1, 500) km with a step of 1km. This "optimal" D will be found when the condition $W = \sum_{n=1}^{\#sta*2} Z(i)*L(i) \geq W_t$ is met. The stations that will be used for the calculations are only those that fall within the specified longtitude/latitude range. For more information, see [Background and Algorithms](#bck_and_algorithms) section.
 
 ## Input Files
 
-To perform the computations, `StrainTensor.py` needs an input file, that holds input data. Usually, this implies a list of GPS/GNSS stations with their ellipsoidal coordinates (aka longtitude and latitude) and their respective tectonic velocities (usually estimated using position time-series) allong with the corresponding standard deviation values. The format of these files, should follow the convention:
+To perform the computations, `StrainTensor.py` needs an input file, that holds input data. Usually, this implies a list of GPS/GNSS stations with their ellipsoidal coordinates (aka longtitude and latitude) and their respective tectonic velocities (usually estimated using position time-series) along with the corresponding standard deviation values. The format of these files, should follow the convention:
 
 <pre id="block-samp" <samp="">        station-name  longtitude   latitude   Ve     Vn    SigmaVe  SigmaVn  Sne  time-span 
          string           deg.        deg.   mm/yr  mm/yr   mm/yr    mm/yr    /   dec. years</pre>
@@ -171,7 +171,7 @@ Results of `StrainTensor.py` are recorded in the following three files:
     The columns of the file are structured as below:
 
 <pre id="block-samp" <samp="">Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
-   deg       deg         mm/yr           mm/yr          marcsec/yr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
+   deg       deg         mm/yr           mm/yr          deg/Myr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
 	        </pre>
 
 *   **station_info.dat :** Stations' data used for the calculation of strain tensor are written at htis file. Format is:
@@ -181,7 +181,7 @@ Code    Longtitude Latitude  Ve   Vn   dVe  dVn
 string      deg       deg          mm/yr
 	      </pre>
 
-*   **StrainTensor.out :** Parameters used to modigy grid, calculate Strain tensors etc.
+*   **StrainTensor.out :** Parameters used to modify grid, calculate Strain tensors etc.
 
 # How to use Plot Tools
 
@@ -196,8 +196,17 @@ All of the scripts need the file named `default-param` to be in the same folder.
 <pre id="block-samp" <samp="">   
 pth2inptf=../data/  # set default folder for input files (strain_info.dat, strain_stats.dat, station_info.dat)
 west, east, south, north, projscale, frame, sclength: set region parameters
+
+PAPER_SIZE="30cx30c" : set custom paper size (width x height)
+
+vscmagn=20 : magnitude of horizontal arrow scale
+VSC=0.05 : Horizontal velocity scale
+
+strscmagn=100 : set magnitude of principal axes scale
 STRSC=0.01 : set principal axis plot scale
+
 ROTSC=.7 : set rotational rates plot scale
+ROT_wedge_mag=1 : set magnitude of rotational 1-wedge.
 </pre>
 
 **gmtstrainplot.sh options:**
@@ -229,7 +238,7 @@ Other options:
      -h | --help : help menu
 </pre>
 
-For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+For example, to plot the principal axis fo strain rates for the example case above you can use the following command:
 
     $> ./gmtstrainplot.sh -jpg -str strain_info.dat -psta -l
 
@@ -259,7 +268,7 @@ Other options:
      -h | --help : help menu
 </pre>
 
-For exanple, to plot the principal axis fo strain rates for the example case above you can use the following command:
+For example, to plot the principal axis fo strain rates for the example case above you can use the following command:
 
     $> ./gmtstatsplot.sh -jpg -stats strain_stats.dat --stats-stations -leg -o output_stats-stations
 
