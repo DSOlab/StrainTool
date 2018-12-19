@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc4.1
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -128,25 +128,25 @@ function help {
 # create Tmax scale variables
 function scalevar_T() 
 {
- if [ $(echo " ${T} <= 1 " | bc -l) == 1 ]
+ if [ $(awk 'BEGIN {print ('$T' <= 1 )}') ]
   then
     Tmax_r=1
     Tmax_r_marg=0.1
     cpt_step=0.01
     scale_step_r=1
-  elif [ $(echo " ${T} > 1 " | bc -l) == 1 ] && [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 1 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
   then
     Tmax_r=0
     Tmax_r_marg=1
     cpt_step=0.01
     scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
   then
     Tmax_r=-1
     Tmax_r_marg=10
     cpt_step=0.01
     scale_step_r=-1
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] 
+  elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ]
   then
     Tmax_r=-1
     Tmax_r_marg=10

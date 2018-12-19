@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc4.1
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -412,19 +412,19 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
   # set variables for scale
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  if [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
   then
     Tmax_r=0
     Tmax_r_marg=1
     cpt_step=1
     scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
   then
     Tmax_r=0
     Tmax_r_marg=5
     cpt_step=1
     scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 25000 )}') ]
   then
     Tmax_r=-1
     Tmax_r_marg=10
@@ -470,19 +470,19 @@ then
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
 # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+  if [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
   then
     Tmax_r=0
     Tmax_r_marg=1
     cpt_step=1
     scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
   then
     Tmax_r=0
     Tmax_r_marg=5
     cpt_step=1
     scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+  elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 25000 )}') ]
   then
     Tmax_r=-1
     Tmax_r_marg=10
@@ -531,19 +531,19 @@ then
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
 ## comm. I am not sure that this check needed for sigma value
-#   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+#   if [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=1
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=5
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 25000 )}') ]
 #   then
 #     Tmax_r=-1
 #     Tmax_r_marg=10
