@@ -144,7 +144,12 @@ The whole list of available options, is:
   --dmax D_MAX          Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.
   --dstep D_STEP        Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.
   --d-param D_PARAMETER
-                        Only relevant for '--method=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.</samp></pre>
+                        Only relevant for '--method=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.
+  -g, --generate-statistics
+                        Only relevant when '--mehod=shen' and '--barycenter' is not set. This option will create an output file, named 'strain_stats.dat', where estimation info and statistics will be written. (default: False)
+  --verbose             Run in verbose mode (show debugging messages) (default: False)
+  -v                    Display version and exit. (default: False)
+                        </samp></pre>
 
 For example, the command we used on the [Example](#straintensor_prg_example) section:
 
@@ -216,8 +221,9 @@ Basic Plots & Background :
      -r | --region : region to plot (default Greece)
          usage: -r west east south north projscale frame
 
-Plot station and velocitiess:
+Plot station and velocities:
     -psta [:=stations] plot only stations from input file
+    -deltr [:= delaunay triangles] plot delaunay triangles
     -vhor (station_file)[:= horizontal velocities]
     -vsc [:=velocity scale] change valocity scale default 0.05
 
@@ -230,10 +236,13 @@ Plot strain tensor parameters:
      -secinv (strain file) [:=2nd invariand] Plot second invariand
      -strsc [:=strain scale]
      -rotsc [:=rotational scales]
+   *for -gtot | -dil | -secinv use +grd to plot gridded data
+        ex:-gtot+grd
 
 Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
+     -mt | --map_title "text": title map default none, use quotes
      -jpg : convert eps file to jpg
      -h | --help : help menu
 </pre>
@@ -263,7 +272,7 @@ Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
      -leg : plot legends
-     -mt | --map_title <text> : title map default none use quotes
+     -mt | --map_title <text> : title map default none, use quotes
      -jpg : convert eps file to jpg
      -h | --help : help menu
 </pre>
@@ -306,7 +315,7 @@ The work is licensed under [MIT-license](LICENSE)
 
 ## Authors & Bug Reports
 **Dimitrios G. Anastasiou**
-> Dr.Eng Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
+> Dr. Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
 
 **Xanthos Papanikolaou**
 > Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
