@@ -96,7 +96,6 @@ _(You may not need the ./ part at the begining if you are on a Wnidows system)_.
 
 Under `data/` you will find the "reference" output files for checking, named `strain_info.dat.ref` and `station_info.dat.ref`. Verify that the files you have just created (placed under `bin/`) contain the same results as the "reference" files (this can be very easily performed using the [diff](https://www.gnu.org/software/diffutils/) command).
 
-### TODO: plot example files and compare
 
 # How to use StrainTensor.py
 
