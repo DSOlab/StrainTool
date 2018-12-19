@@ -284,7 +284,7 @@
         for a large list of GPS/GNSS stations around the globe. We will use it to
         perform a test run of <code>StrainTensor.py</code>.</p>
         <p>Go to the <code>bin/</code> folder and execute the command:
-        <pre id="block-code"><code>$> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c</code></pre>
+        <pre id="block-code"><code>$> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c -g </code></pre>
         <em>(You may not need the ./ part at the begining if you are on a Wnidows system)</em>. This command will
         compute Strain Tensor parameters for approximately the whole of Greece, using the input file <code>CNRS_midas.vel</code>.
         The results will be written in a (newly created) file, named <code>strain_info.dat</code>,
@@ -405,7 +405,7 @@
 	    <li><b>strain_info.dat</b> This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.<br>The columns of the file are structured as below:</li>
 		 <pre id="block-samp"><samp>
 Latitude Longtitude vx+dvx  vy+dvy   w+dw     exx+dexx    exy+dexy    eyy+deyy   emax+demax  emin+demin   shr+dshr  azi+dazi  dilat+ddilat   sec. invariant 
-   deg       deg     mm/yr   mm/yr  marcsec/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr    deg.    nstrain/yr    nstrain/yr</samp></pre>
+   deg       deg     mm/yr   mm/yr  deg/Myr   nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr    deg.    nstrain/yr    nstrain/yr</samp></pre>
 	    <li><b>station_info.dat</b> Station's data used for the calculation of strain tensor are written at this file. Format is: </li>
                  <pre id="block-samp"><samp>
 Code    Longtitude Latitude  Ve   Vn   dVe  dVn 
@@ -730,7 +730,7 @@ $> ./plotall.sh -p test -s test2
         <h1 id="authorsbugreports">Authors &amp; Bug Reports</h1>
         <p><strong>Dr. Dimitrios G. Anastasiou</strong></p>
         <blockquote>
-          <p>Dr.Eng Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:dganastasiou@gmail.com">dganastasiou@gmail.com</p></a>
+          <p>Dr. Rural &amp; Surveying Engineer | Dionysos Satellite Observatory - NTUA | <a href="mailto:dganastasiou@gmail.com">dganastasiou@gmail.com</p></a>
         </blockquote>
         <p><strong>Xanthos Papanikolaou</strong></p>
         <blockquote>
