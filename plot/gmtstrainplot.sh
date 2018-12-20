@@ -98,30 +98,34 @@ scalevar_T()
         fi
     fi
     T="${1}"
-    if awk -v T="$T" 'BEGIN {print T==1}' &>/dev/null
+    if awk -v T="$T" 'BEGIN {if (T<=1) exit 0; exit 1}' &>/dev/null
     then
         Tmax_r=1
         Tmax_r_marg=0.1
         cpt_step=0.01
         scale_step_r=1
-    elif awk -v T="$T" 'BEGIN {print (T>1 && T<10)}' &>/dev/null
+        echo "[DEBUG] T1 "$T
+    elif awk -v T="$T" 'BEGIN {if (T>1 && T<10) exit 0; exit 1}' &>/dev/null
     then
         Tmax_r=0
         Tmax_r_marg=1
         cpt_step=0.01
         scale_step_r=0
-    elif awk -v T="$T" 'BEGIN {print (T>=10 && T<100)}' &>/dev/null
-    then
-        Tmax_r=-1
-        Tmax_r_marg=10
-        cpt_step=0.01
-        scale_step_r=-1
-    elif awk -v T="$T" 'BEGIN {print T>=100}' &>/dev/null
+        echo "[DEBUG] T10 "$T
+    elif awk -v T="$T" 'BEGIN {if (T>=10 && T<100) exit 0; exit 1}' &>/dev/null
     then
         Tmax_r=-1
         Tmax_r_marg=10
         cpt_step=0.1
         scale_step_r=-1
+        echo "[DEBUG] T100 "$T
+    elif awk -v T="$T" 'BEGIN {if (T>=100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=-1
+        Tmax_r_marg=10
+        cpt_step=1
+        scale_step_r=-1
+        echo "[DEBUG] T1000000 "$T
     else
         echo "[ERROR] Failed to resolve T scale" || exit 1
     fi
