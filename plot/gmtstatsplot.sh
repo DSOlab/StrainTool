@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc4.1
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -73,6 +73,57 @@ pythonc() {
         python -c "$@"
     else
         python -c "from __future__ import print_function; $@"
+    fi
+}
+
+##
+##  Function to set scale variables. User must pass in the T variable, and the
+##+ function will set the following (global) variables):
+##+     * Tmax_r
+##+     * Tmax_r_marg
+##+     * cpt_step
+##+     * scale_step_r
+##  Use as: <scalevar_T Tval> where Tvar must be a number (integer or float)
+##
+scalevar_T() 
+{
+    re="^[+-]?[0-9]+([.][0-9]+)?$"
+    if test -z ${1+x} 
+    then
+        echo "[ERROR] Must supply cmd arg in scalevar_T" && exit 1
+    else
+        if ! [[ $1 =~ $re ]]
+        then
+            echo "[ERROR] Must supply numeric cmd arg in scalevar_T" && exit 1
+        fi
+    fi
+    T="${1}"
+    if awk -v T="$T" 'BEGIN {if (T<=1) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=1
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>1 && T<10) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=1
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>=10 && T<100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=5
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>=100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=-1
+        Tmax_r_marg=10
+        cpt_step=1
+        scale_step_r=-1
+    else
+        echo "[ERROR] Failed to resolve T scale" || exit 1
     fi
 }
 
@@ -182,18 +233,11 @@ do
       north=$5
       projscale=$6
       frame=$7
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
+      shift 7
       ;;
     -mt)
       maptitle=$2
-      shift
-      shift
+      shift 2
       ;;
     -psta)
       pth2sta=${pth2inptf}/station_info.dat
@@ -208,8 +252,7 @@ do
     -stats)
       pth2stats=${pth2inptf}/$2
       STATS=1
-      shift
-      shift
+      shift 2
       ;;
     --stats-stations)
       STATS_STATIONS=1
@@ -228,8 +271,7 @@ do
       ;;
     -o | --output)
       outfile=${2}.ps
-      shift
-      shift
+      shift 2
       ;;
     -l | --labels)
       LABELS=1
@@ -412,28 +454,7 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
   # set variables for scale
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=1
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=5
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=1
-    scale_step_r=-1
-  else
-    echo "ERROR"
-    exit 1
-  fi
+  scalevar_T ${T}
   Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
   Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
@@ -470,28 +491,8 @@ then
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
 # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=1
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=5
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=1
-    scale_step_r=-1
-  else
-    echo "ERROR"
-    exit 1
-  fi
+
+  scalevar_T ${T}
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
   Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
@@ -531,19 +532,19 @@ then
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
 ## comm. I am not sure that this check needed for sigma value
-#   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+#   if [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=1
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=5
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 25000 )}') ]
 #   then
 #     Tmax_r=-1
 #     Tmax_r_marg=10

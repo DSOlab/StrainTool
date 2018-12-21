@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc4.1
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -76,6 +76,57 @@ pythonc() {
     fi
 }
 
+##
+##  Function to set scale variables. User must pass in the T variable, and the
+##+ function will set the following (global) variables):
+##+     * Tmax_r
+##+     * Tmax_r_marg
+##+     * cpt_step
+##+     * scale_step_r
+##  Use as: <scalevar_T Tval> where Tvar must be a number (integer or float)
+##
+scalevar_T() 
+{
+    re="^[+-]?[0-9]+([.][0-9]+)?$"
+    if test -z ${1+x} 
+    then
+        echo "[ERROR] Must supply cmd arg in scalevar_T" && exit 1
+    else
+        if ! [[ $1 =~ $re ]]
+        then
+            echo "[ERROR] Must supply numeric cmd arg in scalevar_T" && exit 1
+        fi
+    fi
+    T="${1}"
+    if awk -v T="$T" 'BEGIN {if (T<=1) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=1
+        Tmax_r_marg=0.1
+        cpt_step=0.01
+        scale_step_r=1
+    elif awk -v T="$T" 'BEGIN {if (T>1 && T<10) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=1
+        cpt_step=0.01
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>=10 && T<100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=-1
+        Tmax_r_marg=10
+        cpt_step=0.1
+        scale_step_r=-1
+    elif awk -v T="$T" 'BEGIN {if (T>=100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=-1
+        Tmax_r_marg=10
+        cpt_step=1
+        scale_step_r=-1
+    else
+        echo "[ERROR] Failed to resolve T scale" || exit 1
+    fi
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -122,42 +173,6 @@ function help {
 	echo "/*************************************************************/"
 	exit 1
 }
-
-
-# //////////////////////////////////////////////////////////////////////////////
-# create Tmax scale variables
-function scalevar_T() 
-{
- if [ $(echo " ${T} <= 1 " | bc -l) == 1 ]
-  then
-    Tmax_r=1
-    Tmax_r_marg=0.1
-    cpt_step=0.01
-    scale_step_r=1
-  elif [ $(echo " ${T} > 1 " | bc -l) == 1 ] && [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=1
-    cpt_step=0.01
-    scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=0.01
-    scale_step_r=-1
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] 
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=0.1
-    scale_step_r=-1
-  else
-    echo "ERROR"
-    exit 1
-  fi
-}
-
 
 # //////////////////////////////////////////////////////////////////////////////
 # BASH settings
@@ -234,18 +249,11 @@ do
       north=$5
       projscale=$6
       frame=$7
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
+      shift 7
       ;;
     -mt)
       maptitle=$2
-      shift
-      shift
+      shift 2
       ;;
     -psta)
       pth2sta=${pth2inptf}/station_info.dat
@@ -261,37 +269,31 @@ do
       pth2stainfo=${pth2inptf}/$2
       maptitle="Velocity field"
       VHORIZONTAL=1
-      shift
-      shift
+      shift 2
       ;;
     -vsc)
       VSC=$2
-      shift
-      shift
+      shift 2
       ;;
     -str)
       pth2strinfo=${pth2inptf}/${2}
       maptitle="Principal Axes of Strain Rates"
       STRAIN=1
-      shift
-      shift
+      shift 2
       ;;
     -strsc)
       STRSC=$2
-      shift
-      shift
+      shift 2
       ;;
     -rot)
       pth2strinfo=${pth2inptf}/${2}
       maptitle="Rotational Rates"
       STRROT=1
-      shift
-      shift
+      shift 2
       ;;
     -rotsc)
       ROTSC=${2}
-      shift
-      shift
+      shift 2
       ;;
     -gtot*)
       if [ "${1:5:8}" == "+grd" ]; then
@@ -307,15 +309,13 @@ do
         GTOTAL=1
         maptitle="Maximum Shear Strain Rates"
       fi
-      shift
-      shift
+      shift 2
       ;;
     -gtotaxes)
       pth2strinfo=${pth2inptf}/${2}
       GTOTALAXES=1
       maptitle="Axes of dextral/sinistral shear strain"
-      shift
-      shift
+      shift 2
       ;;
     -dil*)
       pth2strinfo=${pth2inptf}/${2}
@@ -324,8 +324,7 @@ do
       if [ "${1:4:7}" == "+grd" ]; then
         GRDDAT=1
       fi
-      shift
-      shift
+      shift 2
       ;;
     -secinv*)
       pth2strinfo=${pth2inptf}/${2}
@@ -334,13 +333,11 @@ do
       if [ "${1:7:10}" == "+grd" ]; then
         GRDDAT=1
       fi
-      shift
-      shift
+      shift 2
       ;;
     -o | --output)
       outfile=${2}.ps
-      shift
-      shift
+      shift 2
       ;;
     -l | --labels)
       LABELS=1
@@ -533,7 +530,7 @@ then
 # find min max and create cpt file
   T=`awk '{print $3}' tmpgtot | gmt info -Eh `
 # set variables for scale plot
-  scalevar_T
+  scalevar_T ${T}
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
@@ -579,7 +576,7 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpdil | gmt info -Eh `
   # set variables for scale plot
-  scalevar_T
+  scalevar_T ${T}
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdil | gmt info -El `
   Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
@@ -625,7 +622,7 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
 # set variables for scale plot
-  scalevar_T
+  scalevar_T ${T}
   
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
