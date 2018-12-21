@@ -78,7 +78,8 @@ pythonc() {
 
 ##
 ##  Function to set scale variables. User must pass in the T variable, and the
-##+ function will set the following (global) variables):
+##+ function will set the following (global) variables:
+##+     * T
 ##+     * Tmax_r
 ##+     * Tmax_r_marg
 ##+     * cpt_step
@@ -87,6 +88,7 @@ pythonc() {
 ##
 scalevar_T() 
 {
+    ## make sure function i called with a cmd, which is a number
     re="^[+-]?[0-9]+([.][0-9]+)?$"
     if test -z ${1+x} 
     then
@@ -98,33 +100,40 @@ scalevar_T()
         fi
     fi
     T="${1}"
-    if awk -v T="$T" 'BEGIN {if (T<=1) exit 0; exit 1}' &>/dev/null
-    then
-        Tmax_r=1
-        Tmax_r_marg=0.1
-        cpt_step=0.01
-        scale_step_r=1
-    elif awk -v T="$T" 'BEGIN {if (T>1 && T<10) exit 0; exit 1}' &>/dev/null
-    then
-        Tmax_r=0
-        Tmax_r_marg=1
-        cpt_step=0.01
-        scale_step_r=0
-    elif awk -v T="$T" 'BEGIN {if (T>=10 && T<100) exit 0; exit 1}' &>/dev/null
-    then
-        Tmax_r=-1
-        Tmax_r_marg=10
-        cpt_step=0.1
-        scale_step_r=-1
-    elif awk -v T="$T" 'BEGIN {if (T>=100) exit 0; exit 1}' &>/dev/null
-    then
-        Tmax_r=-1
-        Tmax_r_marg=10
-        cpt_step=1
-        scale_step_r=-1
-    else
-        echo "[ERROR] Failed to resolve T scale" || exit 1
-    fi
+    ## assign (scale) results to array (via awk)
+    local SVARS=($(awk -v T="$T" '
+        BEGIN {
+            if (T<=1) {
+                Tmax_r=1
+                Tmax_r_marg=0.1
+                cpt_step=0.01
+                scale_step_r=1
+            } else if (T>1 && T<10) {
+                Tmax_r=0
+                Tmax_r_marg=1
+                cpt_step=0.01
+                scale_step_r=0
+            } else if (T>=10 && T<100) {
+                Tmax_r=-1
+                Tmax_r_marg=10
+                cpt_step=0.1
+                scale_step_r=-1
+            } else if (T>=100) {
+                Tmax_r=-1
+                Tmax_r_marg=10
+                cpt_step=1
+                scale_step_r=-1
+            } else {
+                print "[ERROR] Cannot resolve scale variables"
+                exit 1
+            }
+            print Tmax_r, Tmax_r_marg, cpt_step, scale_step_r;
+        }
+    '))
+    ## check and assign to (global) variables
+    test "${#SVARS[@]}" -eq 4  \
+        || { echo "[ERROR] Failed to resolve scale variables"; exit 1; }
+    read Tmax_r Tmax_r_marg cpt_step scale_step_r <<< "${SVARS[@]}"
 }
 
 # //////////////////////////////////////////////////////////////////////////////
