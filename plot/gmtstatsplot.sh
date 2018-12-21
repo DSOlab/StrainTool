@@ -237,18 +237,11 @@ do
       north=$5
       projscale=$6
       frame=$7
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
+      shift 7
       ;;
     -mt)
       maptitle=$2
-      shift
-      shift
+      shift 2
       ;;
     -psta)
       pth2sta=${pth2inptf}/station_info.dat
@@ -263,8 +256,7 @@ do
     -stats)
       pth2stats=${pth2inptf}/$2
       STATS=1
-      shift
-      shift
+      shift 2
       ;;
     --stats-stations)
       STATS_STATIONS=1
@@ -283,8 +275,7 @@ do
       ;;
     -o | --output)
       outfile=${2}.ps
-      shift
-      shift
+      shift 2
       ;;
     -l | --labels)
       LABELS=1
