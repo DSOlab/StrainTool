@@ -185,7 +185,14 @@ Code    Longtitude Latitude  Ve   Vn   dVe  dVn
 string      deg       deg          mm/yr
 	      </pre>
 
-*   **StrainTensor.out :** Parameters used to modify grid, calculate Strain tensors etc.
+*   **strain_stats.dat :** Output file for statistics:
+<pre id="block-samp" <samp=""> --HEADER-- 
+Parameters and arguments used for estimation of strain tensors.
+--statistics--
+Longtitude  Latitude  # stations D (optimal)  CutOff dis.     Sigma
+ deg.       deg.        #           Km           #            / 
+              </pre>
+
 
 # How to use Plot Tools
 
