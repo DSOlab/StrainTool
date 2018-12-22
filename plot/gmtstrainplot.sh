@@ -136,6 +136,73 @@ scalevar_T()
     read Tmax_r Tmax_r_marg cpt_step scale_step_r <<< "${SVARS[@]}"
 }
 
+##
+##  Check if a (given) variable is a number (either integer or float, in
+##+ fixed or scietific format. Returns 0 if variable is number, 1 otherwise.
+##
+##  Examples:
+##      for s in abc 2.a 2 -2 +2.234 2.0e0 -123.45e-9 .25 . " " "" ; do
+##          isNumber $s && echo "$s is number"
+##      done
+##  Result:
+##      2 is number
+##      -2 is number
+##      +2.234 is number
+##      2.0e0 is number
+##      -123.45e-9 is number
+##     .25 is number
+##
+isNumber() {
+    test -z $1 && return 1
+    numre="^[+-]?([0-9]+)?([.][0-9]+)?([eE][+-]?[0-9]{1,2})?$"
+    [[ "$1" =~ $numre ]] && return 0;
+    return 1
+}
+
+##
+##  This function will read in a variable. If (and only if) the variable is
+##+ in the form "a/b/c/d/e/f" (aka 6 numbers, seperated by '/'), then the
+##+ function will set the global variables: 
+##+ west, east, south, north, projscale, frame to the fields of the string;
+##+ that is west=a, east=b, ..., frame=f
+##  If the resolution happens successefuly and the variables are assigned,
+##+ 0 is returned; in any other case, the variables are not set and the
+##+ function returns 1.
+##  Note that the string must comprise of numbers, i.e. in the passed in
+##+ argument "a/b/c/d/e/f" a, b, c, .., f must be numbers.
+##
+##  Example:
+##      resolve_region "1/2/3//5/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2/3"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "foobar"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2/3/4/foo/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2e0/3/4/5.0/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##  Prints:
+##      vars:
+##      vars:
+##      vars:
+##      vars:
+##      vars: 1 2e0 3 4 5.0 6
+##
+resolve_region() {
+#    local ar=$(echo $1 | awk -F"/" '{ 
+#        if (NF == 6)
+#            print $0 
+#        else 
+#            print "ERROR"
+#    }')
+#    test "$ar" == "ERROR" && return 1
+    local AR=( $(echo $1 | tr '/' ' ') )
+    test "${#AR[@]}" -eq 6 || return 1
+    for num in "${AR[@]}" ; do isNumber "$num" || return 1 ; done
+    read west east south north projscale frame <<< "${AR[@]}"
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -149,6 +216,7 @@ function help {
 	echo "/*** Basic Plots & Background ***********************************/"
 	echo "     -r | --region : region to plot (default Greece)"
 	echo "         usage: -r west east south north projscale frame"
+        echo "            or: -r west/east/south/north/projscale/frame"
 	echo ""
 	echo "/*** PLOT STATIONS ***********************************************/"
 	echo "     -psta [:=stations] plot only stations from input file"
@@ -250,16 +318,25 @@ fi
 
 while [ $# -gt 0 ]
 do
-  case "$1" in
-    -r | --region)
-      west=$2
-      east=$3
-      south=$4
-      north=$5
-      projscale=$6
-      frame=$7
-      shift 7
-      ;;
+    case "$1" in
+        -r | --region)
+        ## check the next argument; maybe its w/e/s/n/p/f
+        if resolve_region "${2}"
+        then
+            shift 2
+        else
+            ## at least 6 (more) arguments should follow, seperated by space(s)
+            test "$#" -ge 7 || { echo "[ERROR] Invalid region arg"; exit 1; }
+            read west east south north projscale frame <<< $(echo $2 $3 $4 $5 $6 $7)
+            shift 7
+            ## all arguments should be numeric
+            for rarg in "$west" "$east" "$south" "$north" "$projscale" "$frame"
+            do
+                isNumber "${rarg}" || \
+                    { echo "[ERROR] Invalid region arg"; exit 1; }
+            done
+        fi
+        ;;
     -mt)
       maptitle=$2
       shift 2
