@@ -203,6 +203,33 @@ resolve_region() {
     read west east south north projscale frame <<< "${AR[@]}"
 }
 
+check_region() {
+  ## test south north -90 < south < north < 90
+  local SVARS=($(awk -v west="$1" -v east="$2" -v south="$3" -v north="$4" '
+        BEGIN {
+            if (-90 <= south && south < north && north <= 90) {
+                  south = south
+                  north = north
+                if (west < east && (east - west) < 360 ) {
+                  west = west
+                  east = east
+                } else {
+                  print "[ERROR] check again west east inputs"
+                  exit 1
+                }
+            } else {
+                print "[ERROR] check again south north inputs"
+                exit 1
+            }
+            print east, west, south, north;
+        }
+    '))
+    ## check and assign to (global) variables
+    test "${#SVARS[@]}" -eq 4  \
+        || { echo "[ERROR] Failed to modify boundary zone"; exit 1; }
+    read east west south north <<< "${SVARS[@]}"
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -336,6 +363,7 @@ do
                     { echo "[ERROR] Invalid region arg"; exit 1; }
             done
         fi
+        check_region $west $east $south $north
         ;;
     -mt)
       maptitle=$2
