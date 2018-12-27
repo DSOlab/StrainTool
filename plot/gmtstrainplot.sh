@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.1
+#                     RELEASE=rc4.2
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -203,9 +203,15 @@ resolve_region() {
     read west east south north projscale frame <<< "${AR[@]}"
 }
 
+##
+##  Check the inputs for the boundary zone that all inuts are ok. That's meean:
+##  west < east and (east - west) < 360
+##  -90 <= south < north <= 90
+##  projscale > 0 and frame > 0 
+##
 check_region() {
   ## test south north -90 < south < north < 90
-  local SVARS=($(awk -v west="$1" -v east="$2" -v south="$3" -v north="$4" '
+  local SVARS=($(awk -v west="$1" -v east="$2" -v south="$3" -v north="$4" -v projscale="$5" -v frame="$6" '
         BEGIN {
             if (-90 <= south && south < north && north <= 90) {
                   south = south
@@ -213,21 +219,28 @@ check_region() {
                 if (west < east && (east - west) < 360 ) {
                   west = west
                   east = east
+				  if (projscale > 0 && frame > 0) {
+				    projscale = projscale
+				    frame = frame
+				  } else {
+				    print "[ERROR] check again projscale and frame inputs"
+                    exit 1
+				  }
                 } else {
                   print "[ERROR] check again west east inputs"
                   exit 1
                 }
-            } else {
+			} else {
                 print "[ERROR] check again south north inputs"
                 exit 1
             }
-            print east, west, south, north;
+            print west, east, south, north, projscale, frame;
         }
     '))
     ## check and assign to (global) variables
-    test "${#SVARS[@]}" -eq 4  \
+    test "${#SVARS[@]}" -eq 6  \
         || { echo "[ERROR] Failed to modify boundary zone"; exit 1; }
-    read east west south north <<< "${SVARS[@]}"
+    read west east south north projscale frame <<< "${SVARS[@]}"
 }
 
 # //////////////////////////////////////////////////////////////////////////////
@@ -290,7 +303,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc4.0"
+VERSION="v.1.0-rc4.2"
 
 # system's Python version
 PYV=99
@@ -363,7 +376,6 @@ do
                     { echo "[ERROR] Invalid region arg"; exit 1; }
             done
         fi
-        check_region $west $east $south $north
         ;;
     -mt)
       maptitle=$2
@@ -534,10 +546,12 @@ then
   fi
 fi
 
-
-
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
+# check region inputs
+check_region $west $east $south $north $projscale $frame
+
+#set region parameters
 tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
 sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
