@@ -923,9 +923,12 @@ class ShenStrain:
         # Parameter variance-covariance matrix
         if m > 6:
             try:
-                # A-posteriori std. deviation
+                ##  A-posteriori std. deviation. res[0] is the sum of residuals;
+                ##+ squared Euclidean 2-norm for each column in b - a*x, aka
+                ##+ u^T * P * u,
+                ##+ or (b - A*estim)^T * (b - A*estim)
                 sigma0_post = float(res[0])
-                self.__sigma0__ = sigma0_post
+                self.__sigma0__ = sqrt(sigma0_post / (float(m) - 6e0))
                 bvar = linalg.inv(VcV) * sigma0_post
                 self.__vcv__ = bvar
             except:
