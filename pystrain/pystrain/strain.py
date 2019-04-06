@@ -261,19 +261,26 @@ class ShenStrain:
             Note that the computation of the weight matrix is actually performed
             via a call to this->make_weight_matrix().
 
+            Note that the function make_weight_matrix does not actually return
+            the weight matrix but its square root, aka W = P^(1/2). This
+            is the matrix we will use here (we only need the square root of
+            the weight matrix to multiply with matrices A and b). Also note
+            that the weight matrix is not scaled by any a-priori sigma0; hence
+            the scaling should be done here (if needed).
+
             Then the function will form two matrices, A and b. The matrix A,
             is the design matrix multiplied by W, that is each row of A, is:
             A(i,:)   = (1, 0, Δx, Δy, 0, Δy)*W(i)
             A(i+1,:) = (0, 1, 0, Δx, Δy, -Δx)*W(i+1),
             where:
             Δx is the distance (x-component) between station i and the 
-               instance's centre
+               instance's centre in meters
             Δy is the distance (y-component) between station i and the 
-               instance's centre
-            W(i) is the (scalar) weight of station i, for the x (or east)
-               component
-            W(i+1) is the (scalar) weight of station i, for the y (or north)
-               component
+               instance's centre in meters
+            W(i) is the (scalar) square root of weight of station i, for the x 
+               (or east) component
+            W(i+1) is the (scalar) square root of weight of station i, for the 
+               y (or north) component
             For the matrix (actually vector) b, the function will form:
             b(i)   = sta.ve * W(i)
             b(i+1) = sta.vn * W(i+1)
@@ -282,6 +289,8 @@ class ShenStrain:
             [ Ux, Uy, τx, τxy, τy, ω ]**T
             The number of rows in A and b matrices, will be:
             len(self.__stalst__)*2
+            The units of the paramter vector are:
+            [ m, m, strain/yr, strain/yr, strain/yr, strain/yr ]**T
 
             Args:
                 sigma0 (float): A-priori sigma0 (σ0) for the formulation of the
@@ -296,8 +305,8 @@ class ShenStrain:
         N = len(self.__stalst__)*2
         ## number of columns (parameters)
         M = 6
-        ## the weights, i.e. W(i)
-        W = self.make_weight_matrix(sigma0)
+        ## the weights, i.e. σ0 * W(i)
+        W = sigma0 * self.make_weight_matrix()
         assert W.shape == (N,1)
         ##  Distances, dx and dy for each station from (cx, cy). Each element
         ##+ of the array is xyr = [ ... (dx, dy, dr) ... ]
@@ -320,7 +329,7 @@ class ShenStrain:
         return A, b
 
     def make_weight_matrix(self, sigma0=1e-3):
-        """ Construct the weight matrix.
+        """ Construct the square root of weight matrix W <- P^(1/2)
 
             This function will construct the weight matrix to be used for
             strain estimation (via LSE). The weight matrix will be formed
@@ -332,12 +341,15 @@ class ShenStrain:
             then W[0] is the x-weight of dyng, W[1] is the y-weight of dyng,
             W[2] is the x-weight of ankr, W[3] is the y-weight of ankr ....
 
+            Note that no a-priori sigma0 (σ0) scaling factor is used here. If
+            you want, you can scale the resulting matrix later on.
+
             If weighting scheme is 'shen', then the function will:
                 * read z- and l- weights from the instance's __zweights__ and
                   __lweights__ lists
                 * compute for each station a pair of sigmas, as:
-                  w_x = (σ0/σe) * sqrt(Z(i)*L(i))
-                  w_y = (σ0/σn) * sqrt(Z(i)*L(i))
+                  w_x = (1/σe) * sqrt(Z(i)*L(i))
+                  w_y = (1/σn) * sqrt(Z(i)*L(i))
             If weighting scheme is 'equal weights', then the function will
             return a weight matrix with all elements equal to 1.
 
@@ -365,8 +377,8 @@ class ShenStrain:
             lw = self.__lweights__
             i = 0
             for idx, sta in enumerate(self.__stalst__):
-                W[i]   = (sigma0/sta.se)*sqrt(zw[idx]*lw[idx])
-                W[i+1] = (sigma0/sta.sn)*sqrt(zw[idx]*lw[idx])
+                W[i]   = (1e0/sta.se)*sqrt(zw[idx]*lw[idx])
+                W[i+1] = (1e0/sta.sn)*sqrt(zw[idx]*lw[idx])
                 i += 2
             assert i == N
         elif self.__options__['weighting_function'] == 'equal_weights':
@@ -640,7 +652,8 @@ class ShenStrain:
                 * dilat
                 * sec_inv
             given that the "fundamental" parameters have already been estimated
-            (i.e. the parameters [Ux, Uy, τx, τxy, τy, ω]).
+            (i.e. the parameters [Ux, Uy, τx, τxy, τy, ω] with units:
+            [ m, m, strain/yr, strain/yr, strain/yr, strain/yr ]**T ).
 
             The function will also compute the parameter corresponding std.
             deviation  values (aka staumax, semax, semin, sazim, sdilat), if
@@ -675,6 +688,7 @@ class ShenStrain:
                 azim, sazim, dilat, sdilat, sec_inv)
                 If params_cov is None, then the values of the sigmas (staumax,
                 semax, semin, sazim and sdilat) are all set to 'None'.
+                All units are strain/year
 
             Note:
                 Normaly, the user should call the funtion with self.__vcv__ as
@@ -684,21 +698,21 @@ class ShenStrain:
                 The functions to compute the strain parameters, are taken from
                 Shen's VISR fortran code.
         '''
-        x1  = self.__parameters__['taux']
-        x2  = self.__parameters__['tauxy']
-        x3  = self.__parameters__['tauy']
+        x1  = self.__parameters__['taux']   ## strain/yr
+        x2  = self.__parameters__['tauxy']  ## strain/yr
+        x3  = self.__parameters__['tauy']   ## strain/yr
         cov = pi / 180e0
         ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
         ##+ and dextral tau_max azimuth
-        emean = (x1+x3) / 2e0
-        ediff = (x1-x3) / 2e0
-        taumax= sqrt(x2**2 + ediff**2)
-        emax  = emean+taumax
-        emin  = emean-taumax
-        azim  = -atan2(x2, ediff) / cov / 2.0e0
+        emean = (x1+x3) / 2e0               ## strain/yr
+        ediff = (x1-x3) / 2e0               ## strain/yr
+        taumax= sqrt(x2**2 + ediff**2)      ## strain/yr
+        emax  = emean+taumax                ## strain/yr
+        emin  = emean-taumax                ## strain/yr
+        azim  = -atan2(x2, ediff) / cov / 2.0e0 ## degrees
         azim  = 90e0+azim
         dexazim = azim+45e0-180e0
-        dilat = x1+x3
+        dilat = x1+x3                       ## strain/yr
         sec_inv = sqrt(x1*x1+2e0*x2*x2+x3*x3)
         if params_cov is None:
             staumax, semax, semin, sazim, sdilat = [None] * 5
@@ -927,9 +941,9 @@ class ShenStrain:
                 ##+ squared Euclidean 2-norm for each column in b - a*x, aka
                 ##+ u^T * P * u,
                 ##+ or (b - A*estim)^T * (b - A*estim)
-                sigma0_post = float(res[0])
-                self.__sigma0__ = sqrt(sigma0_post / (float(m) - 6e0))
-                bvar = linalg.inv(VcV) * sigma0_post
+                variance_post = float(res[0]) / (float(m) - float(n))
+                self.__sigma0__ = sqrt(variance_post)
+                bvar = linalg.inv(VcV) * self.__sigma0__
                 self.__vcv__ = bvar
             except:
                 self.vprint('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
