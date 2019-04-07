@@ -251,7 +251,7 @@ class ShenStrain:
             for a in azimouths: assert a['az'] >= 0e0 and a['az'] < 2*pi
         return azimouths
 
-    def ls_matrices(self, sigma0=1e-3):
+    def ls_matrices(self, sigma0=1):
         """ Construct Least Squares Matrices (A and b) to be solved for.
         
             Matrix A is the "design matrix" and b is the observation vector.
