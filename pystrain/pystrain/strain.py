@@ -328,7 +328,7 @@ class ShenStrain:
         assert i == N, "[DEBUG] Failed to construct ls matrices"
         return A, b
 
-    def make_weight_matrix(self, sigma0=1e-3):
+    def make_weight_matrix(self):
         """ Construct the square root of weight matrix W <- P^(1/2)
 
             This function will construct the weight matrix to be used for
@@ -719,6 +719,7 @@ class ShenStrain:
         else:
             nv, mv = params_cov.shape
             assert nv == mv and nv == 6
+            """
             # cut the part of vcv that holds tau* info
             vcv = params_cov[2:5, 2:5]
             v   = numpy.zeros(shape=(3,1))
@@ -745,6 +746,28 @@ class ShenStrain:
             sazim = sqrt(numpy.dot(v.T, numpy.dot(vcv, v)))
             # estimate sigma of dilatation
             sdilat = sqrt(vcv[0,0]+vcv[2,2]+2e0*vcv[0,2])
+            """
+            ## Error propagation for non-linear functions, aka V <- J*VcV*J^T
+            ## where J is the Jacobain matrix and VcV the var-covar matrix of
+            ## the parameter vector: [Ux, Uy, τx, τxy, τy, ω]
+            ## rows of the Jacobian are:
+            ## [τ_max, e_max, e_min, Azim, dilatation]
+            ## first row is:
+            ## [ dτ_max/dUx, dτ_max/dUy, dτ_max/dτx, dτ_max/dτxy, dτ_max/dτy, dτ_max/dω ]
+            J = numpy.zeros(shape=(5,6))
+            _tmp = ediff/(2e0*taumax)
+            J[0, :] = [ 0e0, 0e0, _tmp,           x2/taumax,        -_tmp,          0e0 ]
+            J[1, :] = [ 0e0, 0e0, .5e0+_tmp,      x2/taumax,         .5e0-_tmp,     0e0 ]
+            J[2, :] = [ 0e0, 0e0, .5e0-_tmp,     -x2/taumax,         .5e0+_tmp,     0e0 ]
+            _tmp = ediff*ediff + x2*x2
+            J[3, :] = [ 0e0, 0e0, x2/(4e0*_tmp), -ediff/(4e0*_tmp), -x2/(4e0*_tmp), 0e0 ]
+            J[4, :] = [ 0e0, 0e0, 1e0,            0e0,               1e0,           0e0 ]
+            Vy = numpy.dot(J, numpy.dot(params_cov, J.T))
+            staumax = sqrt(Vy[0,0])
+            semax   = sqrt(Vy[1,1])
+            semin   = sqrt(Vy[2,2])
+            sazim   = sqrt(Vy[3,3])
+            sdilat  = sqrt(Vy[4,4])
         return emean, ediff, \
             taumax, staumax, \
             emax, semax, \
@@ -941,9 +964,10 @@ class ShenStrain:
                 ##+ squared Euclidean 2-norm for each column in b - a*x, aka
                 ##+ u^T * P * u,
                 ##+ or (b - A*estim)^T * (b - A*estim)
-                variance_post = float(res[0]) / (float(m) - float(n))
-                self.__sigma0__ = sqrt(variance_post)
-                bvar = linalg.inv(VcV) * self.__sigma0__
+                sigma0_post = float(res[0])
+                self.__sigma0__ = sqrt(sigma0_post / (float(m) - 6e0))
+                bvar = linalg.inv(VcV) * (sigma0_post/float(m-n))
+                ## A-posteriri VcV matrix = σ0^2 * (A^T P A)^-1
                 self.__vcv__ = bvar
             except:
                 self.vprint('[DEBUG] Cannot compute var-covar matrix! Probably singular.')
