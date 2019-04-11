@@ -52,6 +52,34 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
+def compute__(grd, sta_list_utm, fout, fstats, **dargs):
+    node_nr, nodes_estim = 0, 0
+    for x, y in grd:
+        clat, clon =  radians(y), radians(x)
+        N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
+        assert ZN == utm_zone
+        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
+        #print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
+        ## Construct the Strain instance, with all args (from input)
+        sstr = ShenStrain(E, N, sta_list_utm, **dargs)
+        ## check azimouth coverage (aka max β angle)
+        if degrees(max(sstr.beta_angles())) <= dargs["max_beta_angle"]:
+            try:
+                sstr.estimate()
+                vprint('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
+                sstr.print_details(fout, utm_zone)
+                if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
+                # strain_list.append(sstr)
+                nodes_estim += 1
+            except RuntimeError:
+                vprint('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
+            except ArithmeticError:
+                vprint('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
+        else:
+            vprint('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
+        node_nr += 1
+    print('[DEBUG] Estimated Strain Tensors for {} out of {} nodes'.format(nodes_estim, node_nr))
+
 ##  If only the formatter_class could be:
 ##+ argparse.RawTextHelpFormatter|ArgumentDefaultsHelpFormatter ....
 ##  Seems to work with multiple inheritance!
@@ -184,6 +212,11 @@ parser.add_argument('--verbose',
     help='Run in verbose mode (show debugging messages)',
     action='store_true')
 
+parser.add_argument('--multicore',
+    dest='multiproc_mode',
+    help='Run in multithreading mode',
+    action='store_true')
+
 parser.add_argument('-v',
     dest='version',
     help='Display version and exit.',
@@ -209,6 +242,12 @@ if args.version:
 
 ## Verbose print (function only exists in verbose mode)
 vprint = print if args.verbose_mode else lambda *a, **k: None
+
+## if in mutlithreading mode, load the module
+if args.multiproc_mode:
+    import multiprocessing
+    cpu_count = multiprocessing.cpu_count()
+    print("[DEBUG] Using multithreaded version; available CPU's: {:02d}".format(cpu_count))
 
 ## If needed, open a file to write model info and statistics
 fstats = open('strain_stats.dat', 'w') if args.generate_stats else None
@@ -324,32 +363,64 @@ if args.method == 'shen':  ## Going for Shen algorithm ...
     vprint('[DEBUG] Estimating strain tensor for each cell center:')
     ##  Iterate through the grid (on each cell center). Grid returns cell-centre
     ##+ coordinates in lon/lat pairs, in degrees!
-    node_nr, nodes_estim = 0, 0
-    for x, y in grd:
-        clat, clon =  radians(y), radians(x)
-        N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
-        assert ZN == utm_zone
-        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
-        print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
-        ## Construct the Strain instance, with all args (from input)
-        sstr = ShenStrain(E, N, sta_list_utm, **dargs)
-        ## check azimouth coverage (aka max β angle)
-        if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
-            try:
-                sstr.estimate()
-                vprint('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
-                sstr.print_details(fout, utm_zone)
-                if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
-                # strain_list.append(sstr)
-                nodes_estim += 1
-            except RuntimeError:
-                vprint('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
-            except ArithmeticError:
-                vprint('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
+    if args.multiproc_mode:
+        grd1, grd2, grd3, grd4 = grd.split2four()
+        fout2=open(".out.thread2", "w")
+        fout3=open(".out.thread3", "w")
+        fout4=open(".out.thread4", "w")
+        if fstats:
+            fstats2=open(".sta.thread2", "w")
+            fstats3=open(".sta.thread3", "w")
+            fstats4=open(".sta.thread4", "w")
         else:
-            vprint('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
-        node_nr += 1
-    print('[DEBUG] Estimated Strain Tensors for {} out of {} nodes'.format(nodes_estim, node_nr))
+            fstats2 = fstats3 = fstats4 = None
+        p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, fout,  fstats, ), kwargs=dargs)
+        p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, fout2, fstats2,), kwargs=dargs)
+        p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, fout3, fstats3,), kwargs=dargs)
+        p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, fout4, fstats4,), kwargs=dargs)
+        p1.start()
+        p2.start()
+        p3.start()
+        p4.start()
+        p1.join()
+        p2.join()
+        p3.join()
+        p4.join()
+        fout.close()
+        fout2.close()
+        fout3.close()
+        fout4.close()
+        with open('strain_info.dat', 'a') as fout:
+            for fnr in range(2,5):
+                with open(".out.thread"+str(fnr), "r") as slave_f:
+                    fout.write(slave_f.read())
+    else:
+        node_nr, nodes_estim = 0, 0
+        for x, y in grd:
+            clat, clon =  radians(y), radians(x)
+            N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
+            assert ZN == utm_zone
+            vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
+            print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
+            ## Construct the Strain instance, with all args (from input)
+            sstr = ShenStrain(E, N, sta_list_utm, **dargs)
+            ## check azimouth coverage (aka max β angle)
+            if degrees(max(sstr.beta_angles())) <= args.max_beta_angle:
+                try:
+                    sstr.estimate()
+                    vprint('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
+                    sstr.print_details(fout, utm_zone)
+                    if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
+                    # strain_list.append(sstr)
+                    nodes_estim += 1
+                except RuntimeError:
+                    vprint('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
+                except ArithmeticError:
+                    vprint('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
+            else:
+                vprint('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
+            node_nr += 1
+        print('[DEBUG] Estimated Strain Tensors for {} out of {} nodes'.format(nodes_estim, node_nr))
 else:
     ## Open file to write delaunay triangles.
     print('[DEBUG] Estimating Strain Tensors at the barycentre of Delaunay triangles')
