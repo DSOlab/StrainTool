@@ -425,16 +425,18 @@ if __name__ == '__main__':
         ##+ coordinates in lon/lat pairs, in degrees!
         if args.multiproc_mode:
             grd1, grd2, grd3, grd4 = grd.split2four()
+            fout1=open(".out.thread1", "w")
             fout2=open(".out.thread2", "w")
             fout3=open(".out.thread3", "w")
             fout4=open(".out.thread4", "w")
             if fstats:
+                fstats1=open(".sta.thread1", "w")
                 fstats2=open(".sta.thread2", "w")
                 fstats3=open(".sta.thread3", "w")
                 fstats4=open(".sta.thread4", "w")
             else:
-                fstats2 = fstats3 = fstats4 = None
-            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, fout,  fstats, ), kwargs=dargs)
+                fstats1 = fstats2 = fstats3 = fstats4 = None
+            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, fout1, fstats1,), kwargs=dargs)
             p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, fout2, fstats2,), kwargs=dargs)
             p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, fout3, fstats3,), kwargs=dargs)
             p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, fout4, fstats4,), kwargs=dargs)
@@ -443,16 +445,17 @@ if __name__ == '__main__':
             ##  Note that fout? and fstats? are now closed! We need to
             ##+ concatenate the files though.
             with open(STRAIN_OUT_FILE, 'a') as fout:
-                for fnr in range(2,5):
+                for fnr in range(1,5):
                     with open(".out.thread"+str(fnr), "r") as slave_f:
                         fout.write(slave_f.read())
                     os.remove(".out.thread"+str(fnr))
             if fstats:
                 with open(STATISTICS_FILE, 'a') as fout:
-                    for fnr in range(2,5):
+                    for fnr in range(1,5):
                         with open(".sta.thread"+str(fnr), "r") as slave_f:
                             fout.write(slave_f.read())
                         os.remove(".sta.thread"+str(fnr))
+           
         else:
             compute__(grd, sta_list_utm, fout,  fstats, **dargs)
     else:
