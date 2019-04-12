@@ -836,6 +836,42 @@ class ShenStrain:
             self.value_of('tauy')*1e9, novar, \
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
             novar, azim, novar, dilat*1e9, novar, sec_inv*1e9), file=fout)
+    
+    def print_details_v2(self, fout, utm_zone=None):
+        if utm_zone:
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
+        else:
+            cx, cy = self.__xcmp__,  self.__ycmp__
+        emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
+            dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
+        if self.__vcv__ is not None:
+            lstr = '%9.5f %9.5f %+7.1f %+7.1f %+7.1f '\
+            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
+            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
+            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f\n' %(cy, cx, \
+            self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
+            self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
+            self.value_of('omega')*1e9*0.206e0/3.6e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0/3.6e0, \
+            self.value_of('taux')*1e9, sqrt(self.__vcv__[2,2])*1e9, \
+            self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
+            self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
+            emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, \
+            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9)
+        else:
+            novar = '-'
+            lstr = '%9.5f %9.5f %+7.1f %8s %+7.1f '\
+            '%8s %+7.1f %8s %+7.1f %8s %+7.1f %8s '\
+            '%+7.1f %8s %+7.1f %8s %+7.1f %8s %+7.1f '\
+            '%8s %+7.1f %8s %+7.1f %8s %+7.1f\n' %(cy, cx, \
+            self.value_of('Ux')*1e3, novar, \
+            self.value_of('Uy')*1e3, novar, \
+            self.value_of('omega')*1e9*0.206e0/3.6e0, novar, \
+            self.value_of('taux')*1e9, novar, \
+            self.value_of('tauxy')*1e9, novar, \
+            self.value_of('tauy')*1e9, novar, \
+            emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
+            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9)
+        fout.write(lstr)
 
     def value_of(self, key):
         """Kinda getter.
