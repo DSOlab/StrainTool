@@ -1,5 +1,56 @@
 # Change Log
 
+## [v1.0-rc5.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc5.0) (2019-06-05)
+
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc4.0...v1.0-rc5.0)
+
+**Implemented enhancements:**
+
+- README file [\#3](https://github.com/DSOlab/StrainTool/issues/3)
+- Dev danast, optim. of sd estimations [\#57](https://github.com/DSOlab/StrainTool/pull/57) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- magnitude of sd [\#56](https://github.com/DSOlab/StrainTool/issues/56)
+- \[gmtplots...\] bc not woring for windows [\#53](https://github.com/DSOlab/StrainTool/issues/53)
+- One tensor \(barycenter\) not working? [\#52](https://github.com/DSOlab/StrainTool/issues/52)
+- Issue53 [\#54](https://github.com/DSOlab/StrainTool/pull/54) ([demanasta](https://github.com/demanasta))
+
+## [v1.0-rc4.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc4.0) (2018-12-14)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc3.0...v1.0-rc4.0)
+
+**Implemented enhancements:**
+
+- rotational units [\#33](https://github.com/DSOlab/StrainTool/issues/33)
+- Dev danast [\#51](https://github.com/DSOlab/StrainTool/pull/51) ([demanasta](https://github.com/demanasta))
+- Issue33 [\#45](https://github.com/DSOlab/StrainTool/pull/45) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- gmtplots: scale of gridded data not plotted correctly [\#47](https://github.com/DSOlab/StrainTool/issues/47)
+- -r / --region switch fails if not set [\#44](https://github.com/DSOlab/StrainTool/issues/44)
+- Issue47  [\#50](https://github.com/DSOlab/StrainTool/pull/50) ([demanasta](https://github.com/demanasta))
+- Issue33 [\#48](https://github.com/DSOlab/StrainTool/pull/48) ([demanasta](https://github.com/demanasta))
+- Dev [\#46](https://github.com/DSOlab/StrainTool/pull/46) ([demanasta](https://github.com/demanasta))
+
+**Merged pull requests:**
+
+- sync issue33 wth dev-danast [\#43](https://github.com/DSOlab/StrainTool/pull/43) ([demanasta](https://github.com/demanasta))
+- sync dev-danast with master [\#41](https://github.com/DSOlab/StrainTool/pull/41) ([demanasta](https://github.com/demanasta))
+
+## [v1.0-rc3.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc3.0) (2018-11-30)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc2.0...v1.0-rc3.0)
+
+**Implemented enhancements:**
+
+- Issue38 [\#39](https://github.com/DSOlab/StrainTool/pull/39) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- gmtstrainplot python verion error [\#38](https://github.com/DSOlab/StrainTool/issues/38)
+- gmtplots: gtotalaxes [\#37](https://github.com/DSOlab/StrainTool/issues/37)
+- Issue38 [\#39](https://github.com/DSOlab/StrainTool/pull/39) ([demanasta](https://github.com/demanasta))
+
 ## [v1.0-rc2.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc2.0) (2018-11-27)
 [Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc1.0...v1.0-rc2.0)
 

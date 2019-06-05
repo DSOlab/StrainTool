@@ -1,12 +1,28 @@
 # Change Log
 
-## [v1.0-rc4.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc4.0)(2018-12-14)
+## [v1.0-rc5.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc5.0) (2019-06-05)
 
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc4.0...v1.0-rc5.0)
+
+**Implemented enhancements:**
+
+- README file [\#3](https://github.com/DSOlab/StrainTool/issues/3)
+- Dev danast, optim. of sd estimations [\#57](https://github.com/DSOlab/StrainTool/pull/57) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- magnitude of sd [\#56](https://github.com/DSOlab/StrainTool/issues/56)
+- \[gmtplots...\] bc not woring for windows [\#53](https://github.com/DSOlab/StrainTool/issues/53)
+- One tensor \(barycenter\) not working? [\#52](https://github.com/DSOlab/StrainTool/issues/52)
+- Issue53 [\#54](https://github.com/DSOlab/StrainTool/pull/54) ([demanasta](https://github.com/demanasta))
+
+## [v1.0-rc4.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc4.0) (2018-12-14)
 [Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc3.0...v1.0-rc4.0)
 
 **Implemented enhancements:**
 
 - rotational units [\#33](https://github.com/DSOlab/StrainTool/issues/33)
+- Dev danast [\#51](https://github.com/DSOlab/StrainTool/pull/51) ([demanasta](https://github.com/demanasta))
 - Issue33 [\#45](https://github.com/DSOlab/StrainTool/pull/45) ([demanasta](https://github.com/demanasta))
 
 **Fixed bugs:**
