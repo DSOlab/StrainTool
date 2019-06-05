@@ -38,7 +38,7 @@ class Grid:
     """
 
     ## TODO write about ceil/floor and [x|y]_max in documentation
-    def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step):
+    def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step, strict_upper_limit=False, upper_limit_epsilon=1e-10):
         """Constructor via x- and y- axis limits.
 
             The __init__ method will assign all of the instance's attributes.
@@ -51,6 +51,24 @@ class Grid:
                 y_min : minimum value in y-axis.
                 y_max : maximum value in y-axis.
                 y_step: y-axis step size.
+                strict_upper_limit: see Note
+                upper_limit_epsilon: see Note
+
+            Note:
+                To find the number of points between the min and max values for
+                each of the axis (aka x and y), the function will perform a
+                computation of the type:
+                xpts = int(floor((x_max-x_min) / float(x_step)))
+                This is quite accurate, but due to roundoff errors, it may 
+                happen that the quantity x_min + xpts * x_step is just a bit 
+                larger than x_max.
+                If the user definitely wants the formula:
+                x_min + self.xpts * x_step <= x_max to hold, then the option
+                strict_upper_limit must be set to true.
+                If strict_upper_limit is false, then the above relationship
+                will hold up to the given accuracy, aka upper_limit_epsilon,
+                that is:
+                x_min + self.xpts * x_step <= x_max + upper_limit_epsilon
 
         """
         self.x_min = x_min
@@ -63,13 +81,21 @@ class Grid:
         self.cyi    = 0      # current y-axis tick / index
         self.xpts   = int(floor((x_max-x_min) / float(x_step)))
         self.ypts   = int(floor((y_max-y_min) / float(y_step)))
+        if strict_upper_limit:
+            while x_min + self.xpts * x_step > x_max:
+                self.xpts -= 1
+            while y_min + self.ypts * y_step > y_max:
+                self.ypts -= 1
+            upper_limit_epsilon = 0e0
+        else:
+            assert x_step > upper_limit_epsilon/2e0 and y_step > upper_limit_epsilon/2e0
         # if using ceil for pts number
         #assert x_min + self.xpts * x_step >= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step/float(2)
         #assert y_min + self.ypts * y_step >= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step/float(2)
         # if using floor for pts number
-        assert x_min + self.xpts * x_step <= x_max and abs(x_min + self.xpts * x_step - x_max) < x_step
-        assert y_min + self.ypts * y_step <= y_max and abs(y_min + self.ypts * y_step - y_max) < y_step
         assert self.xpts > 0 and self.ypts > 0
+        assert x_min + self.xpts * x_step <= x_max + upper_limit_epsilon
+        assert y_min + self.ypts * y_step <= y_max + upper_limit_epsilon
 
     def __iter__(self):
         self.cxi = 0

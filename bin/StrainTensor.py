@@ -20,7 +20,7 @@ import pystrain.grid
 ############################################## ploting
 from scipy.spatial import Delaunay
 
-Version = 'StrainTensor.py Version: 1.0-rc4.0'
+Version = 'StrainTensor.py Version: 1.0-rc4.1'
 
 def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     new_sta_lst = []
@@ -295,8 +295,14 @@ if args.one_tensor:
     print('[DEBUG] Estimating Strain Tensor at region\'s barycentre.')
     if args.method == 'shen':
         sstr = ShenStrain(0e0, 0e0, sta_list_utm, **dargs)
+    else:
+        sstr = ShenStrain(0e0, 0e0, sta_list_utm, weighting_function='equal_weights')
     sstr.set_to_barycenter()
     sstr.estimate()
+    sstr.print_details(fout, utm_zone)
+    fout.close()
+    write_station_info(sta_list_ell)
+    print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))      
     sys.exit(0)
 
 # strain_list = [] Probably we do not need to keep the tensors ...

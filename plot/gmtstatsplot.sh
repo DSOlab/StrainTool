@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc4.2
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -76,6 +76,164 @@ pythonc() {
     fi
 }
 
+##
+##  Function to set scale variables. User must pass in the T variable, and the
+##+ function will set the following (global) variables):
+##+     * Tmax_r
+##+     * Tmax_r_marg
+##+     * cpt_step
+##+     * scale_step_r
+##  Use as: <scalevar_T Tval> where Tvar must be a number (integer or float)
+##
+scalevar_T() 
+{
+    re="^[+-]?[0-9]+([.][0-9]+)?$"
+    if test -z ${1+x} 
+    then
+        echo "[ERROR] Must supply cmd arg in scalevar_T" && exit 1
+    else
+        if ! [[ $1 =~ $re ]]
+        then
+            echo "[ERROR] Must supply numeric cmd arg in scalevar_T" && exit 1
+        fi
+    fi
+    T="${1}"
+    if awk -v T="$T" 'BEGIN {if (T<=1) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=1
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>1 && T<10) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=1
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>=10 && T<100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=0
+        Tmax_r_marg=5
+        cpt_step=1
+        scale_step_r=0
+    elif awk -v T="$T" 'BEGIN {if (T>=100) exit 0; exit 1}' &>/dev/null
+    then
+        Tmax_r=-1
+        Tmax_r_marg=10
+        cpt_step=1
+        scale_step_r=-1
+    else
+        echo "[ERROR] Failed to resolve T scale" || exit 1
+    fi
+}
+##
+##  Check if a (given) variable is a number (either integer or float, in
+##+ fixed or scietific format. Returns 0 if variable is number, 1 otherwise.
+##
+##  Examples:
+##      for s in abc 2.a 2 -2 +2.234 2.0e0 -123.45e-9 .25 . " " "" ; do
+##          isNumber $s && echo "$s is number"
+##      done
+##  Result:
+##      2 is number
+##      -2 is number
+##      +2.234 is number
+##      2.0e0 is number
+##      -123.45e-9 is number
+##     .25 is number
+##
+isNumber() {
+    test -z $1 && return 1
+    numre="^[+-]?([0-9]+)?([.][0-9]+)?([eE][+-]?[0-9]{1,2})?$"
+    [[ "$1" =~ $numre ]] && return 0;
+    return 1
+}
+
+##
+##  This function will read in a variable. If (and only if) the variable is
+##+ in the form "a/b/c/d/e/f" (aka 6 numbers, seperated by '/'), then the
+##+ function will set the global variables: 
+##+ west, east, south, north, projscale, frame to the fields of the string;
+##+ that is west=a, east=b, ..., frame=f
+##  If the resolution happens successefuly and the variables are assigned,
+##+ 0 is returned; in any other case, the variables are not set and the
+##+ function returns 1.
+##  Note that the string must comprise of numbers, i.e. in the passed in
+##+ argument "a/b/c/d/e/f" a, b, c, .., f must be numbers.
+##
+##  Example:
+##      resolve_region "1/2/3//5/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2/3"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "foobar"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2/3/4/foo/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##      resolve_region "1/2e0/3/4/5.0/6"
+##      echo "vars: $west $east $south $north $projscale $frame"
+##  Prints:
+##      vars:
+##      vars:
+##      vars:
+##      vars:
+##      vars: 1 2e0 3 4 5.0 6
+##
+resolve_region() {
+#    local ar=$(echo $1 | awk -F"/" '{ 
+#        if (NF == 6)
+#            print $0 
+#        else 
+#            print "ERROR"
+#    }')
+#    test "$ar" == "ERROR" && return 1
+    local AR=( $(echo $1 | tr '/' ' ') )
+    test "${#AR[@]}" -eq 6 || return 1
+    for num in "${AR[@]}" ; do isNumber "$num" || return 1 ; done
+    read west east south north projscale frame <<< "${AR[@]}"
+}
+
+
+##
+##  Check the inputs for the boundary zone that all inuts are ok. That's meean:
+##  west < east and (east - west) < 360
+##  -90 <= south < north <= 90
+##  projscale > 0 and frame > 0 
+##
+check_region() {
+  ## test south north -90 < south < north < 90
+  local SVARS=($(awk -v west="$1" -v east="$2" -v south="$3" -v north="$4" -v projscale="$5" -v frame="$6" '
+        BEGIN {
+            if (-90 <= south && south < north && north <= 90) {
+                  south = south
+                  north = north
+                if (west < east && (east - west) < 360 ) {
+                  west = west
+                  east = east
+				  if (projscale > 0 && frame > 0) {
+				    projscale = projscale
+				    frame = frame
+				  } else {
+				    print "[ERROR] check again projscale and frame inputs"
+                    exit 1
+				  }
+                } else {
+                  print "[ERROR] check again west east inputs"
+                  exit 1
+                }
+			} else {
+                print "[ERROR] check again south north inputs"
+                exit 1
+            }
+            print west, east, south, north, projscale, frame;
+        }
+    '))
+    ## check and assign to (global) variables
+    test "${#SVARS[@]}" -eq 6  \
+        || { echo "[ERROR] Failed to modify boundary zone"; exit 1; }
+    read west east south north projscale frame <<< "${SVARS[@]}"
+}
+
 # //////////////////////////////////////////////////////////////////////////////
 # HELP FUNCTION
 function help {
@@ -125,7 +283,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc4.0"
+VERSION="v.1.0-rc4.2"
 
 # system's Python version
 PYV=99
@@ -174,26 +332,28 @@ fi
 
 while [ $# -gt 0 ]
 do
-  case "$1" in
-    -r | --region)
-      west=$2
-      east=$3
-      south=$4
-      north=$5
-      projscale=$6
-      frame=$7
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
-      shift
-      ;;
+    case "$1" in
+      -r | --region)
+        ## check the next argument; maybe its w/e/s/n/p/f
+        if resolve_region "${2}"
+        then
+          shift 2
+        else
+          ## at least 6 (more) arguments should follow, seperated by space(s)
+          test "$#" -ge 7 || { echo "[ERROR] Invalid region arg"; exit 1; }
+          read west east south north projscale frame <<< $(echo $2 $3 $4 $5 $6 $7)
+          shift 7
+          ## all arguments should be numeric
+          for rarg in "$west" "$east" "$south" "$north" "$projscale" "$frame"
+          do
+            isNumber "${rarg}" || \
+              { echo "[ERROR] Invalid region arg"; exit 1; }
+          done
+        fi
+        ;;
     -mt)
       maptitle=$2
-      shift
-      shift
+      shift 2
       ;;
     -psta)
       pth2sta=${pth2inptf}/station_info.dat
@@ -208,8 +368,7 @@ do
     -stats)
       pth2stats=${pth2inptf}/$2
       STATS=1
-      shift
-      shift
+      shift 2
       ;;
     --stats-stations)
       STATS_STATIONS=1
@@ -228,8 +387,7 @@ do
       ;;
     -o | --output)
       outfile=${2}.ps
-      shift
-      shift
+      shift 2
       ;;
     -l | --labels)
       LABELS=1
@@ -314,7 +472,15 @@ then
   north_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
   | awk ' {printf "%+0.3f\n", $2}' | gmt info -Eh)
   range_grd="-R${west_grd}/${east_grd}/${south_grd}/${north_grd}"
-    
+  # read grid step for each component
+  stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
+  stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
+  # convert from cell centers to grid boundaries
+  west_grd=$(pythonc "print($west_grd - $stat_x_grid_step/2.)")
+  east_grd=$(pythonc "print($east_grd + $stat_x_grid_step/2.)")
+  south_grd=$(pythonc "print($south_grd - $stat_y_grid_step/2.)")
+  north_grd=$(pythonc "print($north_grd + $stat_y_grid_step/2.)")
+  
   > .legend
   {
   globFonts="G .5c"
@@ -348,9 +514,8 @@ then
   echo -e "T @_Grid limits@_:\n${globFonts}"
   echo -e "T west / east: ${west_grd} / ${east_grd}\n${globFonts}"
   echo -e "T south / north: ${south_grd} / ${north_grd}\n${globFonts}"
-  stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
+  
   echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
-  stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
   echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
   } >> .legend
   istep_grd=$(pythonc "print(${stat_x_grid_step}*60.)")
@@ -358,6 +523,10 @@ fi
 
 # //////////////////////////////////////////////////////////////////////////////
 # SET REGION PROPERTIES
+# check region inputs
+check_region $west $east $south $north $projscale $frame
+
+#set region parameters
 tmp_scrate=$(pythonc "print((${projscale}/150000000.)*10.)")
 sclat=$(pythonc "print(${south} + ${tmp_scrate})")
 
@@ -412,28 +581,7 @@ then
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
   # set variables for scale
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=1
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=5
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=1
-    scale_step_r=-1
-  else
-    echo "ERROR"
-    exit 1
-  fi
+  scalevar_T ${T}
   Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
   Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
@@ -470,28 +618,8 @@ then
   awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
 # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
-  if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=1
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
-  then
-    Tmax_r=0
-    Tmax_r_marg=5
-    cpt_step=1
-    scale_step_r=0
-  elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
-  then
-    Tmax_r=-1
-    Tmax_r_marg=10
-    cpt_step=1
-    scale_step_r=-1
-  else
-    echo "ERROR"
-    exit 1
-  fi
+
+  scalevar_T ${T}
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
   Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
@@ -531,19 +659,19 @@ then
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
 ## comm. I am not sure that this check needed for sigma value
-#   if [ $(echo " ${T} <= 10 " | bc -l) == 1 ]
+#   if [ $(awk 'BEGIN {print ('$T' <= 10 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=1
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 10 " | bc -l) == 1 ] && [ $(echo " ${T} <= 100 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 10 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 100 )}') ]
 #   then
 #     Tmax_r=0
 #     Tmax_r_marg=5
 #     cpt_step=1
 #     scale_step_r=0
-#   elif [ $(echo " ${T} > 100 " | bc -l) == 1 ] && [ $(echo " ${T} <= 25000 " | bc -l) == 1 ]
+#   elif [ $(awk 'BEGIN {print ('$T' > 100 )}') ] && [ $(awk 'BEGIN {print ('$T' <= 25000 )}') ]
 #   then
 #     Tmax_r=-1
 #     Tmax_r_marg=10

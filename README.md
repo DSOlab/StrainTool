@@ -96,7 +96,6 @@ _(You may not need the ./ part at the begining if you are on a Wnidows system)_.
 
 Under `data/` you will find the "reference" output files for checking, named `strain_info.dat.ref` and `station_info.dat.ref`. Verify that the files you have just created (placed under `bin/`) contain the same results as the "reference" files (this can be very easily performed using the [diff](https://www.gnu.org/software/diffutils/) command).
 
-### TODO: plot example files and compare
 
 # How to use StrainTensor.py
 
@@ -144,7 +143,12 @@ The whole list of available options, is:
   --dmax D_MAX          Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the upper limit for searching for an optimal d-param value. Unit is km. Default is dmax=500km.
   --dstep D_STEP        Only relevant for '--method=shen' and if 'd-param' is not passed in. This is the step size for searching for an optimal d-param value. Unit is km. Default is dstep=2km.
   --d-param D_PARAMETER
-                        Only relevant for '--method=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.</samp></pre>
+                        Only relevant for '--method=shen'. This is the 'D' parameter for computing the spatial weights. If this option is used, then the parameters: dmin, dmax, dstep and Wt are not used.
+  -g, --generate-statistics
+                        Only relevant when '--mehod=shen' and '--barycenter' is not set. This option will create an output file, named 'strain_stats.dat', where estimation info and statistics will be written. (default: False)
+  --verbose             Run in verbose mode (show debugging messages) (default: False)
+  -v                    Display version and exit. (default: False)
+                        </samp></pre>
 
 For example, the command we used on the [Example](#straintensor_prg_example) section:
 
@@ -181,7 +185,14 @@ Code    Longtitude Latitude  Ve   Vn   dVe  dVn
 string      deg       deg          mm/yr
 	      </pre>
 
-*   **StrainTensor.out :** Parameters used to modify grid, calculate Strain tensors etc.
+*   **strain_stats.dat :** Output file for statistics:
+<pre id="block-samp" <samp=""> --HEADER-- 
+Parameters and arguments used for estimation of strain tensors.
+--statistics--
+Longtitude  Latitude  # stations D (optimal)  CutOff dis.     Sigma
+ deg.       deg.        #           Km           #            / 
+              </pre>
+
 
 # How to use Plot Tools
 
@@ -216,8 +227,9 @@ Basic Plots & Background :
      -r | --region : region to plot (default Greece)
          usage: -r west east south north projscale frame
 
-Plot station and velocitiess:
+Plot station and velocities:
     -psta [:=stations] plot only stations from input file
+    -deltr [:= delaunay triangles] plot delaunay triangles
     -vhor (station_file)[:= horizontal velocities]
     -vsc [:=velocity scale] change valocity scale default 0.05
 
@@ -230,10 +242,13 @@ Plot strain tensor parameters:
      -secinv (strain file) [:=2nd invariand] Plot second invariand
      -strsc [:=strain scale]
      -rotsc [:=rotational scales]
+   *for -gtot | -dil | -secinv use +grd to plot gridded data
+        ex:-gtot+grd
 
 Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
+     -mt | --map_title "text": title map default none, use quotes
      -jpg : convert eps file to jpg
      -h | --help : help menu
 </pre>
@@ -263,7 +278,7 @@ Other options:
      -o | --output : name of output files
      -l | --labels : plot labels
      -leg : plot legends
-     -mt | --map_title <text> : title map default none use quotes
+     -mt | --map_title <text> : title map default none, use quotes
      -jpg : convert eps file to jpg
      -h | --help : help menu
 </pre>
@@ -306,7 +321,7 @@ The work is licensed under [MIT-license](LICENSE)
 
 ## Authors & Bug Reports
 **Dimitrios G. Anastasiou**
-> Dr.Eng Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
+> Dr. Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
 
 **Xanthos Papanikolaou**
 > Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
@@ -329,6 +344,8 @@ This project has received funding from the European Union’s Horizon 2020 resea
 Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.
 
 ## References
+* Anastasiou D., Ganas A., Legrand J., Bruyninx C., Papanikolaou X., Tsironi V. and Kapetanidis V. (2019). Tectonic strain distribution over Europe from EPN data. EGU General Assembly 2019, Geophysical Research Abstracts, Vol. 21, EGU2019-17744-1 [Abstract](https://meetingorganizer.copernicus.org/EGU2019/EGU2019-17744-1.pdf)
+
 * Shen, Z.-K., M. Wang, Y. Zeng, and F. Wang, (2015), Strain determination using spatially discrete geodetic data, Bull. Seismol. Soc. Am., 105(4), 2117-2127, doi: 10.1785/0120140247
 
 * Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166
