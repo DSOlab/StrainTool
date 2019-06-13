@@ -21,6 +21,8 @@ StrainTool has three basic components:
 *   The main executable, named `StrainTensor.py`
 *   A list of shell scripts to plot results from `StrainTensor.py`
 
+A first application of the software with EUREF data was presented in EGU2019 (Anastasiou et al. 2019).
+
 ## pystrain Package
 
 `pystrain` is a package written in [python](https://www.python.org/), defining a variety of functions, classes, etc to enable the computation of strain tensors.
