@@ -56,10 +56,16 @@ def write_station_info(sta_lst, filename='station_info.dat'):
         The file to be written is named as $filename
     """
     with open(filename, 'w') as fout:
-        print('{:^10s} {:^10s} {:^10s} {:7s} {:7s} {:7s} {:7s}'.format('Station', 'Longtitude', 'Latitude', 'Ve', 'Vn', 'sVe', 'sVn'), file=fout)
-        print('{:^10s} {:^10s} {:^10s} {:7s} {:7s} {:7s} {:7s}'.format('', 'deg.', 'deg', 'mm/yr', 'mm/yr', 'mm/yr', 'mm/yr'), file=fout)
+        print('{:^10s} {:^10s} {:^10s} {:7s} {:7s} {:7s} {:7s}'.format(
+            'Station', 'Longtitude', 'Latitude', 'Ve', 'Vn', 'sVe', 'sVn'),
+            file=fout)
+        print('{:^10s} {:^10s} {:^10s} {:7s} {:7s} {:7s} {:7s}'.format(
+            '', 'deg.', 'deg', 'mm/yr', 'mm/yr', 'mm/yr', 'mm/yr'),
+            file=fout)
         for idx, sta in enumerate(sta_lst):
-            print('{:10s} {:+10.5f} {:10.5f} {:+7.2f} {:+7.2f} {:+7.3f} {:+7.3f}'.format(sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03, sta.vn*1e03, sta.se*1e03, sta.sn*1e03), file=fout)
+            print('{:10s} {:+10.5f} {:10.5f} {:+7.2f} {:+7.2f} {:+7.3f} {:+7.3f}'.format(
+                sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03, 
+                sta.vn*1e03, sta.se*1e03, sta.sn*1e03), file=fout)
     return
 
 def print_model_info(fout, cmd, clargs):
@@ -102,7 +108,8 @@ def compute__(grd, sta_list_utm, fout, fstats, **dargs):
         clat, clon =  radians(y), radians(x)
         N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_zone)
         assert ZN == utm_zone
-        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(x, y, E, N))
+        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(
+            x, y, E, N))
         if not dargs['multiproc_mode']:
             print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
         ## Construct the Strain instance, with all args (from input)
@@ -292,9 +299,13 @@ if __name__ == '__main__':
 
     ## if in mutlithreading mode, load the module
     if args.multiproc_mode:
-        import multiprocessing
-        cpu_count = multiprocessing.cpu_count()
-        print("[DEBUG] Using multithreaded version; available CPU's: {:02d}".format(cpu_count))
+        if args.method == 'shen'
+            import multiprocessing
+            cpu_count = multiprocessing.cpu_count()
+            print("[DEBUG] Using multithreaded version; available CPU's: {:02d}".format(
+                cpu_count))
+        else:
+            print("[DEBUG] Multithreading is only available when using shen method; ignoring the \"--multicore\" switch!")
 
     ## If needed, open a file to write model info and statistics
     fstats = open(STATISTICS_FILE, 'w') if args.generate_stats else None
@@ -305,10 +316,12 @@ if __name__ == '__main__':
     ##  After reading, station coordinates are in radians and velocities are in
     ##+ m/yr.
     if not os.path.isfile(args.gps_file):
-        print('[ERROR] Cannot find input file \'{}\'.'.format(args.gps_file), file=sys.stderr)
+        print('[ERROR] Cannot find input file \'{}\'.'.format(
+            args.gps_file), file=sys.stderr)
         sys.exit(1)
     sta_list_ell = parse_ascii_input(args.gps_file)
-    print('[DEBUG] Reading station coordinates and velocities from {}'.format(args.gps_file))
+    print('[DEBUG] Reading station coordinates and velocities from {}'.format(
+        args.gps_file))
     print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
 
     ##  If a region is passed in, resolve it (from something like 
@@ -332,7 +345,8 @@ if __name__ == '__main__':
                     sys.exit(0)
         except:
             ## TODO we should exit with error here
-            print('[ERROR] Failed to parse region argument \"{:}\"'.format(args.region), file=sys.stderr)
+            print('[ERROR] Failed to parse region argument \"{:}\"'.format(
+                args.region), file=sys.stderr)
 
     ##  Filter out stations that are never going to be used. This is an opt!
     ##  This is only needed when the used has specified:
@@ -436,6 +450,7 @@ if __name__ == '__main__':
                 fstats4=open(".sta.thread4", "w")
             else:
                 fstats1 = fstats2 = fstats3 = fstats4 = None
+            print('[DEBUG] Estimating strain tensors in multi-threading mode')
             p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, fout1, fstats1,), kwargs=dargs)
             p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, fout2, fstats2,), kwargs=dargs)
             p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, fout3, fstats3,), kwargs=dargs)

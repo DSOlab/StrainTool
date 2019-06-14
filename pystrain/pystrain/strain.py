@@ -685,9 +685,9 @@ class ShenStrain:
             Returns:
                 a tuple, holding the elements:
                 (emean, ediff, taumax, staumax, emax, semax, emin, semin, \
-                azim, sazim, dilat, sdilat, sec_inv)
+                azim, sazim, dilat, sdilat, sec_inv, ssec_inv)
                 If params_cov is None, then the values of the sigmas (staumax,
-                semax, semin, sazim and sdilat) are all set to 'None'.
+                semax, semin, sazim, sdilat and ssec_inv) are all set to 'None'.
                 All units are strain/year
 
             Note:
@@ -715,7 +715,7 @@ class ShenStrain:
         dilat = x1+x3                       ## strain/yr
         sec_inv = sqrt(x1*x1+2e0*x2*x2+x3*x3)
         if params_cov is None:
-            staumax, semax, semin, sazim, sdilat = [None] * 5
+            staumax, semax, semin, sazim, sdilat, ssec_inv = [None] * 6
         else:
             nv, mv = params_cov.shape
             assert nv == mv and nv == 6
@@ -748,13 +748,13 @@ class ShenStrain:
             sdilat = sqrt(vcv[0,0]+vcv[2,2]+2e0*vcv[0,2])
             """
             ## Error propagation for non-linear functions, aka V <- J*VcV*J^T
-            ## where J is the Jacobain matrix and VcV the var-covar matrix of
+            ## where J is the Jacobian matrix and VcV the var-covar matrix of
             ## the parameter vector: [Ux, Uy, τx, τxy, τy, ω]
             ## rows of the Jacobian are:
-            ## [τ_max, e_max, e_min, Azim, dilatation]
+            ## [τ_max, e_max, e_min, Azim, dilatation, sec_inv]
             ## first row is:
             ## [ dτ_max/dUx, dτ_max/dUy, dτ_max/dτx, dτ_max/dτxy, dτ_max/dτy, dτ_max/dω ]
-            J = numpy.zeros(shape=(5,6))
+            J = numpy.zeros(shape=(6,6))
             _tmp = ediff/(2e0*taumax)
             J[0, :] = [ 0e0, 0e0, _tmp,           x2/taumax,        -_tmp,          0e0 ]
             J[1, :] = [ 0e0, 0e0, .5e0+_tmp,      x2/taumax,         .5e0-_tmp,     0e0 ]
@@ -762,19 +762,21 @@ class ShenStrain:
             _tmp = ediff*ediff + x2*x2
             J[3, :] = [ 0e0, 0e0, x2/(4e0*_tmp), -ediff/(4e0*_tmp), -x2/(4e0*_tmp), 0e0 ]
             J[4, :] = [ 0e0, 0e0, 1e0,            0e0,               1e0,           0e0 ]
+            J[5, :] = [ 0e0, 0e0, x1/sec_inv,     2e0*x2/sec_inv,    x3/sec_inv,    0e0 ]
             Vy = numpy.dot(J, numpy.dot(params_cov, J.T))
             staumax = sqrt(Vy[0,0])
             semax   = sqrt(Vy[1,1])
             semin   = sqrt(Vy[2,2])
             sazim   = sqrt(Vy[3,3])
             sdilat  = sqrt(Vy[4,4])
+            ssec_inv= sqrt(Vy[5,5])
         return emean, ediff, \
             taumax, staumax, \
             emax, semax, \
             emin, semin, \
             azim, sazim, \
             dilat, sdilat, \
-            sec_inv
+            sec_inv, ssec_inv
 
     def info(self):
         return __strain_info__(self.__parameters__)
@@ -808,12 +810,12 @@ class ShenStrain:
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
-            dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
+            dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
             print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} '\
             '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} '\
             '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} '\
-            '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
+            '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0/3.6e0, \
@@ -821,13 +823,13 @@ class ShenStrain:
             self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
             self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
             emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, \
-            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9), file=fout)
+            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9, ssec_inv*1e9), file=fout)
         else:
             novar = '-'
             print('{:9.5f} {:9.5f} {:+7.1f} {:8s} {:+7.1f} '\
             '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} '\
             '{:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} '\
-            '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f}'.format(cy, cx, \
+            '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s}'.format(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, novar, \
@@ -835,7 +837,7 @@ class ShenStrain:
             self.value_of('tauxy')*1e9, novar, \
             self.value_of('tauy')*1e9, novar, \
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
-            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9), file=fout)
+            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9, novar), file=fout)
     
     def print_details_v2(self, fout, utm_zone=None):
         if utm_zone:
@@ -843,12 +845,12 @@ class ShenStrain:
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
-            dilat, sdilat, sec_inv =  self.cmp_strain(self.__vcv__)
+            dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
             lstr = '%9.5f %9.5f %+7.1f %+7.1f %+7.1f '\
             '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
             '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
-            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f\n' %(cy, cx, \
+            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f\n' %(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0/3.6e0, \
@@ -856,13 +858,13 @@ class ShenStrain:
             self.value_of('tauxy')*1e9, sqrt(self.__vcv__[3,3])*1e9, \
             self.value_of('tauy')*1e9, sqrt(self.__vcv__[4,4])*1e9, \
             emax*1e9, semax*1e9, emin*1e9, semin*1e9, taumax*1e9, \
-            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9)
+            staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9, ssec_inv*1e9)
         else:
             novar = '-'
             lstr = '%9.5f %9.5f %+7.1f %8s %+7.1f '\
             '%8s %+7.1f %8s %+7.1f %8s %+7.1f %8s '\
             '%+7.1f %8s %+7.1f %8s %+7.1f %8s %+7.1f '\
-            '%8s %+7.1f %8s %+7.1f %8s %+7.1f\n' %(cy, cx, \
+            '%8s %+7.1f %8s %+7.1f %8s %+7.1f %8s\n' %(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, novar, \
@@ -870,7 +872,7 @@ class ShenStrain:
             self.value_of('tauxy')*1e9, novar, \
             self.value_of('tauy')*1e9, novar, \
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
-            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9)
+            novar, azim, novar, dilat*1e9, novar, sec_inv*1e9, novar)
         fout.write(lstr)
 
     def value_of(self, key):
