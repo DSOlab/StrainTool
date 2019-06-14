@@ -812,10 +812,10 @@ class ShenStrain:
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
             dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
-            print('{:9.5f} {:9.5f} {:+7.1f} {:+7.1f} {:+7.1f} '\
-            '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} '\
-            '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} '\
-            '{:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f} {:+7.1f}'.format(cy, cx, \
+            print('{:9.5f} {:9.5f} {:+7.1f} {:7.1f} {:+7.1f} '\
+            '{:7.1f} {:+7.1f} {:7.1f} {:+7.1f} {:7.1f} {:+7.1f} {:7.1f} '\
+            '{:+7.1f} {:7.1f} {:+7.1f} {:7.1f} {:+7.1f} {:7.1f} {:+7.1f} '\
+            '{:7.1f} {:+7.1f} {:7.1f} {:+7.1f} {:7.1f} {:+7.1f} {:7.1f}'.format(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0/3.6e0, \
@@ -826,10 +826,10 @@ class ShenStrain:
             staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9, ssec_inv*1e9), file=fout)
         else:
             novar = '-'
-            print('{:9.5f} {:9.5f} {:+7.1f} {:8s} {:+7.1f} '\
-            '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} '\
-            '{:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} '\
-            '{:8s} {:+7.1f} {:8s} {:+7.1f} {:8s} {:+7.1f} {:8s}'.format(cy, cx, \
+            print('{:9.5f} {:9.5f} {:+7.1f} {:7s} {:+7.1f} '\
+            '{:7s} {:+7.1f} {:7s} {:+7.1f} {:7s} {:+7.1f} {:7s} '\
+            '{:+7.1f} {:7s} {:+7.1f} {:7s} {:+7.1f} {:7s} {:+7.1f} '\
+            '{:7s} {:+7.1f} {:7s} {:+7.1f} {:7s} {:+7.1f} {:7s}'.format(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, novar, \
@@ -847,10 +847,10 @@ class ShenStrain:
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
             dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
-            lstr = '%9.5f %9.5f %+7.1f %+7.1f %+7.1f '\
-            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
-            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f '\
-            '%+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f %+7.1f\n' %(cy, cx, \
+            lstr = '%9.5f %9.5f %+7.1f %7.1f %+7.1f '\
+            '%7.1f %+7.1f %7.1f %+7.1f %7.1f %+7.1f %7.1f '\
+            '%+7.1f %7.1f %+7.1f %7.1f %+7.1f %7.1f %+7.1f '\
+            '%7.1f %+7.1f %7.1f %+7.1f %7.1f %+7.1f %7.1f\n' %(cy, cx, \
             self.value_of('Ux')*1e3, sqrt(self.__vcv__[0,0])*1e3, \
             self.value_of('Uy')*1e3, sqrt(self.__vcv__[1,1])*1e3, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, sqrt(self.__vcv__[5,5])*1e9*0.206e0/3.6e0, \
@@ -861,10 +861,10 @@ class ShenStrain:
             staumax*1e9, azim, sazim, dilat*1e9, sdilat*1e9, sec_inv*1e9, ssec_inv*1e9)
         else:
             novar = '-'
-            lstr = '%9.5f %9.5f %+7.1f %8s %+7.1f '\
-            '%8s %+7.1f %8s %+7.1f %8s %+7.1f %8s '\
-            '%+7.1f %8s %+7.1f %8s %+7.1f %8s %+7.1f '\
-            '%8s %+7.1f %8s %+7.1f %8s %+7.1f %8s\n' %(cy, cx, \
+            lstr = '%9.5f %9.5f %+7.1f %7s %+7.1f '\
+            '%7s %+7.1f %7s %+7.1f %7s %+7.1f %7s '\
+            '%+7.1f %7s %+7.1f %7s %+7.1f %7s %+7.1f '\
+            '%7s %+7.1f %7s %+7.1f %7s %+7.1f %7s\n' %(cy, cx, \
             self.value_of('Ux')*1e3, novar, \
             self.value_of('Uy')*1e3, novar, \
             self.value_of('omega')*1e9*0.206e0/3.6e0, novar, \

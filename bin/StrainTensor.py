@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     ## if in mutlithreading mode, load the module
     if args.multiproc_mode:
-        if args.method == 'shen'
+        if args.method == 'shen':
             import multiprocessing
             cpu_count = multiprocessing.cpu_count()
             print("[DEBUG] Using multithreaded version; available CPU's: {:02d}".format(
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     ##  Open file to write Strain Tensor estimates; write the header
     fout = open(STRAIN_OUT_FILE, 'w')
     vprint('[DEBUG] Strain info written in file: {}'.format(STRAIN_OUT_FILE))
-    print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant'), file=fout)
+    print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('Latitude', 'Longtitude', 'vx+dvx', 'vy+dvy', 'w+dw', 'exx+dexx', 'exy+dexy', 'eyy+deyy', 'emax+demax', 'emin+demin', 'shr+dshr', 'azi+dazi', 'dilat+ddilat', 'sec. invariant+dsec inv.'), file=fout)
     print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'deg/Myr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 
     ##  Compute only one Strain Tensor, at the region's barycenter; then exit.
