@@ -38,3 +38,6 @@ gmt.*
 *.dat
 strain_info.dat
 station_info.dat
+
+# temporary test data
+test_data
