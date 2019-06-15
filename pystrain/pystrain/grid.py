@@ -37,6 +37,15 @@ class Grid:
             ypts  : number of ticks on y-axis
     """
 
+    def split2four(self):
+        x2 = self.x_min + (self.xpts/2)*self.x_step
+        y2 = self.y_min + (self.ypts/2)*self.y_step
+        g1 = Grid(self.x_min, x2, self.x_step, self.y_min, y2, self.y_step)
+        g2 = Grid(x2, self.x_max, self.x_step, self.y_min, y2, self.y_step) 
+        g3 = Grid(self.x_min, x2, self.x_step, y2, self.y_max, self.y_step)
+        g4 = Grid(x2, self.x_max, self.x_step, y2, self.y_max, self.y_step)
+        return g1, g2, g3, g4
+
     ## TODO write about ceil/floor and [x|y]_max in documentation
     def __init__(self, x_min, x_max, x_step, y_min, y_max, y_step, strict_upper_limit=False, upper_limit_epsilon=1e-10):
         """Constructor via x- and y- axis limits.
