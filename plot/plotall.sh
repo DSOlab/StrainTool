@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # program version
-VERSION="v.1.0-rc4.0"
+VERSION="v.1.0-rc5.1"
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
 #
@@ -14,7 +14,7 @@ VERSION="v.1.0-rc4.0"
 #                     NAME=plotall
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#                     RELEASE=rc5.1
 #    licence        : MIT
 #    created        : SEP-2018
 #    usage          :

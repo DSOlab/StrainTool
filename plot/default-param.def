@@ -1,0 +1,44 @@
+#!/bin/bash
+#use this file to cheange default parameters for plots
+# //////////////////////////////////////////////////////////////////////////////
+
+#Path to input file directory
+pth2inptf=../bin/
+
+
+#outfiles
+outfile=output.ps
+
+# #colormaps
+# landcpt=land_man.cpt
+# bathcpt=bath_man.cpt
+PAPER_SIZE="30cx30c" # width x height
+
+# //////////////////////////////////////////////////////////////////////////////
+# Set default REGION 
+west=17 #19.5
+east=30 #29
+south=34
+north=43 #42
+projscale=6000000
+frame=1
+
+# length of plot scale (Km)
+sclength=100
+
+logo_pos="BL/.1c/.1c"
+
+# scale parameters for velocities
+# vsclon=22.34 #delete
+# vsclat=37.68 #delete
+vscmagn=20
+VSC=0.05
+
+strscmagn=100
+STRSC=.0080
+ROTSC=.65
+ROT_wedge_mag=1 #(deg/My)
+# strsclon=20.4 #delete
+# strsclat=36.3 #delete
+
+legendc="-Jx1i -R0/8/0/8 -Dx20.5c/12.6c+w5c/4.6c+jBL"	

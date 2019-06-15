@@ -149,6 +149,7 @@ The whole list of available options, is:
   -g, --generate-statistics
                         Only relevant when '--mehod=shen' and '--barycenter' is not set. This option will create an output file, named 'strain_stats.dat', where estimation info and statistics will be written. (default: False)
   --verbose             Run in verbose mode (show debugging messages) (default: False)
+  --multicore           Run in multithreading mode (default: False)
   -v                    Display version and exit. (default: False)
                         </samp></pre>
 
@@ -176,7 +177,7 @@ Results of `StrainTensor.py` are recorded in the following three files:
 *   **strain_info.dat :** This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.  
     The columns of the file are structured as below:
 
-<pre id="block-samp" <samp="">Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec. invariant 
+<pre id="block-samp" <samp="">Latitude  Longtitude     vx+dvx          vy+dvy           w+dw          exx+dexx        exy+dexy        eyy+deyy       emax+demax      emin+demin       shr+dshr        azi+dazi      dilat+ddilat   sec.inv.+dsec.inv.
    deg       deg         mm/yr           mm/yr          deg/Myr       nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr      nstrain/yr         deg.         nstrain/yr      nstrain/yr   
 	        </pre>
 

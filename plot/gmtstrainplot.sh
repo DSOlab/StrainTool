@@ -13,7 +13,7 @@
 #                     NAME=gmtstrainplot
 #    version        : v-1.0
 #                     VERSION=v1.0
-#                     RELEASE=rc4.2
+#                     RELEASE=rc5.1
 #    licence        : MIT
 #    created        : MAY-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=DEC-2018
+#    update list    : LAST_UPDATE=JUN-2019
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -303,7 +303,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc4.2"
+VERSION="v.1.0-rc5.1"
 
 # system's Python version
 PYV=99

@@ -16,7 +16,7 @@ from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 import pystrain.grid
 
-Version = 'StrainTensor.py Version: 1.0-rc4.1'
+Version = 'StrainTensor.py Version: 1.0-rc5.1'
 STRAIN_OUT_FILE = 'strain_info.dat'
 STATISTICS_FILE = 'strain_stats.dat'
 
@@ -465,10 +465,10 @@ if __name__ == '__main__':
                         fout.write(slave_f.read())
                     os.remove(".out.thread"+str(fnr))
             if fstats:
-                with open(STATISTICS_FILE, 'a') as fout:
+                with open(STATISTICS_FILE, 'a') as fstats:
                     for fnr in range(1,5):
                         with open(".sta.thread"+str(fnr), "r") as slave_f:
-                            fout.write(slave_f.read())
+                            fstats.write(slave_f.read())
                         os.remove(".sta.thread"+str(fnr))
            
         else:
