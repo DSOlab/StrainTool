@@ -336,7 +336,7 @@
                        [-c] [-b] [--max-beta-angle MAX_BETA_ANGLE]
                        [-t WEIGHTING_FUNCTION] [--Wt Wt] [--dmin D_MIN]
                        [--dmax D_MAX] [--dstep D_STEP] [--d-param D_PARAMETER]
-                       [-g] [--verbose] [-v]<samp></pre>
+                       [-g] [--verbose] [--multicore] [-v]<samp></pre>
         <h2 id="straintool_prg_opt">Options</h2>
         <p>The whole list of available options, is:
         <pre id="block-samp"><samp>optional arguments:
@@ -367,6 +367,7 @@
   -g, --generate-statistics
                         Only relevant when '--mehod=shen' and '--barycenter' is not set. This option will create an output file, named 'strain_stats.dat', where estimation info and statistics will be written.
   --verbose             Run in verbose mode (show debugging messages)
+  --multicore           Run in multithreading mode (default: False)
   -v                    Display version and exit.</samp></pre></p>
         <p>For example, the command we used on the <a href="#straintensor_prg_example">Example</a> section:
         <pre id="block-code"><code>$> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c</code></pre>
@@ -406,7 +407,7 @@
 	  <ul>
 	    <li><b>strain_info.dat</b> This file includes strain tensor parameters, principal axis, rotational rates, dilatation etc.<br>The columns of the file are structured as below:</li>
 		 <pre id="block-samp"><samp>
-Latitude Longtitude vx+dvx  vy+dvy   w+dw     exx+dexx    exy+dexy    eyy+deyy   emax+demax  emin+demin   shr+dshr  azi+dazi  dilat+ddilat   sec. invariant 
+Latitude Longtitude vx+dvx  vy+dvy   w+dw     exx+dexx    exy+dexy    eyy+deyy   emax+demax  emin+demin   shr+dshr  azi+dazi  dilat+ddilat   sec.inv+dsec.inv 
    deg       deg     mm/yr   mm/yr  deg/Myr   nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr  nstrain/yr    deg.    nstrain/yr    nstrain/yr</samp></pre>
 	    <li><b>station_info.dat</b> Station's data used for the calculation of strain tensor are written at this file. Format is: </li>
                  <pre id="block-samp"><samp>
