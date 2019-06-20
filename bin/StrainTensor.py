@@ -79,7 +79,7 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
-def compute__(grd, sta_list_utm, utmzone, fout, fstats, **dargs):
+def compute__(grd, sta_list_utm, utmzone, fout, fstats, vprint_fun, **dargs):
     """ Function to perform the bulk of a Strain Tensor estimation.
         For each of the grid cells, a ShenStrain object will be created, using
         the list of stations and the **dargs options.
@@ -95,6 +95,12 @@ def compute__(grd, sta_list_utm, utmzone, fout, fstats, **dargs):
                                   (aka strain information) are to be written
             fstats (output stream): An (open) output stream where estimation
                                   statistics are written
+            vprint_fun (function) : A function that handles printing. Based on
+                                  user options we may want or not to print
+                                  verbose information. This function does exactly
+                                  that. Normally, this function is just the
+                                  normal print function or a no-opt, see vprint(...)
+                                  defined in __main__
             **dargs (dictionary)  : A list of parameters to use when constructing
                                   the individual Strain Tensors
 
@@ -110,7 +116,7 @@ def compute__(grd, sta_list_utm, utmzone, fout, fstats, **dargs):
         clat, clon =  radians(y), radians(x)
         N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utmzone)
         assert ZN == utmzone
-        vprint('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(
+        vprint_fun('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(
             x, y, E, N))
         if not dargs['multiproc_mode']:
             print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
@@ -120,16 +126,16 @@ def compute__(grd, sta_list_utm, utmzone, fout, fstats, **dargs):
         if degrees(max(sstr.beta_angles())) <= dargs['max_beta_angle']:
             try:
                 sstr.estimate()
-                vprint('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
+                vprint_fun('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
                 sstr.print_details_v2(fout, utmzone)
                 if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
                 nodes_estim += 1
             except RuntimeError:
-                vprint('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
+                vprint_fun('[DEBUG] Too few observations to estimate strain at {:+8.4f}, {:8.4f}. Point skipped.'.format(x,y))
             except ArithmeticError:
-                vprint('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
+                vprint_fun('[DEBUG] Failed to compute parameter VcV matrix for strain at {:+8.4f}, {:8.4f}. Point skipped'.format(x,y))
         else:
-            vprint('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
+            vprint_fun('[DEBUG] Skipping computation at {:+8.4f},{:8.4f} because of limited coverage (max_beta= {:6.2f}deg.)'.format(x, y, degrees(max(sstr.beta_angles()))))
         node_nr += 1
     print('[DEBUG] Estimated Strain Tensors for {} out of {} nodes'.format(nodes_estim, node_nr))
     fout.close()
@@ -453,10 +459,10 @@ if __name__ == '__main__':
             else:
                 fstats1 = fstats2 = fstats3 = fstats4 = None
             print('[DEBUG] Estimating strain tensors in multi-threading mode')
-            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, utm_zone, fout1, fstats1,), kwargs=dargs)
-            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, utm_zone, fout2, fstats2,), kwargs=dargs)
-            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, utm_zone, fout3, fstats3,), kwargs=dargs)
-            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, utm_zone, fout4, fstats4,), kwargs=dargs)
+            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, utm_zone, fout1, fstats1, vprint), kwargs=dargs)
+            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, utm_zone, fout2, fstats2, vprint), kwargs=dargs)
+            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, utm_zone, fout3, fstats3, vprint), kwargs=dargs)
+            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, utm_zone, fout4, fstats4, vprint), kwargs=dargs)
             [ p.start() for p in [p1, p2, p3, p4]]
             [ p.join()  for p in [p1, p2, p3, p4]]
             ##  Note that fout? and fstats? are now closed! We need to
@@ -474,7 +480,7 @@ if __name__ == '__main__':
                         os.remove(".sta.thread"+str(fnr))
            
         else:
-            compute__(grd, sta_list_utm, utm_zone, fout, fstats, **dargs)
+            compute__(grd, sta_list_utm, utm_zone, fout, fstats, vprint, **dargs)
     else:
         ##  Using veis method. Compute delaunay triangles and estimate one tensor
         ##+ per triangle centre
