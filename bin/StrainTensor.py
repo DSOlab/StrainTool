@@ -314,6 +314,12 @@ if __name__ == '__main__':
                 cpu_count))
         else:
             print("[DEBUG] Multithreading is only available when using shen method; ignoring the \"--multicore\" switch!")
+    
+	## import dill module for windows multithreading processing
+    if args.multiproc_mode and os.name == 'nt':
+        print("[DEBUG] Import dill module for windows multithreading processing")
+        import dill
+        
 
     ## If needed, open a file to write model info and statistics
     fstats = open(STATISTICS_FILE, 'w') if args.generate_stats else None
@@ -465,6 +471,13 @@ if __name__ == '__main__':
             p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, utm_zone, fout4, fstats4, vprint), kwargs=dargs)
             [ p.start() for p in [p1, p2, p3, p4]]
             [ p.join()  for p in [p1, p2, p3, p4]]
+            for fl in [fout1, fout2, fout3, fout4]:
+                if not fl.closed:
+                    fl.close()
+            if fstats:
+                for fl in [fstats1, fstats2, fstats3, fstats4]:
+                    if not fl.closed:
+                        fl.close()
             ##  Note that fout? and fstats? are now closed! We need to
             ##+ concatenate the files though.
             with open(STRAIN_OUT_FILE, 'a') as fout:
