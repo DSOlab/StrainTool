@@ -16,7 +16,7 @@ from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 import pystrain.grid
 
-Version = 'StrainTensor.py Version: 1.0-rc5.1'
+Version = 'StrainTensor.py Version: 1.0'
 STRAIN_OUT_FILE = 'strain_info.dat'
 STATISTICS_FILE = 'strain_stats.dat'
 
@@ -156,7 +156,7 @@ parser = argparse.ArgumentParser(
     Dionysos Satellite Observatory\n
 Send bug reports to:
   Xanthos Papanikolaou, xanthos@mail.ntua.gr
-  Demitris Anastasiou,danast@mail.ntua.gr
+  Dimitris Anastasiou,danast@mail.ntua.gr
 November, 2017'''))
 
 parser.add_argument('-i', '--input-file',

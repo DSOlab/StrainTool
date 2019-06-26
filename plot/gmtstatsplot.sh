@@ -11,9 +11,9 @@
 #
 #    filename       : gmtstatsnplot.sh
 #                     NAME=gmtstrainplot
-#    version        : v-1.0
-#                     VERSION=v1.0
-#                     RELEASE=rc5.1
+#    version        : 1.0
+#                     VERSION=1.0
+#                     RELEASE=1.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -239,7 +239,7 @@ check_region() {
 function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : gmtstatplot.sh"
-	echo " Version : v-1.0"
+	echo " Version : 1.0"
 	echo " Purpose : Plot statistics generated from straintool"
 	echo " Usage   : gmtstatsplot.sh -stats [input] --stats-<option> -o [output]"
 	echo " Switches: "
@@ -283,7 +283,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc5.1"
+VERSION="gmtstatsplot - v1.0"
 
 # system's Python version
 PYV=99
