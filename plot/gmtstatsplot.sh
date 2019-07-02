@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# program version
+VERSION="gmtstatsplot - v1.0"
+
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
 #
@@ -239,7 +242,7 @@ check_region() {
 function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : gmtstatplot.sh"
-	echo " Version : 1.0"
+	echo " Version : ${VERSION}"
 	echo " Purpose : Plot statistics generated from straintool"
 	echo " Usage   : gmtstatsplot.sh -stats [input] --stats-<option> -o [output]"
 	echo " Switches: "
@@ -281,9 +284,6 @@ set -o pipefail
 
 # //////////////////////////////////////////////////////////////////////////////
 # pre define parameters
-
-# program version
-VERSION="gmtstatsplot - v1.0"
 
 # system's Python version
 PYV=99
