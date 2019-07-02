@@ -1,7 +1,25 @@
 # Change Log
 
-## [v1.0-rc5.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc5.0) (2019-06-05)
+## [v1.0](https://github.com/DSOlab/StrainTool/tree/v1.0) (2019-07-02)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc4.0...v1.0-rc5.0)
 
+**Implemented enhancements:**
+
+- strain.py: calculate sd of second invariant [\#55](https://github.com/DSOlab/StrainTool/issues/55)
+- method Veis: check and readme [\#49](https://github.com/DSOlab/StrainTool/issues/49)
+- code commenting [\#40](https://github.com/DSOlab/StrainTool/issues/40)
+- gmtplots: plot statistics [\#31](https://github.com/DSOlab/StrainTool/issues/31)
+- Output files [\#6](https://github.com/DSOlab/StrainTool/issues/6)
+- Dev danast [\#61](https://github.com/DSOlab/StrainTool/pull/61) ([demanasta](https://github.com/demanasta))
+- multithreading  [\#58](https://github.com/DSOlab/StrainTool/pull/58) ([demanasta](https://github.com/demanasta))
+
+**Fixed bugs:**
+
+- Multithreading is different between Linux and Windows [\#59](https://github.com/DSOlab/StrainTool/issues/59)
+- gmtplots: plot statistics [\#31](https://github.com/DSOlab/StrainTool/issues/31)
+- multithreading  [\#58](https://github.com/DSOlab/StrainTool/pull/58) ([demanasta](https://github.com/demanasta))
+
+## [v1.0-rc5.0](https://github.com/DSOlab/StrainTool/tree/v1.0-rc5.0) (2019-06-05)
 [Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc4.0...v1.0-rc5.0)
 
 **Implemented enhancements:**
