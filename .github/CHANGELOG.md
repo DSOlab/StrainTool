@@ -1,7 +1,7 @@
 # Change Log
 
 ## [v1.0](https://github.com/DSOlab/StrainTool/tree/v1.0) (2019-07-02)
-[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc4.0...v1.0-rc5.0)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-rc5.0...v1.0)
 
 **Implemented enhancements:**
 
@@ -10,6 +10,7 @@
 - code commenting [\#40](https://github.com/DSOlab/StrainTool/issues/40)
 - gmtplots: plot statistics [\#31](https://github.com/DSOlab/StrainTool/issues/31)
 - Output files [\#6](https://github.com/DSOlab/StrainTool/issues/6)
+- remove tmp data [\#62](https://github.com/DSOlab/StrainTool/pull/62) ([demanasta](https://github.com/demanasta))
 - Dev danast [\#61](https://github.com/DSOlab/StrainTool/pull/61) ([demanasta](https://github.com/demanasta))
 - multithreading  [\#58](https://github.com/DSOlab/StrainTool/pull/58) ([demanasta](https://github.com/demanasta))
 
