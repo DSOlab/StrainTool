@@ -34,7 +34,7 @@ VERSION="plotall - v1.0"
 function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : plotall.sh"
-	echo " Version : 1.0"
+	echo " Version : ${VERSION}"
 	echo " Purpose : Plot alla available maps using prefix/suffix work id"
 	echo " Usage   : plotall.sh "
 	echo " Switches: "

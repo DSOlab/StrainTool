@@ -17,6 +17,7 @@ hs_err_pid*
 # Setuptools distribution folder.
 dist/
 build/
+_build/
 
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
