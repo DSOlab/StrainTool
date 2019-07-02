@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # program version
-VERSION="v.1.0-rc4.0"
+VERSION="plotall - v1.0"
 # //////////////////////////////////////////////////////////////////////////////
 # ==============================================================================
 #
@@ -12,9 +12,9 @@ VERSION="v.1.0-rc4.0"
 #
 #    filename       : plotall.sh
 #                     NAME=plotall
-#    version        : v-1.0
-#                     VERSION=v1.0
-#                     RELEASE=rc4.0
+#    version        : 1.0
+#                     VERSION=1.0
+#                     RELEASE=1.0
 #    licence        : MIT
 #    created        : SEP-2018
 #    usage          :
@@ -34,7 +34,7 @@ VERSION="v.1.0-rc4.0"
 function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : plotall.sh"
-	echo " Version : v-1.0"
+	echo " Version : 1.0"
 	echo " Purpose : Plot alla available maps using prefix/suffix work id"
 	echo " Usage   : plotall.sh "
 	echo " Switches: "

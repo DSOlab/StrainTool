@@ -22,7 +22,7 @@
 **Implemented enhancements:**
 
 - rotational units [\#33](https://github.com/DSOlab/StrainTool/issues/33)
-- Dev danast [\#51](https://github.com/DSOlab/StrainTool/pull/51) ([demanasta](https://github.com/demanasta))
+- Dev danast [\#51](https://github.com/DSOlab/StrainTool/pull/51) ([demanasta](https://github.com/demamaster
 - Issue33 [\#45](https://github.com/DSOlab/StrainTool/pull/45) ([demanasta](https://github.com/demanasta))
 
 **Fixed bugs:**

@@ -11,9 +11,9 @@
 #
 #    filename       : gmtstatsnplot.sh
 #                     NAME=gmtstrainplot
-#    version        : v-1.0
-#                     VERSION=v1.0
-#                     RELEASE=rc4.2
+#    version        : 1.0
+#                     VERSION=1.0
+#                     RELEASE=1.0
 #    licence        : MIT
 #    created        : JUL-2018
 #    usage          :
@@ -25,7 +25,7 @@
 #    discription    : 
 #    uses           : 
 #    notes          :
-#    update list    : LAST_UPDATE=DEC-2018
+#    update list    : LAST_UPDATE=JUN-2019
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
 #                     Xanthos Papanikolaou (xanthos@mail.ntua.gr)
 #    ----------------------------------------------------------------------
@@ -239,7 +239,7 @@ check_region() {
 function help {
 	echo "/*****************************************************************/"
 	echo " Program Name : gmtstatplot.sh"
-	echo " Version : v-1.0"
+	echo " Version : 1.0"
 	echo " Purpose : Plot statistics generated from straintool"
 	echo " Usage   : gmtstatsplot.sh -stats [input] --stats-<option> -o [output]"
 	echo " Switches: "
@@ -283,7 +283,7 @@ set -o pipefail
 # pre define parameters
 
 # program version
-VERSION="v.1.0-rc4.2"
+VERSION="gmtstatsplot - v1.0"
 
 # system's Python version
 PYV=99
@@ -577,7 +577,7 @@ fi
 if [ "$STATS_STATIONS" -eq 1 ]
 then
   echo "...plot stations used for each grid cell..."
-  awk 'NR > 24 {print $1,$2,$3}' $pth2stats > tmpstations
+  awk 'NR > 25 {print $1,$2,$3}' $pth2stats > tmpstations
   # find min max and create cpt file
   T=`awk '{print $3}' tmpstations | gmt info -Eh `
   # set variables for scale
@@ -615,7 +615,7 @@ fi
 if [ "$STATS_DOPTIMAL" -eq 1 ]
 then
   echo "...plot optimal distance D for each grid cell..."
-  awk 'NR > 24 {print $1,$2,$4}' $pth2stats > tmpdoptimal
+  awk 'NR > 25 {print $1,$2,$4}' $pth2stats > tmpdoptimal
 # find min max and create cpt file
   T=`awk '{print $3}' tmpdoptimal | gmt info -Eh `
 
@@ -654,7 +654,7 @@ fi
 if [ "$STATS_SIGMA" -eq 1 ]
 then
   echo "...plot sigm estimated for each grid cell..."
-  awk 'NR > 24 {print $1,$2,$6}' $pth2stats > tmpsigma
+  awk 'NR > 25 {print $1,$2,$6}' $pth2stats > tmpsigma
   # find min max and create cpt file
   T=`awk '{print $3}' tmpsigma | gmt info -Eh `
   Tmax=$(pythonc "print(round(${T},3)+.001)")
