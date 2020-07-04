@@ -333,7 +333,12 @@ if __name__ == '__main__':
         print('[ERROR] Cannot find input file \'{}\'.'.format(
             args.gps_file), file=sys.stderr)
         sys.exit(1)
-    sta_list_ell = parse_ascii_input(args.gps_file)
+    try:
+        sta_list_ell = parse_ascii_input(args.gps_file, args.method=='shen')
+    except ValueError as err:
+        print(err)
+        print('[ERROR] Failed to parse input file: \"{:}\"'.format(args.gps_file))
+        sys.exit(1)
     print('[DEBUG] Reading station coordinates and velocities from {}'.format(
         args.gps_file))
     print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
