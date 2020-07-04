@@ -170,7 +170,7 @@ Station coordinates are provided in longtitude/latitude pairs in decimal degrees
 
 There are no strict formating rules on how the individual elements should be printed (i.e. how many fields, decimal places, etc). The only condition is that fields are seperated by whitespace(s). To see an example of a valid input file, you can check `data/CNRS_midas.vel`.
 
-Note that when using the Shen method (aka --method='shen'), standard deviation values for north and east velocities (SigmaVe and SigmaVn) cannot be zero (see #65).
+Note that when using the Shen method (aka --method='shen'), standard deviation values for north and east velocities (SigmaVe and SigmaVn) cannot be zero (see [#65](https://github.com/DSOlab/StrainTool/issues/65)).
 
 ## Output Files
 
