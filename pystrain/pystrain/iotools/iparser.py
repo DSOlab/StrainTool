@@ -31,6 +31,12 @@ def parse_ascii_input(filename, zero_std_is_error=False):
       nSta=Station(line)
       if zero_std_is_error and (nSta.sn==0e0 or nSta.se==0e0):
         raise ValueError('[ERROR] Zero std. deviation not allowed! station is: {:}'.format(nSta.name))
+      ## check that the station is not a duplicate
+      for sta in stations:
+        if sta.name == nSta.name:
+          raise ValueError('[ERROR] Duplicate record found in input file for station {:}'.format(sta.name))
+        if sta.lat==nSta.lat and sta.lon==nSta.lon:
+          raise ValueError('[ERROR] Exact coordinate match for stations {:} and {:}. Possible duplicate!'.format(sta.name, nSta.name))
       stations.append(nSta)
   if len(stations):
     return stations
