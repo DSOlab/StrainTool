@@ -71,10 +71,9 @@ class Station:
         '''
         self.set_none()
 
-        if len(args) is not 0:
-            self.init_from_ascii_line(args[0])
+        if len(args) != 0: self.init_from_ascii_line(args[0])
 
-        if len(kargs) is not 0:
+        if len(kargs) != 0:
             for key, val in kargs.items():
                 if key in station_member_names:
                     setattr(self, key, val)
