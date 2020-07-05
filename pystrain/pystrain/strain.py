@@ -967,7 +967,7 @@ class ShenStrain:
         """
         ##  If we are using Shen's weighting sheme, the find D, lweights and
         ##+ zweights.
-        if self.__options__['weighting_function'] is 'shen':
+        if self.__options__['weighting_function'] == 'shen':
             if not self.__options__['d_coef']:
                 self.vprint('[DEBUG] Searching for optimal D parameter.')
                 if self.__options__['dmin'] >= self.__options__['dmax'] or self.__options__['dstep'] < 0:
