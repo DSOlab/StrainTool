@@ -16,7 +16,7 @@ from pystrain.geodesy.utm import *
 from pystrain.iotools.iparser import *
 import pystrain.grid
 
-Version = 'StrainTensor.py Version: 1.0'
+Version = 'StrainTensor.py Version: 1.0-r1'
 STRAIN_OUT_FILE = 'strain_info.dat'
 STATISTICS_FILE = 'strain_stats.dat'
 
