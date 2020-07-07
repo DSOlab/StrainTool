@@ -27,9 +27,9 @@ before_script:
  
 install:
  - sudo python pystrain/setup.py install
- - pip install -r test/requirements.txt
+# - pip install -r test/requirements.txt
 
 script:
- - bin/StrainTensor.py -i data/CNRS_midas.vel -r=18/30/34/43 -c
+# - bin/StrainTensor.py -i data/CNRS_midas.vel -r=18/30/34/43 -c
  
 after_script: cd ~
