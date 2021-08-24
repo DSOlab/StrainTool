@@ -79,8 +79,7 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
-#def compute__(grid, sta_list_utm, utmzone, fout, fstats, vprint_fun, **dargs):
-def compute__(grid, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
+def compute__(igrd, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
     """ Function to perform the bulk of a Strain Tensor estimation.
         For each of the grid cells, a ShenStrain object will be created, using
         the list of stations and the **dargs options.
@@ -112,9 +111,11 @@ def compute__(grid, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
             not flushed before returning or something). Anyway, always close the 
             streams before exiting.
     """
+    #print('--> Thread given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(igrd.x_min, igrd.x_max, igrd.x_step, igrd.y_min, igrd.y_max, igrd.y_step))
     node_nr, nodes_estim = 0, 0
-    for x, y in grd:
+    for x, y in igrd:
         clat, clon =  radians(y), radians(x)
+        #print('--> computing tensor at lon {:}, lat {:}'.format(x, y))
         N, E, ZN, lcm = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_lcm)
         #assert ZN == utmzone
         assert utm_lcm == lcm
@@ -462,6 +463,7 @@ if __name__ == '__main__':
         ##+ coordinates in lon/lat pairs, in degrees!
         if args.multiproc_mode:
             grd1, grd2, grd3, grd4 = grd.split2four()
+            print('--> grid split to four!')
             fout1=open(".out.thread1", "w")
             fout2=open(".out.thread2", "w")
             fout3=open(".out.thread3", "w")
@@ -474,6 +476,10 @@ if __name__ == '__main__':
             else:
                 fstats1 = fstats2 = fstats3 = fstats4 = None
             print('[DEBUG] Estimating strain tensors in multi-threading mode')
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd1.x_min, grd1.x_max, grd1.x_step, grd1.y_min, grd1.y_max, grd1.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd2.x_min, grd2.x_max, grd2.x_step, grd2.y_min, grd2.y_max, grd2.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd3.x_min, grd3.x_max, grd3.x_step, grd3.y_min, grd3.y_max, grd3.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd4.x_min, grd4.x_max, grd4.x_step, grd4.y_min, grd4.y_max, grd4.y_step))
             p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, lcm, fout1, fstats1, vprint), kwargs=dargs)
             p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, lcm, fout2, fstats2, vprint), kwargs=dargs)
             p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, lcm, fout3, fstats3, vprint), kwargs=dargs)

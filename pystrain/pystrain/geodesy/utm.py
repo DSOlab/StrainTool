@@ -5,6 +5,8 @@ from __future__ import print_function
 from pystrain.geodesy.ellipsoid import Ellipsoid
 import math
 
+MAX_UTM_ITERATIONS = 100
+
 def dd2dms(dd):
     ''' Decimal degrees to hexicondal degrees.
         
@@ -69,7 +71,8 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
     ko   = 0.9996e0    # UTM scale factor
     lat1 = N/ko/a
     dlat = 1e0
-    while abs(dlat) > 1e-12:
+    iterations = 0
+    while abs(dlat) > 1e-12 and iterations < MAX_UTM_ITERATIONS:
         A0=1e0-(e2/4e0)-(e22*3e0/64e0)-(e23*5e0/256e0)-(e24*175e0/16384e0)
         A2=(3e0/8e0)*( e2+(e22/4e0)+(e23*15e0/128e0)-(e24*455e0/4096e0) )
         A4=(15e0/256e0)*( e22+(e23*3e0/4e0)-(e24*77e0/128e0) )
@@ -79,6 +82,9 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
         f2=a*( A0-2e0*A2*math.cos(2e0*lat1)+4e0*A4*math.cos(4e0*lat1)-6e0*A6*math.cos(6e0*lat1)+8e0*A8*math.cos(8e0*lat1) )
         dlat=-f1/f2
         lat1=lat1+dlat
+        iterations += 1
+    if iterations >= MAX_UTM_ITERATIONS:
+      raise RuntimeError('[ERROR] utm2ell failed to converge after 100 iterations')
     RN  = ell.N(lat1)
     RM  = ell.M(lat1)
     h2  = e2*pow(math.cos(lat1),2e0)/(1e0-e2)

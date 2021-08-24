@@ -807,7 +807,7 @@ class ShenStrain:
                 matrix), then the sigmas will be printed as '-'
         """
         if utm_lcm:
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__) ]
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
@@ -843,7 +843,7 @@ class ShenStrain:
     def print_details_v2(self, fout, utm_lcm=None):
         if utm_lcm:
             #cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__) ]
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
