@@ -527,7 +527,7 @@ if __name__ == '__main__':
             ##+ 3 points (in UTM) and equal_weights weighting scheme.
             sstr = ShenStrain(cx, cy, cy<0e0, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
             sstr.estimate()
-            sstr.print_details(fout, utm_lcm)
+            sstr.print_details(fout, lcm)
             ## Print the triangle in the corresponding file (ellipsoidal crd, degrees)
             print('> {:}, {:}, {:}'.format(sta_list_utm[trng[0]].name, sta_list_utm[trng[1]].name, sta_list_utm[trng[2]].name), file=dlnout)
             print('{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}'.format(*[ degrees(x) for x in [sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat, sta_list_ell[trng[1]].lon, sta_list_ell[trng[1]].lat, sta_list_ell[trng[2]].lon, sta_list_ell[trng[2]].lat, sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat]]), file=dlnout)
