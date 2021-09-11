@@ -15,7 +15,7 @@ python:
 
 matrix:
   include:
-    - python: 3.6
+    - python: 2.7
       dist: trusty
      #sudo: required
       virtualenv:
