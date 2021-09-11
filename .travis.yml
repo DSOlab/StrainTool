@@ -2,7 +2,6 @@ language: python
 notifications:
   email: false
 sudo: true
-language: python
 python:
   - "2.7"
 #  - "3.4"
@@ -19,11 +18,11 @@ matrix:
       #sudo: required
       virtualenv:
         system_site_packages: true
-      addons:
-        apt:
-          packages:
-            - python-numpy
-            - python-scipy
+#      addons:
+#        apt:
+#          packages:
+#            - python-numpy
+#            - python-scipy
 before_script:
 # - export PYTHONPATH=$PYTHONPATH:/home/travis/virtualenv/python2.7_with_system_site_packages/local/lib/python2.7/site-packages
  - export PYTHONPATH=$PYTHONPATH:$(pwd)
