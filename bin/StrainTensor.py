@@ -160,8 +160,8 @@ parser = argparse.ArgumentParser(
     Dionysos Satellite Observatory\n
 Send bug reports to:
   Xanthos Papanikolaou, xanthos@mail.ntua.gr
-  Dimitris Anastasiou,danast@mail.ntua.gr
-November, 2017'''))
+  Dimitris Anastasiou,dganastasiou@gmail.com
+September, 2021'''))
 
 parser.add_argument('-i', '--input-file',
     default=argparse.SUPPRESS,
