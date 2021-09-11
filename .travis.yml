@@ -3,10 +3,10 @@ notifications:
   email: false
 sudo: true
 python:
-  - "2.7"
+#  - "2.7"
 #  - "3.4"
 #  - "3.5"
-  - "3.6"      # current default Python on Travis CI
+#  - "3.6"      # current default Python on Travis CI
 #  - "3.7"
 #  - "3.8"
 #  - "3.9"
@@ -15,15 +15,17 @@ python:
 
 matrix:
   include:
-    - dist: trusty
+    - python: 2.7
+      dist: trusty
       sudo: required
       virtualenv:
         system_site_packages: true
-#      addons:
-#        apt:
-#          packages:
-#            - python-numpy
-#            - python-scipy
+      addons:
+        apt:
+          packages:
+            - python-numpy
+            - python-scipy
+
 
 before_script:
 # - export PYTHONPATH=$PYTHONPATH:/home/travis/virtualenv/python2.7_with_system_site_packages/local/lib/python2.7/site-packages
