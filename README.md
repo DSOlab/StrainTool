@@ -78,12 +78,12 @@ That's it! The package modules should now be in place and you should be able to 
 
 The following scenarios have been tested to validate the installation procedure
 
-|    OS      |Python 2.7 | Python 3.6 | GMT 5.2 | GMT 5.4
-|:----------:|:------------------:|:------------------:|:------------------:|:------------------:|
-| Fedora     | :white_check_mark: |                    | :white_check_mark: |                   |
-| Manjaro    |                    | :white_check_mark: | :white_check_mark: |                   |
-| Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Windows 10 | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+|    OS      |Python 2.7 | Python 3.6 | Python 3.9 | GMT 5.2 | GMT 5.4 | GMT 6.0
+|:----------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|
+| Fedora     | :white_check_mark: |                    |                    | :white_check_mark: |                    |                    |
+| Manjaro    |                    | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: |
+| Ubuntu     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Windows 10 | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 
 ## Example

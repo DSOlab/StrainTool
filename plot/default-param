@@ -16,12 +16,12 @@ PAPER_SIZE="30cx30c" # width x height
 
 # //////////////////////////////////////////////////////////////////////////////
 # Set default REGION 
-west=17 #19.5
-east=30 #29
-south=34
-north=43 #42
-projscale=6000000
-frame=1
+west=25
+east=50
+south=-30
+north=22
+projscale=20000000
+frame=2
 
 # length of plot scale (Km)
 sclength=100

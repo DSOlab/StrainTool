@@ -81,7 +81,7 @@ class ShenStrain:
             d = sqrt((__stalst__[i].lon - __xcmp__)^2 + (__stalst__[i].lat - __ycmp__)^2)
     """
 
-    def __init__(self, x=0e0, y=0e0, station_list=[], **kwargs):
+    def __init__(self, x=0e0, y=0e0, in_southern_hemisphere=False, station_list=[], **kwargs):
         """ ShenStrain constructor.
 
             Args:
@@ -115,6 +115,7 @@ class ShenStrain:
         self.__stalst__ = station_list
         self.__xcmp__   = x
         self.__ycmp__   = y
+        self.__in_shemisphere__ = in_southern_hemisphere
         self.__zweights__ = None
         self.__lweights__ = None
         self.__options__  = {
@@ -781,7 +782,7 @@ class ShenStrain:
     def info(self):
         return __strain_info__(self.__parameters__)
 
-    def print_details(self, fout, utm_zone=None):
+    def print_details(self, fout, utm_lcm=None):
         """Print Strain Tensor details
 
             With details, we mean the following parameters:
@@ -805,8 +806,8 @@ class ShenStrain:
                 if the instance's __vcv__ is None (aka we have no var-covar
                 matrix), then the sigmas will be printed as '-'
         """
-        if utm_zone:
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
+        if utm_lcm:
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
@@ -839,9 +840,10 @@ class ShenStrain:
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
             novar, azim, novar, dilat*1e9, novar, sec_inv*1e9, novar), file=fout)
     
-    def print_details_v2(self, fout, utm_zone=None):
-        if utm_zone:
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
+    def print_details_v2(self, fout, utm_lcm=None):
+        if utm_lcm:
+            #cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \

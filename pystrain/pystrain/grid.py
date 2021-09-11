@@ -44,6 +44,10 @@ class Grid:
         g2 = Grid(x2, self.x_max, self.x_step, self.y_min, y2, self.y_step) 
         g3 = Grid(self.x_min, x2, self.x_step, y2, self.y_max, self.y_step)
         g4 = Grid(x2, self.x_max, self.x_step, y2, self.y_max, self.y_step)
+        #print('--> /grd1/: X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(g1.x_min, g1.x_max, g1.x_step, g1.y_min, g1.y_max, g1.y_step))
+        #print('--> /grd2/: X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(g2.x_min, g2.x_max, g2.x_step, g2.y_min, g2.y_max, g2.y_step))
+        #print('--> /grd3/: X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(g3.x_min, g3.x_max, g3.x_step, g3.y_min, g3.y_max, g3.y_step))
+        #print('--> /grd4/: X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(g4.x_min, g4.x_max, g4.x_step, g4.y_min, g4.y_max, g4.y_step))
         return g1, g2, g3, g4
 
     ## TODO write about ceil/floor and [x|y]_max in documentation

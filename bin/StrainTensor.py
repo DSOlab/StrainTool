@@ -79,7 +79,7 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
-def compute__(grd, sta_list_utm, utmzone, fout, fstats, vprint_fun, **dargs):
+def compute__(igrd, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
     """ Function to perform the bulk of a Strain Tensor estimation.
         For each of the grid cells, a ShenStrain object will be created, using
         the list of stations and the **dargs options.
@@ -111,23 +111,27 @@ def compute__(grd, sta_list_utm, utmzone, fout, fstats, vprint_fun, **dargs):
             not flushed before returning or something). Anyway, always close the 
             streams before exiting.
     """
+    #print('--> Thread given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(igrd.x_min, igrd.x_max, igrd.x_step, igrd.y_min, igrd.y_max, igrd.y_step))
     node_nr, nodes_estim = 0, 0
-    for x, y in grd:
+    for x, y in igrd:
         clat, clon =  radians(y), radians(x)
-        N, E, ZN, _ = ell2utm(clat, clon, Ellipsoid("wgs84"), utmzone)
-        assert ZN == utmzone
+        #print('--> computing tensor at lon {:}, lat {:}'.format(x, y))
+        N, E, ZN, lcm = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_lcm)
+        #assert ZN == utmzone
+        assert utm_lcm == lcm
         vprint_fun('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(
             x, y, E, N))
         if not dargs['multiproc_mode']:
             print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
         ## Construct the Strain instance, with all args (from input)
-        sstr = ShenStrain(E, N, sta_list_utm, **dargs)
+        # sstr = ShenStrain(E, N, sta_list_utm, **dargs)
+        sstr = ShenStrain(E, N, clat<0e0, sta_list_utm, **dargs)
         ## check azimouth coverage (aka max β angle)
         if degrees(max(sstr.beta_angles())) <= dargs['max_beta_angle']:
             try:
                 sstr.estimate()
                 vprint_fun('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
-                sstr.print_details_v2(fout, utmzone)
+                sstr.print_details_v2(fout, utm_lcm)
                 if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
                 nodes_estim += 1
             except RuntimeError:
@@ -156,8 +160,8 @@ parser = argparse.ArgumentParser(
     Dionysos Satellite Observatory\n
 Send bug reports to:
   Xanthos Papanikolaou, xanthos@mail.ntua.gr
-  Dimitris Anastasiou,danast@mail.ntua.gr
-November, 2017'''))
+  Dimitris Anastasiou,dganastasiou@gmail.com
+September, 2021'''))
 
 parser.add_argument('-i', '--input-file',
     default=argparse.SUPPRESS,
@@ -405,15 +409,16 @@ if __name__ == '__main__':
     ##  TODO is this mean_lon the optimal?? or should it be the region's mean longtitude
     ##
     mean_lon = degrees(sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell))
-    utm_zone = floor(mean_lon/6)+31
-    utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
-    vprint('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
+    #utm_zone = floor(mean_lon/6)+31
+    #utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
+    lcm = radians(floor(mean_lon))
+    #print('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
     sta_list_utm = deepcopy(sta_list_ell)
     for idx, sta in enumerate(sta_list_utm):
-        N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), utm_zone)
+        N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), lcm)
         sta_list_utm[idx].lon = E
         sta_list_utm[idx].lat = N
-        assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
+        # assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
     vprint('[DEBUG] Station list transformed to UTM.')
 
     ##  Open file to write Strain Tensor estimates; write the header
@@ -426,12 +431,12 @@ if __name__ == '__main__':
     if args.one_tensor:
         print('[DEBUG] Estimating Strain Tensor at region\'s barycentre.')
         if args.method == 'shen':
-            sstr = ShenStrain(0e0, 0e0, sta_list_utm, **dargs)
+            sstr = ShenStrain(0e0, 0e0, False, sta_list_utm, **dargs)
         else:
-            sstr = ShenStrain(0e0, 0e0, sta_list_utm, weighting_function='equal_weights')
+            sstr = ShenStrain(0e0, 0e0, False, sta_list_utm, weighting_function='equal_weights')
         sstr.set_to_barycenter()
         sstr.estimate()
-        sstr.print_details(fout, utm_zone)
+        sstr.print_details(fout, utm_lcm)
         fout.close()
         write_station_info(sta_list_ell)
         print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))      
@@ -458,6 +463,7 @@ if __name__ == '__main__':
         ##+ coordinates in lon/lat pairs, in degrees!
         if args.multiproc_mode:
             grd1, grd2, grd3, grd4 = grd.split2four()
+            print('--> grid split to four!')
             fout1=open(".out.thread1", "w")
             fout2=open(".out.thread2", "w")
             fout3=open(".out.thread3", "w")
@@ -470,10 +476,14 @@ if __name__ == '__main__':
             else:
                 fstats1 = fstats2 = fstats3 = fstats4 = None
             print('[DEBUG] Estimating strain tensors in multi-threading mode')
-            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, utm_zone, fout1, fstats1, vprint), kwargs=dargs)
-            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, utm_zone, fout2, fstats2, vprint), kwargs=dargs)
-            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, utm_zone, fout3, fstats3, vprint), kwargs=dargs)
-            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, utm_zone, fout4, fstats4, vprint), kwargs=dargs)
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd1.x_min, grd1.x_max, grd1.x_step, grd1.y_min, grd1.y_max, grd1.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd2.x_min, grd2.x_max, grd2.x_step, grd2.y_min, grd2.y_max, grd2.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd3.x_min, grd3.x_max, grd3.x_step, grd3.y_min, grd3.y_max, grd3.y_step))
+            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd4.x_min, grd4.x_max, grd4.x_step, grd4.y_min, grd4.y_max, grd4.y_step))
+            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, lcm, fout1, fstats1, vprint), kwargs=dargs)
+            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, lcm, fout2, fstats2, vprint), kwargs=dargs)
+            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, lcm, fout3, fstats3, vprint), kwargs=dargs)
+            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, lcm, fout4, fstats4, vprint), kwargs=dargs)
             [ p.start() for p in [p1, p2, p3, p4]]
             [ p.join()  for p in [p1, p2, p3, p4]]
             for fl in [fout1, fout2, fout3, fout4]:
@@ -498,7 +508,7 @@ if __name__ == '__main__':
                         os.remove(".sta.thread"+str(fnr))
            
         else:
-            compute__(grd, sta_list_utm, utm_zone, fout, fstats, vprint, **dargs)
+            compute__(grd, sta_list_utm, lcm, fout, fstats, vprint, **dargs)
     else:
         ##  Using veis method. Compute delaunay triangles and estimate one tensor
         ##+ per triangle centre
@@ -515,9 +525,9 @@ if __name__ == '__main__':
             cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
             ##  Construct a strain instance, at the triangle's barycentre, with only
             ##+ 3 points (in UTM) and equal_weights weighting scheme.
-            sstr = ShenStrain(cx, cy, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
+            sstr = ShenStrain(cx, cy, cy<0e0, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
             sstr.estimate()
-            sstr.print_details(fout, utm_zone)
+            sstr.print_details(fout, lcm)
             ## Print the triangle in the corresponding file (ellipsoidal crd, degrees)
             print('> {:}, {:}, {:}'.format(sta_list_utm[trng[0]].name, sta_list_utm[trng[1]].name, sta_list_utm[trng[2]].name), file=dlnout)
             print('{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}'.format(*[ degrees(x) for x in [sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat, sta_list_ell[trng[1]].lon, sta_list_ell[trng[1]].lat, sta_list_ell[trng[2]].lon, sta_list_ell[trng[2]].lat, sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat]]), file=dlnout)

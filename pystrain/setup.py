@@ -5,7 +5,7 @@ setuptools.setup(name='pystrain',
       description='Python Strain Tensor estimation tool.',
       url='https://github.com/DSOlab/StrainTool.git',
       author='Xanthos Papanikolaou, Dimitris Anastasiou',
-      author_email='xanthos@mail.ntua.gr, danast@mail.ntua.gr',
+      author_email='xanthos@mail.ntua.gr, dganastasiou@gmail.com',
       packages=setuptools.find_packages(),#['pystrain', 'pystrain.geodesy', 'pystrain.iotools'],
       install_requires=['numpy', 'scipy']
       )
