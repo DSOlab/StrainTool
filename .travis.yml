@@ -7,7 +7,8 @@ python:
 #  - 3.4
 #  - 3.5
 #  - 3.6 
-  - 3.7
+#  - 3.8
+ - 3.9
 matrix:
   include:
     - python: 2.7
@@ -29,7 +30,8 @@ install:
  - python pystrain/setup.py install
 # - pip install -r test/requirements.txt
 
-# script:
-# - bin/StrainTensor.py -i data/CNRS_midas.vel -r=18/30/34/43 -c
+script:
+ - bin/StrainTensor.py --help
+ #- bin/StrainTensor.py -i data/CNRS_midas.vel -r=18/30/34/43 -c
  
 # after_script: cd ~
