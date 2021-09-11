@@ -12,12 +12,9 @@ python:
   - "3.9"
 #  - "3.9-dev"  # 3.9 development branch
 #  - "nightly"  # nightly build
-matrix:
-  include:
-    - dist: trusty
-      #sudo: required
-      virtualenv:
-        system_site_packages: true
+
+virtualenv:
+  system_site_packages: true
 #      addons:
 #        apt:
 #          packages:
