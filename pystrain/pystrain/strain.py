@@ -306,9 +306,9 @@ class ShenStrain:
         N = len(self.__stalst__)*2
         ## number of columns (parameters)
         M = 6
-        ## the weights, i.e. σ0 * W(i)
-        W = sigma0 * self.make_weight_matrix()
-        assert W.shape == (N,1)
+        ## the weights, i.e. σ0 * W(i); collapse matrix to 1d array
+        W = sigma0 * self.make_weight_matrix(True)
+        assert(W.ndim == 1)
         ##  Distances, dx and dy for each station from (cx, cy). Each element
         ##+ of the array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
@@ -329,7 +329,7 @@ class ShenStrain:
         assert i == N, "[DEBUG] Failed to construct ls matrices"
         return A, b
 
-    def make_weight_matrix(self):
+    def make_weight_matrix(self, flatten=False):
         """ Construct the square root of weight matrix W <- P^(1/2)
 
             This function will construct the weight matrix to be used for
@@ -353,6 +353,11 @@ class ShenStrain:
                   w_y = (1/σn) * sqrt(Z(i)*L(i))
             If weighting scheme is 'equal weights', then the function will
             return a weight matrix with all elements equal to 1.
+
+            By default, the function will return W as a 2-DIM matrix (i.e. a 
+            column matrix of size Nx1); if the parameter 'flatten' is set to 
+            true, then the function will return a 'collapsed' 1-DIM version 
+            of the matrix/vector.
 
             Returns:
                 numpy matrix (Nx1): The weight matrix computed, of size 
@@ -387,7 +392,7 @@ class ShenStrain:
             #pass
         else:
             raise RuntimeError("[ERROR] Invalid weighting function option")
-        return W
+        return W if not flatten else W.flatten('C')
 
     def z_weights(self, other_sta_lst=None):
         """ Compute spatial (i.e. azimouthal coverage) weights, accordin to
