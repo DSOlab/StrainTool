@@ -845,10 +845,11 @@ class ShenStrain:
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
             novar, azim, novar, dilat*1e9, novar, sec_inv*1e9, novar), file=fout)
     
-    def print_details_v2(self, fout, utm_lcm=None):
-        if utm_lcm:
+    def print_details_v2(self, fout, utm_zone):
+        if utm_zone:
             #cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
+            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone, Ellipsoid("wgs84")) ]
+            print('-> returning from utm2ell@ShenStrain with cy,cx=({:.3f},{:.3f})'.format(cy,cx))
         else:
             cx, cy = self.__xcmp__,  self.__ycmp__
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \

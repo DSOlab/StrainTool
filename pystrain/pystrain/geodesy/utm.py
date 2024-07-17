@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 from __future__ import print_function
-from pystrain.geodesy.ellipsoid import Ellipsoid
+from pystrain.geodesy.ellipsoid import Ellipsoid, normalize_angle
 import math
 
 MAX_UTM_ITERATIONS = 100
@@ -24,13 +24,20 @@ def dd2dms(dd):
     minsec = dd1 - cdeg
     cmin = int(minsec * 60)
     csec = (minsec % 60) / float(3600)
-    if dd < 0e0: cdeg = cdeg * -1
+    if dd < 0e0: cdeg = cdeg * -1e0
     return cdeg,cmin,csec
 
-def zone2lcm(zone_number):
-  return (zone_number-1)*6-180+3
+def zone2lcm(zone):
+  return math.radians(zone*6-183)
 
-def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphere=False):
+def lcm2zone(lcm):
+    print("_____Given lcm = {:.2f}".format(math.degrees(lcm)))
+    zone = math.ceil( (math.degrees(lcm)+180)/6 )
+    assert(zone>0 and zone <= 60)
+    return zone
+
+# https://www.mathworks.com/matlabcentral/fileexchange/45699-ll2utm-and-utm2ll
+def utm2ell(E, N, zone, ell=Ellipsoid("wgs84")):
     '''UTM to ellipsoidal coordinates.
 
         Convert UTM coordinates (i.e. Easting and Northing) to ellipsoidal
@@ -47,14 +54,10 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
             tuple (float, float): first is latitude and second is longtitude,
                                   both in degrees.
     '''
-    if zone == lcm == None:
-      raise RuntimeError('[ERROR] utm2ell:: need to specify at least zone or non-standard central meridian')
+    lcm = zone2lcm(zone)
 
-    if not lcm:
-        lcm = math.radians(abs(zone)*6-183)
-
-    if southern_hemisphere:
-      N -= 10000000e0
+    #if southern_hemisphere:
+    #  N -= 10000000e0
 
     f   = ell.f
     a   = ell.a
@@ -67,7 +70,6 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
     Eo   = 500000    # False easting
     N    = N-No
     E    = E-Eo
-    # Zone = abs(zone) # Remove negative zone indicator for southern hemisphere
     ko   = 0.9996e0    # UTM scale factor
     lat1 = N/ko/a
     dlat = 1e0
@@ -101,7 +103,7 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
     E2  = pow(E0,3e0)/6e0*(1e0+2e0*t2+h2)
     E3  = pow(E0,5e0)/120e0*(5e0+6e0*h2+28e0*t2-3e0*h22+8e0*t2*h2+24e0*t4-4e0*h23+4e0*t2*h22+24e0*t2*h23)
     E4  = pow(E0,7e0)/5040e0*(61e0 + 662e0*t2 + 1320e0*t4 + 720e0*t6)
-    lon = (1e0/math.cos(lat1))*(E1-E2+E3-E4)+lcm
+    lon = normalize_angle( (1e0/math.cos(lat1))*(E1-E2+E3-E4)+lcm, -180., 180.)
 
     E0 = E/ko
     N1 = (t*pow(E0,2e0))/(2e0*RM*RN)
@@ -109,9 +111,12 @@ def utm2ell(E, N, zone=None, ell=Ellipsoid("wgs84"), lcm=None, southern_hemisphe
     N3 = (t*pow(E0,6e0))/(720e0*RM*pow(RN,5e0))*(61e0-90e0*t2+46e0*h2+45e0*t4-252e0*t2*h2-5e0*h22+100e0*h23-66e0*t2*h22-90e0*t4*h2+88e0*h24+225e0*t4*h22+84e0*t2*h23-192e0*t2*h24)
     N4 = (t*pow(E0,8e0))/(40320e0*RM*pow(RN,7e0))*(1385e0+3633e0*t2+4095e0*t4+1575e0*t6)
     lat= lat1-N1+N2-N3+N4
+
+    assert(lon>=-180 and lon<=180)
+    assert(lat>=-90 and lat<=90)
     return lat, lon
 
-def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), lcm=None):
+def ell2utm(lat, lon, zone, ell=Ellipsoid("wgs84")):
     """Ellipsoidal coordinates to UTM.
 
         Convert ellipsoidal coordinates (actualy longtitude and latitude) to
@@ -130,17 +135,15 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), lcm=None):
             tuple (float, float, int, int): a tuple of type:
                 Northing, Easting, Zone, lcm
     """
+    lon = normalize_angle(lon, -math.pi, math.pi)
+    assert(lat>=-math.pi/2 and lat<=math.pi/2)
+    
     f  = ell.f
     a  = ell.a
     e2 = ell.eccentricity_squared()
 
-    if lcm:
-        Zone = 0
-    else:
-        Zone = floor(math.degrees(lon)/6e0)+31
-        Zone = Zone + int(Zone<=0)*60 - int(Zone>60)*60
-        lcm = math.radians(Zone*6-183)
-    # assert Zone >= 1 and Zone <= 60
+    assert zone >= 1 and zone <= 60
+    lcm = zone2lcm(zone)
 
     if abs(lat) > math.radians(80):
       print('[WARNING] Latitude outside 80N/S limit for UTM')
@@ -196,7 +199,7 @@ def ell2utm(lat, lon, ell=Ellipsoid("wgs84"), lcm=None):
     N5 = pow(lam,8e0)/40320e0*sinlat*pow(coslat,7e0)*(1385e0-311e0*t2+543e0*t4-t6)
     N = No+ko*RN*(N1+N2+N3+N4+N5)
 
-    return N, E, Zone, lcm
+    return N, E
 
 if __name__ == "__main__":
     # lats = [39.010444, -12.0464, -37.8136, 38.7223]
