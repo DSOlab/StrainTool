@@ -22,11 +22,11 @@ VERSION="gmtstatsplot - v1.0"
 #    usage          :
 #    GMT Modules    : gmtset, makecpt, psbasemap, xyz2grd, grdsample, grdimage,
 #                     pscoast, psscale, psxy, pstext, psvelo, psconvert, pscontour
-#    UNIX progs     : awk 
+#    UNIX progs     : awk
 #    exit code(s)   : 0 -> success
 #                   : 1 -> error
-#    discription    : 
-#    uses           : 
+#    discription    :
+#    uses           :
 #    notes          :
 #    update list    : LAST_UPDATE=JUN-2019
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
@@ -39,24 +39,27 @@ VERSION="gmtstatsplot - v1.0"
 ##+ is stored in a variable called "PYV"
 ##
 resolve_py_version() {
-    regex="([1-9])\.[1-9]\.[1-9]+"
-    pyv=$(python -c 'import platform; print(platform.python_version())')
-    if [[ $pyv =~ $regex ]]
+#    regex="([1-9])\.[1-9]\.[1-9]+"
+#    pyv=$(python -c 'import platform; print(platform.python_version())')
+    pyv=$(python -c 'import sys; print(sys.version_info.major)')
+#    if [[ $pyv =~ $regex ]]
+#    then
+#        if test "${BASH_REMATCH[1]}" = 2
+    if [[ ${pyv} -eq 2  ]]
     then
-        if test "${BASH_REMATCH[1]}" = 2
-        then
-            PYV=2
-        elif test "${BASH_REMATCH[1]}" = 3
-        then
-            PYV=3
-        else
-            >&2 echo "[ERROR] Failed to resolve Python version"
-            exit 1
-        fi
+        PYV=2
+#    elif test "${BASH_REMATCH[1]}" = 3
+    elif [[ ${pyv} -eq 3  ]]
+    then
+        PYV=3
     else
         >&2 echo "[ERROR] Failed to resolve Python version"
         exit 1
     fi
+#    else
+#        >&2 echo "[ERROR] Failed to resolve Python version"
+#        exit 1
+#    fi
 }
 ##
 ##  Alias python call! This is actualy an alias to calling: 'python -c'
@@ -88,10 +91,10 @@ pythonc() {
 ##+     * scale_step_r
 ##  Use as: <scalevar_T Tval> where Tvar must be a number (integer or float)
 ##
-scalevar_T() 
+scalevar_T()
 {
     re="^[+-]?[0-9]+([.][0-9]+)?$"
-    if test -z ${1+x} 
+    if test -z ${1+x}
     then
         echo "[ERROR] Must supply cmd arg in scalevar_T" && exit 1
     else
@@ -155,7 +158,7 @@ isNumber() {
 ##
 ##  This function will read in a variable. If (and only if) the variable is
 ##+ in the form "a/b/c/d/e/f" (aka 6 numbers, seperated by '/'), then the
-##+ function will set the global variables: 
+##+ function will set the global variables:
 ##+ west, east, south, north, projscale, frame to the fields of the string;
 ##+ that is west=a, east=b, ..., frame=f
 ##  If the resolution happens successefuly and the variables are assigned,
@@ -183,10 +186,10 @@ isNumber() {
 ##      vars: 1 2e0 3 4 5.0 6
 ##
 resolve_region() {
-#    local ar=$(echo $1 | awk -F"/" '{ 
+#    local ar=$(echo $1 | awk -F"/" '{
 #        if (NF == 6)
-#            print $0 
-#        else 
+#            print $0
+#        else
 #            print "ERROR"
 #    }')
 #    test "$ar" == "ERROR" && return 1
@@ -201,7 +204,7 @@ resolve_region() {
 ##  Check the inputs for the boundary zone that all inuts are ok. That's meean:
 ##  west < east and (east - west) < 360
 ##  -90 <= south < north <= 90
-##  projscale > 0 and frame > 0 
+##  projscale > 0 and frame > 0
 ##
 check_region() {
   ## test south north -90 < south < north < 90
@@ -472,6 +475,7 @@ then
   north_grd=$(cat $pth2stats | awk "/^Longtitude/,0" | tail -n +3 \
   | awk ' {printf "%+0.3f\n", $2}' | gmt info -Eh)
   range_grd="-R${west_grd}/${east_grd}/${south_grd}/${north_grd}"
+  echo ${west_grd}
   # read grid step for each component
   stat_x_grid_step=$(tail -n+4 $pth2stats | grep x_grid_step | awk '{print $3}')
   stat_y_grid_step=$(tail -n+4 $pth2stats | grep y_grid_step | awk '{print $3}')
@@ -480,7 +484,7 @@ then
   east_grd=$(pythonc "print($east_grd + $stat_x_grid_step/2.)")
   south_grd=$(pythonc "print($south_grd - $stat_y_grid_step/2.)")
   north_grd=$(pythonc "print($north_grd + $stat_y_grid_step/2.)")
-  
+
   > .legend
   {
   globFonts="G .5c"
@@ -514,7 +518,7 @@ then
   echo -e "T @_Grid limits@_:\n${globFonts}"
   echo -e "T west / east: ${west_grd} / ${east_grd}\n${globFonts}"
   echo -e "T south / north: ${south_grd} / ${north_grd}\n${globFonts}"
-  
+
   echo -e "T x_grid_step: ${stat_x_grid_step}\n${globFonts}"
   echo -e "T y_grid_step: ${stat_y_grid_step}\n${globFonts}"
   } >> .legend
@@ -551,7 +555,7 @@ gmt gmtset PS_MEDIA ${PAPER_SIZE}
 if [ "$TOPOGRAPHY" -eq 0 ]
 then
   echo "...plot coastlines..."
-  ################## Plot coastlines only ######################	
+  ################## Plot coastlines only ######################
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
 fi
@@ -559,12 +563,12 @@ fi
 # //////////////////////////////////////////////////////////////////////////////
 ### PLOT ONLY STATIONS ITHOUT ANY OTHER PARAMETER
 
-if [ "$PSTA" -eq 1 ] && [ "$STATS" -eq 0 ] 
+if [ "$PSTA" -eq 1 ] && [ "$STATS" -eq 0 ]
 then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -585,7 +589,7 @@ then
   Tmax=$(pythonc "print(int(round(${T},${Tmax_r})+${Tmax_r_marg}))")
   T=`awk '{print $3}' tmpstations | gmt info -El `
   Tmin=$(pythonc "print(int(round(${T},${Tmax_r})-${Tmax_r_marg}))")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt
   gmt xyz2grd tmpstations -Gtmpstations.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpstations.grd -I${istep_grd}m -Gtmpstations_sample.grd -V${VRBLEVM}
   gmt grdimage tmpstations_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -594,14 +598,14 @@ then
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"stations": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -623,7 +627,7 @@ then
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   T=`awk '{print $3}' tmpdoptimal | gmt info -El `
   Tmin=$(pythonc "print(round(${T},${Tmax_r})-${Tmax_r_marg})")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt  
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/${cpt_step} > inx.cpt
   gmt xyz2grd tmpdoptimal -Gtmpdoptimal.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpdoptimal.grd -I${istep_grd}m -Gtmpdoptimal_sample.grd -V${VRBLEVM}
   gmt grdimage tmpdoptimal_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -633,14 +637,14 @@ then
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"km": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -683,8 +687,8 @@ then
 #   fi
   T=`awk '{print $3}' tmpsigma | gmt info -El `
   Tmin=$(pythonc "print(round(${T},3)-.001)")
-  gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt  
-  
+  gmt makecpt -Cjet -T${Tmin}/${Tmax}/.001 > inx.cpt
+
   gmt xyz2grd tmpsigma -Gtmpsigma.grd ${range_grd} -I${istep_grd}m -V${VRBLEVM}
   gmt grdsample tmpsigma.grd -I${istep_grd}m -Gtmpsigma_sample.grd -V${VRBLEVM}
   gmt grdimage tmpsigma_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -694,14 +698,14 @@ then
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"sigma": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -737,7 +741,7 @@ echo "$west $south 9,1,white 0 LB STRAINTOOL for EPOS" \
 if [ "$OUTJPG" -eq 1 ]
 then
   echo "...adjust and convert to JPEG format..."
-  gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM} 
+  gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM}
 fi
 
 # clear all teporary files

@@ -18,7 +18,7 @@ PAPER_SIZE="30cx30c" # width x height
 # Set default REGION 
 west=19
 east=43
-south=34
+south=34 
 north=45
 projscale=8000000
 frame=2

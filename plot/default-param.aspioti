@@ -10,21 +10,21 @@ pth2inptf=../bin/
 outfile=output.ps
 
 # #colormaps
-# landcpt=land_man.cpt
-# bathcpt=bath_man.cpt
+landcpt=land_man.cpt
+bathcpt=bath_man.cpt
 PAPER_SIZE="30cx30c" # width x height
 
 # //////////////////////////////////////////////////////////////////////////////
 # Set default REGION 
-west=19
-east=43
-south=34
-north=45
-projscale=8000000
-frame=2
+west=23 #19 #19.5
+east=24.25 #30 #29
+south=37.5 #34
+north=38.5 #42 #42
+projscale=650000
+frame=0.25
 
 # length of plot scale (Km)
-sclength=100
+sclength=20
 
 logo_pos="BL/.1c/.1c"
 
@@ -35,7 +35,7 @@ vscmagn=20
 VSC=0.05
 
 strscmagn=100
-STRSC=.0080
+STRSC=.0060
 ROTSC=.65
 ROT_wedge_mag=1 #(deg/My)
 # strsclon=20.4 #delete

@@ -25,8 +25,8 @@ VERSION="gmtstrainplot - v1.0"
 #    UNIX progs     : awk, tail
 #    exit code(s)   : 0 -> success
 #                   : 1 -> error
-#    discription    : 
-#    uses           : 
+#    discription    :
+#    uses           :
 #    notes          :
 #    update list    : LAST_UPDATE=JUN-2019
 #    contact        : Dimitris Anastasiou (dganastasiou@gmail.com)
@@ -39,24 +39,27 @@ VERSION="gmtstrainplot - v1.0"
 ##+ is stored in a variable called "PYV"
 ##
 resolve_py_version() {
-    regex="([1-9])\.[1-9]\.[1-9]+"
-    pyv=$(python -c 'import platform; print(platform.python_version())')
-    if [[ $pyv =~ $regex ]]
+#    regex="([1-9])\.[1-9][1-9]\.[1-9]+"
+#    pyv=$(python -c 'import platform; print(platform.python_version())')
+    pyv=$(python -c 'import sys; print(sys.version_info.major)')
+#    if [[ $pyv =~ $regex ]]
+#    then
+#        if test "${BASH_REMATCH[1]}" = 2
+    if [[ ${pyv} -eq 2 ]]
     then
-        if test "${BASH_REMATCH[1]}" = 2
-        then
-            PYV=2
-        elif test "${BASH_REMATCH[1]}" = 3
-        then
-            PYV=3
-        else
-            >&2 echo "[ERROR] Failed to resolve Python version"
-            exit 1
-        fi
+        PYV=2
+#        elif test "${BASH_REMATCH[1]}" = 3
+    elif [[ ${pyv} -eq 3 ]]
+    then
+        PYV=3
     else
         >&2 echo "[ERROR] Failed to resolve Python version"
         exit 1
     fi
+#    else
+#        >&2 echo "[ERROR] Failed to resolve Python version"
+#        exit 1
+#    fi
 }
 ##
 ##  Alias python call! This is actualy an alias to calling: 'python -c'
@@ -89,11 +92,11 @@ pythonc() {
 ##+     * scale_step_r
 ##  Use as: <scalevar_T Tval> where Tvar must be a number (integer or float)
 ##
-scalevar_T() 
+scalevar_T()
 {
     ## make sure function i called with a cmd, which is a number
     re="^[+-]?[0-9]+([.][0-9]+)?$"
-    if test -z ${1+x} 
+    if test -z ${1+x}
     then
         echo "[ERROR] Must supply cmd arg in scalevar_T" && exit 1
     else
@@ -165,7 +168,7 @@ isNumber() {
 ##
 ##  This function will read in a variable. If (and only if) the variable is
 ##+ in the form "a/b/c/d/e/f" (aka 6 numbers, seperated by '/'), then the
-##+ function will set the global variables: 
+##+ function will set the global variables:
 ##+ west, east, south, north, projscale, frame to the fields of the string;
 ##+ that is west=a, east=b, ..., frame=f
 ##  If the resolution happens successefuly and the variables are assigned,
@@ -193,10 +196,10 @@ isNumber() {
 ##      vars: 1 2e0 3 4 5.0 6
 ##
 resolve_region() {
-#    local ar=$(echo $1 | awk -F"/" '{ 
+#    local ar=$(echo $1 | awk -F"/" '{
 #        if (NF == 6)
-#            print $0 
-#        else 
+#            print $0
+#        else
 #            print "ERROR"
 #    }')
 #    test "$ar" == "ERROR" && return 1
@@ -210,7 +213,7 @@ resolve_region() {
 ##  Check the inputs for the boundary zone that all inuts are ok. That's meean:
 ##  west < east and (east - west) < 360
 ##  -90 <= south < north <= 90
-##  projscale > 0 and frame > 0 
+##  projscale > 0 and frame > 0
 ##
 check_region() {
   ## test south north -90 < south < north < 90
@@ -577,7 +580,7 @@ gmt gmtset PS_MEDIA ${PAPER_SIZE}
 if [ "$TOPOGRAPHY" -eq 0 ]  # For v1.0 var $TOPOGRAPHY set only 0
 then
   echo "...plot coastlines..."
-  ################## Plot coastlines only ######################	
+  ################## Plot coastlines only ######################
   gmt	psbasemap $range $proj  -B$frame:."$maptitle": -P -K > $outfile
   gmt	pscoast -R -J -O -K -W0.25 -G225 -Df -Na $scale >> $outfile
 fi
@@ -591,7 +594,7 @@ if [ "$PSTA" -eq 1 ] && [ "$STRAIN" -eq 0 ] && [ "$STRROT" -eq 0 ] && [ "$GTOTAL
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -611,7 +614,7 @@ then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -636,14 +639,14 @@ then
   echo "$velsclon $velsclat ${vscmagn} 0 ${vscmagn_sd} ${vscmagn_sd}  0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0.95/0 -W.5p,black -A.05p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
-  
+
   echo "$velsclon $velsclat ${vscmagn} 0 0 0 0 " \
   | gmt psvelo -R -Jm -Se${VSC}/0/0 -W2p,blue -A10p+e -Gblue \
     -O -K -V${VRBLEVM} >> $outfile
-  
+
   echo "$sclon $velsclat 9,1,black 0 CB ${vscmagn} \261 ${vscmagn_sd} mm/y" \
   | gmt pstext -Jm -R -Dj0c/.5c -F+f+a+j  -O -K -V${VRBLEVM} >> $outfile
-  
+
   sclat=${velsclat}
 #   sclon=${velsclon}
 fi
@@ -660,9 +663,9 @@ then
 # set variables for scale plot
   scalevar_T ${T}
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
-  
+
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
-  
+
   if [ "${GRDDAT}" -eq 0 ]
   then
     gmt pscontour tmpgtot -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
@@ -678,14 +681,14 @@ then
   gmt pscoast -R -J -O -K -W0.25 -Df -Na -V${VRBLEVM}>> $outfile
   gmt psscale -Cinx.cpt -D8/-1.1/10/0.3h -B${scale_step}/:"nstrain/y": -I -S \
       -O -K -V${VRBLEVM}>> $outfile
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -713,7 +716,7 @@ then
   if [ "${GRDDAT}" -eq 0 ]
   then
     gmt pscontour tmpdil -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
-  else 
+  else
     gmt xyz2grd tmpdil -Gtmpdil.grd ${range} -I40m= -V
     gmt grdsample tmpdil.grd -I4s -Gtmpdil_sample.grd -V${VRBLEVM}
     gmt grdimage tmpdil_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -731,7 +734,7 @@ then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -751,14 +754,14 @@ then
   T=`awk '{print $3}' tmp2inv | gmt info -Eh `
 # set variables for scale plot
   scalevar_T ${T}
-  
+
   Tmax=$(pythonc "print(round(${T},${Tmax_r})+${Tmax_r_marg})")
   gmt makecpt -Cjet -T0/${Tmax}/${cpt_step} > inx.cpt
-  
+
   if [ "${GRDDAT}" -eq 0 ]
   then
     gmt pscontour tmp2inv -R -J  -Cinx.cpt -I0.1 -O -K -V${VRBLEVM} >> ${outfile}
-  else 
+  else
     gmt xyz2grd tmp2inv -Gtmp2inv.grd ${range} -I40m= -V
     gmt grdsample tmp2inv.grd -I4s -Gtmp2inv_sample.grd -V${VRBLEVM}
     gmt grdimage tmp2inv_sample.grd ${proj} ${range} -Cinx.cpt -Q \
@@ -776,7 +779,7 @@ then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -795,14 +798,14 @@ then
   then
     gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
   fi
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -815,7 +818,7 @@ then
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A5p+e -Gblue -W1p,blue -O -K -V${VRBLEVM} >> $outfile
   awk 'NR > 2 {print $2,$1,$15,0,$21+90}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sx${STRSC} -L -A5p+e -Gred -W1p,red -O -K -V${VRBLEVM} >> $outfile
-  
+
 # plot scale of strain rates
   tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
   strsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
@@ -829,7 +832,7 @@ then
         -O -K -V${VRBLEVM} >> $outfile
   echo "$strsclon $strsclat 9 0 1 CB ${strscmagn} nstrain/y" \
   | gmt pstext -Jm -R -Dj0c/1c -Gwhite -O -K -V${VRBLEVM} >> $outfile
-  
+
   sclat=${strasclat}
 fi
 
@@ -843,14 +846,14 @@ then
   then
     gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
   fi
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -860,19 +863,19 @@ then
 
 # plot rotational rates
   ROT_wmag_sc=$(pythonc "print(0.206e0/${ROT_wedge_mag})")
-  
+
   awk 'NR > 2 { if ($7 >= 0) print $2,$1,$7,$8}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gred -E255/255/220 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
   awk 'NR > 2 { if ($7 < 0) print $2,$1,$7,$8}' $pth2strinfo \
   | gmt psvelo -Jm $range -Sw${ROTSC}/${ROT_wmag_sc} -Gblue -E255/255/220 -L -A0.02  \
         -O -K -V${VRBLEVM} >> $outfile
-        
+
 # plot scale for rotational rates
   tmp_scrate=$(pythonc "print((${projscale}/150000000.)*20.)")
   rotsclat=$(pythonc "print(${sclat} + ${tmp_scrate})")
   rotsclon=$sclon
-  
+
   ROT_wmagf=$(pythonc "print(${ROT_wedge_mag})")
   ROT_wmagf_sd=$(pythonc "print(${ROT_wedge_mag}/2.)")
   echo "$rotsclon $rotsclat ${ROT_wmagf} ${ROT_wmagf_sd}" \
@@ -883,7 +886,7 @@ then
         -O -K -V${VRBLEVM} >> $outfile
   echo "$rotsclon $rotsclat 9 0 1 CB ${ROT_wmagf} \261 ${ROT_wmagf_sd} \260/Myr" \
   | gmt pstext -Jm -R -Dj0c/-.6c -Gwhite -O -K -V${VRBLEVM} >> $outfile
-  
+
   sclat=${rotsclat}
 fi
 
@@ -897,14 +900,14 @@ then
   then
     gmt psxy ${pth2deltr} -R -J -Wthinner -O -K -V${VRBLEVM} >> $outfile
   fi
-  
+
 # plot stations
   if [ "$PSTA" -eq 1 ]
   then
 
     awk 'NR > 2 {print $2,$3}' $pth2sta  \
     | gmt psxy -R -J -W.1 -Sc.15c -Gyellow -O -K -V${VRBLEVM} >> $outfile
-    
+
     if [ "$LABELS" -eq 1 ]
     then
       awk 'NR > 2 {print $2,$3, "7,1,black", 0, "RB", $1}' $pth2sta \
@@ -913,7 +916,7 @@ then
   fi
 
 # plot strain rates
-  # dextral 
+  # dextral
   awk 'NR > 2 {print $2,$1,0,$19,$21-45+90}' $pth2strinfo \
   | gmt psvelo  -Jm $range -Sx${STRSC} -L -A.1p+e -Gred -W1.5p,red \
         -O -K -V${VRBLEVM} >> $outfile
@@ -963,7 +966,7 @@ if [ "$OUTJPG" -eq 1 ]
 then
   echo "...adjust and convert to JPEG format..."
 #   gs -sDEVICE=jpeg -dJPEGQ=100 -dNOPAUSE -dBATCH -dSAFER -r300 -sOutputFile=test.jpg ${outfile}
-  gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM} 
+  gmt psconvert ${outfile} -A0.2c -Tj -V${VRBLEVM}
 fi
 
 # clear all teporary files
