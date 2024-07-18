@@ -16,3 +16,16 @@ The problem was that the Weight matrix computed via ShenStrain::make_weight_matr
 was a 2DIM matrix (of size Nx1), which did not allow setting the A columns in 
 ShenStrain::ls_matrices() via the line "A[i]   = [ Wx*j for j in [1e0, 0e0,  dx, dy, 0e0, dy] ]". 
 The fix was to flatten out the weight matrix returned by ShenStrain::make_weight_matrix().
+
+
+New:
+------------------------------------------------------------------------------
+Added validation for input coordinates: Longitude should be within range 
+[-180, 180] and Latitude should be within [-90, 90].
+
+Using utm library for performing geodetic to UTM coordinate conversion. 
+See https://github.com/Turbo87/utm
+
+Using unique UTM number & letters for all the region. 
+
+No re-computation of ellipsoidal coordinates on each cell.

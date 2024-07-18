@@ -7,5 +7,5 @@ setuptools.setup(name='pystrain',
       author='Xanthos Papanikolaou, Dimitris Anastasiou',
       author_email='xanthos@mail.ntua.gr, dganastasiou@gmail.com',
       packages=setuptools.find_packages(),#['pystrain', 'pystrain.geodesy', 'pystrain.iotools'],
-      install_requires=['numpy', 'scipy']
+      install_requires=['numpy', 'scipy', 'utm']
       )
