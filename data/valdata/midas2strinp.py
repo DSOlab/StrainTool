@@ -33,12 +33,12 @@ header=['code', 'lon2', 'lat', 've2', 'vn2', 'sve2', 'svn2', 'sne', 'tp' ]
 #data001 = data.query('(lon2 >= 20) & (lon2 <= 44) & (lat >= 34) & (lat <= 45)')
 #data001.to_csv('midas001.vel', columns=header, index=False, header=False, float_format='%.7f', sep=' ')
 
-data002 = data.query('(lon2 > -5 ) & (lon2 <= 5)')
-data002 = data002.query('(lat >= 40) & (lat <= 45)')
-data002.to_csv('midas002.vel', columns=header, index=False, header=False, float_format='%.10f', sep=' ')
+#data002 = data.query('(lon2 > -5 ) & (lon2 <= 5)')
+#data002 = data002.query('(lat >= 40) & (lat <= 45)')
+#data002.to_csv('midas002.vel', columns=header, index=False, header=False, float_format='%.10f', sep=' ')
 
 #data003 = data.query('(lon2 >= 94) & (lon2 <= 104) & (lat >= -4) & (lat <= 6)')
 #data003.to_csv('midas003.vel', columns=header, index=False, header=False, float_format='%.10f', sep=' ')
 
-#data004 = data.query('(lon2 >= 297) & (lon2 <= 312) & (lat >= -40) & (lat <= -30)')
-#data004.to_csv('midas004.vel', columns=header, index=False, header=False, float_format='%.10f', sep=' ')
+data004 = data.query('(lon2 >= -62) & (lon2 <= -50) & (lat >= -40) & (lat <= -30)')
+data004.to_csv('midas004.vel', columns=header, index=False, header=False, float_format='%.10f', sep=' ')
