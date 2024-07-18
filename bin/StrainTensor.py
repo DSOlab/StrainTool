@@ -7,12 +7,12 @@ import os
 import time
 from datetime import datetime
 from copy import deepcopy
-from math import degrees, radians, floor, ceil
+import math
 import numpy
 from scipy.spatial import Delaunay
 import argparse
 from pystrain.strain import *
-from pystrain.geodesy.utm import *
+import pystrain.geodesy.proj as proj
 from pystrain.iotools.iparser import *
 import pystrain.grid
 
@@ -20,7 +20,7 @@ Version = 'StrainTensor.py Version: 1.0-r1'
 STRAIN_OUT_FILE = 'strain_info.dat'
 STATISTICS_FILE = 'strain_stats.dat'
 
-def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
+def crop_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
     """ Filter stations that are located within a rectange. The rectangle is
         +-------+--ymax
         |       |
@@ -32,20 +32,13 @@ def cut_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
             * xmin <= station.lon <= xmax and
             * ymin <= station.lat <= ymax
         If the argument 'sta_list_to_degrees' is set to True, then before
-        comaring, each of the station's lon and lat are transformed to degrees
+        comparing, each of the station's lon and lat are transformed to degrees
         (they are supposed to be in radians).
     """
-    new_sta_lst = []
-    for sta in sta_lst:
-        if sta_list_to_degrees:
-            slon = degrees(sta.lon)
-            slat = degrees(sta.lat)
-        else:
-            slon = sta.lon
-            slat = sta.lat
-        if slon >= xmin and slon <= xmax and slat >= ymin and slat <= ymax:
-            new_sta_lst.append(sta)
-    return new_sta_lst
+    def f(sta):
+        lon, lat = math.degrees(sta.lon),math.degrees(sta.lat) if sta_list_to_degrees else sta.lon, sta.lat
+        return (lon >= xmin and lon <= xmax) and (lat >= ymin and lat <= ymax)
+    return filter(f, sta_lst)
 
 def write_station_info(sta_lst, filename='station_info.dat'):
     """ Write station information to an output file. sta_list if a list of
@@ -79,7 +72,7 @@ def print_model_info(fout, cmd, clargs):
         print('\t{:20s} -> {:}'.format(key, clargs[key]), file=fout)
     return
 
-def compute__(igrd, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
+def compute__(igrd, sta_list_utm, utm_zone, utm_letter, fout, fstats, vprint_fun, **dargs):
     """ Function to perform the bulk of a Strain Tensor estimation.
         For each of the grid cells, a ShenStrain object will be created, using
         the list of stations and the **dargs options.
@@ -111,27 +104,23 @@ def compute__(igrd, sta_list_utm, utm_lcm, fout, fstats, vprint_fun, **dargs):
             not flushed before returning or something). Anyway, always close the 
             streams before exiting.
     """
-    #print('--> Thread given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(igrd.x_min, igrd.x_max, igrd.x_step, igrd.y_min, igrd.y_max, igrd.y_step))
     node_nr, nodes_estim = 0, 0
     for x, y in igrd:
-        clat, clon =  radians(y), radians(x)
-        #print('--> computing tensor at lon {:}, lat {:}'.format(x, y))
-        N, E, ZN, lcm = ell2utm(clat, clon, Ellipsoid("wgs84"), utm_lcm)
-        #assert ZN == utmzone
-        assert utm_lcm == lcm
-        vprint_fun('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:}, N={:}'.format(
+        # center of grid in dec. degrees
+        clat, clon =  y, x
+        E, N = proj.ell2utm_point(math.radians(clon), math.radians(clat), utm_zone, utm_letter)
+        vprint_fun('[DEBUG] Grid point at {:+8.4f}, {:8.4f} or E={:.3f}, N={:.3f}'.format(
             x, y, E, N))
         if not dargs['multiproc_mode']:
             print('[DEBUG] {:5d}/{:7d}'.format(node_nr+1, grd.xpts*grd.ypts), end="\r")
         ## Construct the Strain instance, with all args (from input)
-        # sstr = ShenStrain(E, N, sta_list_utm, **dargs)
-        sstr = ShenStrain(E, N, clat<0e0, sta_list_utm, **dargs)
+        sstr = ShenStrain(E, N, math.radians(clon), math.radians(clat), sta_list_utm, **dargs)
         ## check azimouth coverage (aka max β angle)
         if degrees(max(sstr.beta_angles())) <= dargs['max_beta_angle']:
             try:
                 sstr.estimate()
                 vprint_fun('[DEBUG] Computed tensor at {:+8.4f} {:+8.4f} for node {:3d}/{:3d}'.format(x, y, node_nr+1, grd.xpts*grd.ypts))
-                sstr.print_details_v2(fout, utm_lcm)
+                sstr.print_details_v2(fout)
                 if fstats: print('{:+9.4f} {:+10.4f} {:6d} {:14.2f} {:10.2f} {:12.3f}'.format(x,y,len(sstr.__stalst__), sstr.__options__['d_coef'],sstr.__options__['cutoff_dis'], sstr.__sigma0__), file=fstats)
                 nodes_estim += 1
             except RuntimeError:
@@ -272,6 +261,11 @@ parser.add_argument('-g', '--generate-statistics',
     help='Only relevant when \'--mehod=shen\' and \'--barycenter\' is not set. This option will create an output file, named \'strain_stats.dat\', where estimation info and statistics will be written.',
     action='store_true')
 
+parser.add_argument('--zero-velstd-error',
+    dest='zero_vel_std_is_error',
+    help='Do not allow zero values for velocity std. deviation at input, i.e. all input velocities should have an std. deviation other than zero.',
+    action='store_true')
+
 parser.add_argument('--verbose',
     dest='verbose_mode',
     help='Run in verbose mode (show debugging messages)',
@@ -296,6 +290,14 @@ if __name__ == '__main__':
 
     ##  Time the program (for opt/ing purpose only)
     start_time = time.time()
+
+    ## This is a fix for accepting negative min values for longitude, i.e. 
+    ## accespt a region switch as:
+    ## -r -1/2/3/4
+    ## User an still do --region=-1/2/3/4
+    for i, arg in enumerate(sys.argv):
+        if (arg[0] == '-' and arg[1].isdigit()):
+            sys.argv[i] = ' ' + arg
 
     ##  Parse command line arguments and stack them in a dictionary
     args  = parser.parse_args()
@@ -323,22 +325,21 @@ if __name__ == '__main__':
     if args.multiproc_mode and os.name == 'nt':
         print("[DEBUG] Import dill module for windows multithreading processing")
         import dill
-        
 
     ## If needed, open a file to write model info and statistics
     fstats = open(STATISTICS_FILE, 'w') if args.generate_stats else None
     if fstats: print_model_info(fstats, sys.argv, dargs)
 
-    ##  Parse stations from input file; at input, station coordinates are in decimal
-    ##+ degrees and velocities are in mm/yr.
-    ##  After reading, station coordinates are in radians and velocities are in
-    ##+ m/yr.
+    ##  Parse stations from input file; at input, station coordinates are in 
+    ##  decimal degrees and velocities are in mm/yr.
+    ##  After reading, station coordinates are in radians and velocities are 
+    ##  in m/yr.
     if not os.path.isfile(args.gps_file):
         print('[ERROR] Cannot find input file \'{}\'.'.format(
             args.gps_file), file=sys.stderr)
         sys.exit(1)
     try:
-        sta_list_ell = parse_ascii_input(args.gps_file, args.method=='shen')
+        sta_list_ell = parse_ascii_input(args.gps_file, args.zero_vel_std_is_error)
     except ValueError as err:
         print(err)
         print('[ERROR] Failed to parse input file: \"{:}\"'.format(args.gps_file))
@@ -349,9 +350,10 @@ if __name__ == '__main__':
 
     ##  If a region is passed in, resolve it (from something like 
     ##+ '21.0/23.5/36.0/38.5'). Note that limits are in dec. degrees.
-    ##+ If cutting out-of-limits stations option is set, or method is veis, then 
-    ##+ only keep the stations that fall within it.
-    ##  The region coordinates (min/max pairs) should be given in decimal degrees.
+    ##+ If cutting out-of-limits stations option is set, or method is veis, 
+    ##+ then  only keep the stations that fall within it.
+    ##  The region coordinates (min/max pairs) should be given in decimal 
+    ##+ degrees.
     if 'region' in args:
         try:
             lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
@@ -359,7 +361,7 @@ if __name__ == '__main__':
                 Napr = len(sta_list_ell)
                 #  Note that we have to convert radians to degrees for station 
                 #+ coordinates, hence 'sta_list_to_degrees=True'
-                sta_list_ell = cut_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
+                sta_list_ell = crop_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
                 Npst = len(sta_list_ell)
                 vprint('[DEBUG] Stations filtered to fit input region: {:7.3f}/{:7.3f}/{:7.3f}/{:7.3f}'.format(lonmin, lonmax, latmin, latmax))
                 vprint('[DEBUG] {:4d} out of original {:4d} stations remain to be processed.'.format(Npst, Napr))
@@ -390,9 +392,9 @@ if __name__ == '__main__':
     if 'region' in args and not args.method == 'veis' and not args.cut_outoflim_sta:
         vprint('[DEBUG] Filtering stations based on their distance from region barycentre.')
         Napr = len(sta_list_ell)
-        mean_lon, mean_lat = radians(lonmin+(lonmax-lonmin)/2e0), radians(latmin+(latmax-latmin)/2e0)
+        mean_lon, mean_lat = math.radians(lonmin+(lonmax-lonmin)/2e0), math.radians(latmin+(latmax-latmin)/2e0)
         bc =  Station(lon=mean_lon, lat=mean_lat)
-        endpt = Station(lon=radians(lonmax), lat=radians(latmax))
+        endpt = Station(lon=math.radians(lonmax), lat=math.radians(latmax))
         cutoffdis = abs(endpt.haversine_distance(bc)/1e3) # barycentre to endpoint (km)
         d = 2e0*(args.d_coef if args.d_coef is not None else args.dmax)
         cutoffdis += d * (2.15e0 if args.ltype == 'gaussian' else 10e0) # in km
@@ -405,20 +407,7 @@ if __name__ == '__main__':
     ##+ are in UTM. All points should belong to the same ZONE.
     ##  Note that station ellipsoidal coordinates are in radians while the 
     ##+ cartesian (projection) coordinates are in meters.
-    ##
-    ##  TODO is this mean_lon the optimal?? or should it be the region's mean longtitude
-    ##
-    mean_lon = degrees(sum([ x.lon for x in sta_list_ell ]) / len(sta_list_ell))
-    #utm_zone = floor(mean_lon/6)+31
-    #utm_zone = utm_zone + int(utm_zone<=0)*60 - int(utm_zone>60)*60
-    lcm = radians(floor(mean_lon))
-    #print('[DEBUG] Mean longtitude is {} deg.; using Zone = {} for UTM'.format(mean_lon, utm_zone))
-    sta_list_utm = deepcopy(sta_list_ell)
-    for idx, sta in enumerate(sta_list_utm):
-        N, E, Zone, lcm = ell2utm(sta.lat, sta.lon, Ellipsoid("wgs84"), lcm)
-        sta_list_utm[idx].lon = E
-        sta_list_utm[idx].lat = N
-        # assert Zone == utm_zone, "[ERROR] Invalid UTM Zone."
+    sta_list_utm, zone_num, zone_let = proj.ell2utm_list(sta_list_ell)
     vprint('[DEBUG] Station list transformed to UTM.')
 
     ##  Open file to write Strain Tensor estimates; write the header
@@ -476,14 +465,10 @@ if __name__ == '__main__':
             else:
                 fstats1 = fstats2 = fstats3 = fstats4 = None
             print('[DEBUG] Estimating strain tensors in multi-threading mode')
-            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd1.x_min, grd1.x_max, grd1.x_step, grd1.y_min, grd1.y_max, grd1.y_step))
-            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd2.x_min, grd2.x_max, grd2.x_step, grd2.y_min, grd2.y_max, grd2.y_step))
-            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd3.x_min, grd3.x_max, grd3.x_step, grd3.y_min, grd3.y_max, grd3.y_step))
-            #print('--> Thread will be given grid : X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(grd4.x_min, grd4.x_max, grd4.x_step, grd4.y_min, grd4.y_max, grd4.y_step))
-            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, lcm, fout1, fstats1, vprint), kwargs=dargs)
-            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, lcm, fout2, fstats2, vprint), kwargs=dargs)
-            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, lcm, fout3, fstats3, vprint), kwargs=dargs)
-            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, lcm, fout4, fstats4, vprint), kwargs=dargs)
+            p1 = multiprocessing.Process(target=compute__, args=(grd1, sta_list_utm, zone_num, zone_let, fout1, fstats1, vprint), kwargs=dargs)
+            p2 = multiprocessing.Process(target=compute__, args=(grd2, sta_list_utm, zone_num, zone_let, fout2, fstats2, vprint), kwargs=dargs)
+            p3 = multiprocessing.Process(target=compute__, args=(grd3, sta_list_utm, zone_num, zone_let, fout3, fstats3, vprint), kwargs=dargs)
+            p4 = multiprocessing.Process(target=compute__, args=(grd4, sta_list_utm, zone_num, zone_let, fout4, fstats4, vprint), kwargs=dargs)
             [ p.start() for p in [p1, p2, p3, p4]]
             [ p.join()  for p in [p1, p2, p3, p4]]
             for fl in [fout1, fout2, fout3, fout4]:
@@ -508,7 +493,7 @@ if __name__ == '__main__':
                         os.remove(".sta.thread"+str(fnr))
            
         else:
-            compute__(grd, sta_list_utm, lcm, fout, fstats, vprint, **dargs)
+            compute__(grd, sta_list_utm, zone_num, zone_let, fout, fstats, vprint, **dargs)
     else:
         ##  Using veis method. Compute delaunay triangles and estimate one tensor
         ##+ per triangle centre

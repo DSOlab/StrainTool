@@ -4,7 +4,7 @@
 from __future__ import print_function
 import math
 import numpy as np
-from pystrain.geodesy.ellipsoid import Ellipsoid
+from pystrain.geodesy.ellipsoid import Ellipsoid, normnalize_angle
 
 def top2daz(north, east, up):
     """Compute azimouth, zenith and distance from a topocentric vector.
@@ -86,6 +86,10 @@ def ell2car(phi, lamda, h, ell=Ellipsoid("wgs84")):
         Returns: 
             tuple (float): a 3-float tuple, as [x, y, z] in meters
     """
+    # normalize angles
+    lamda = normalize_angle(lamda, -math.pi, math.pi)
+    assert(phi>=-math.pi/2 and phi<=math.pi/2)
+
     # Eccentricity squared.
     e2 = ell.eccentricity_squared()
 
@@ -184,6 +188,8 @@ def car2ell(x, y, z, ell=Ellipsoid("wgs84")):
     if (z < 0.e0):
         phi = -phi
 
+    assert(lamda>=-math.pi and lamda<=math.pi)
+    assert(phi>=-math.pi/2 and phi<=math.pi/2)
     # Finished.
     return phi, lamda, h
 
