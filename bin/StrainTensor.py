@@ -291,6 +291,14 @@ if __name__ == '__main__':
     ##  Time the program (for opt/ing purpose only)
     start_time = time.time()
 
+    ## This is a fix for accepting negative min values for longitude, i.e. 
+    ## accespt a region switch as:
+    ## -r -1/2/3/4
+    ## User an still do --region=-1/2/3/4
+    for i, arg in enumerate(sys.argv):
+        if (arg[0] == '-' and arg[1].isdigit()):
+            sys.argv[i] = ' ' + arg
+
     ##  Parse command line arguments and stack them in a dictionary
     args  = parser.parse_args()
     dargs = vars(args)
@@ -386,7 +394,7 @@ if __name__ == '__main__':
         Napr = len(sta_list_ell)
         mean_lon, mean_lat = math.radians(lonmin+(lonmax-lonmin)/2e0), math.radians(latmin+(latmax-latmin)/2e0)
         bc =  Station(lon=mean_lon, lat=mean_lat)
-        endpt = Station(lon=radians(lonmax), lat=radians(latmax))
+        endpt = Station(lon=math.radians(lonmax), lat=math.radians(latmax))
         cutoffdis = abs(endpt.haversine_distance(bc)/1e3) # barycentre to endpoint (km)
         d = 2e0*(args.d_coef if args.d_coef is not None else args.dmax)
         cutoffdis += d * (2.15e0 if args.ltype == 'gaussian' else 10e0) # in km
