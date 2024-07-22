@@ -346,6 +346,8 @@ The history of releases can be viewed at [ChangeLog](.github/CHANGELOG.md)
 
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
 
+Geo-INQUIRE is funded by the European Commission under project number 101058518 within the HORIZON-INFRA-2021-SERV-01 call
+
 Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.
 
 ## References
