@@ -417,6 +417,7 @@ if __name__ == '__main__':
     print('{:^9s} {:^9s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s} {:^15s}'.format('deg', 'deg', 'mm/yr', 'mm/yr', 'deg/Myr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'nstrain/yr', 'deg.', 'nstrain/yr', 'nstrain/yr'), file=fout)
 
     ##  Compute only one Strain Tensor, at the region's barycenter; then exit.
+    ##  TODO this is an error now!
     if args.one_tensor:
         print('[DEBUG] Estimating Strain Tensor at region\'s barycentre.')
         if args.method == 'shen':
@@ -500,19 +501,20 @@ if __name__ == '__main__':
         ## Open file to write delaunay triangles.
         print('[DEBUG] Estimating Strain Tensors at the barycentre of Delaunay triangles')
         dlnout = open('delaunay_info.dat', 'w')
-        points = numpy.array([ [sta.lon, sta.lat] for sta in sta_list_utm ])
+        points = numpy.array([[sta.lon, sta.lat] for sta in sta_list_utm ])
         tri = Delaunay(points)
         print('[DEBUG] Number of Delaunay triangles: {}'.format(len(tri.simplices)))
         for idx, trng in enumerate(tri.simplices):
             print('[DEBUG] {:5d}/{:7d}'.format(idx+1, len(tri.simplices)), end="\r")
             ## triangle barycentre
-            cx = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
-            cy = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
+            bcE = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
+            bcN = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
+            bclon, bclat = proj.utm2ell_point(bcE, bcN, zone_num, zone_let) 
             ##  Construct a strain instance, at the triangle's barycentre, with only
             ##+ 3 points (in UTM) and equal_weights weighting scheme.
-            sstr = ShenStrain(cx, cy, cy<0e0, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
+            sstr = ShenStrain(bcE, bcN, bclon, bclat, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
             sstr.estimate()
-            sstr.print_details(fout, lcm)
+            sstr.print_details_v2(fout)
             ## Print the triangle in the corresponding file (ellipsoidal crd, degrees)
             print('> {:}, {:}, {:}'.format(sta_list_utm[trng[0]].name, sta_list_utm[trng[1]].name, sta_list_utm[trng[2]].name), file=dlnout)
             print('{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}\n{:+8.5f} {:8.5f}'.format(*[ degrees(x) for x in [sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat, sta_list_ell[trng[1]].lon, sta_list_ell[trng[1]].lat, sta_list_ell[trng[2]].lon, sta_list_ell[trng[2]].lat, sta_list_ell[trng[0]].lon, sta_list_ell[trng[0]].lat]]), file=dlnout)

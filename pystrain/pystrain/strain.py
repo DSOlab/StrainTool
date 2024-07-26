@@ -788,6 +788,7 @@ class ShenStrain:
     def info(self):
         return __strain_info__(self.__parameters__)
 
+    # Oboslete
     def print_details(self, fout):
         """Print Strain Tensor details
 
@@ -995,7 +996,7 @@ class ShenStrain:
             self.__vcv__ = None
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
-        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b, rcond=None)
         # Parameter variance-covariance matrix
         if m > 6:
             try:

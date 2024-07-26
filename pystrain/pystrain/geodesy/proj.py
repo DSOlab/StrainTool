@@ -30,3 +30,7 @@ def ell2utm_point(lon, lat, zone_num, zone_let):
     e, n, zn, zl = utm.from_latlon(math.degrees(lat), math.degrees(lon), zone_num, zone_let)
     assert(zn==zone_num and zl == zone_let)
     return e,n
+
+def utm2ell_point(E, N, zone_num, zone_let):
+    lat, lon = utm.to_latlon(E, N, zone_num, zone_let, None, False)
+    return math.radians(lon), math.radians(lat)
