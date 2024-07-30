@@ -24,18 +24,6 @@ echo ${pth2bin}
 
 # 10024015000211: --y-grid-step 0.5 --y-grid-step 0.5 --Wt 24 --dmin 1 --dmax 500 --dstep 2
 
-
-
-## test code m001_
-## File: midas001
-## Code: 0 1 1 0 0 24 01 500 02 1 0
-#testcode=0110024015000210
-#${pth2st}/bin/./StrainTensor.py -i ${pth2st}/data/valdata/midas001.vel --x-grid-step 1 --y-grid-step 1 -g
-
-#mv station_info.dat ${testcode}_station_info.dat
-#mv strain_info.dat ${testcode}_strain_info.dat
-#mv strain_stats.dat ${testcode}_strain_stats.dat
-
 ## Default test for different files
 for ivel in midas001.vel midas002.vel midas003.vel midas004.vel
 do
