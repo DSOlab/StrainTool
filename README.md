@@ -3,7 +3,6 @@
 Software package to calculate strain tensor parameters
 
 [![License MIT](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/DSOlab/StrainTool/blob/dev-danast/LICENSE)
-[![Build Status](https://api.travis-ci.com/DSOlab/StrainTool.svg?branch=travis_patch)](https://app.travis-ci.com/github/DSOlab/StrainTool)
 [![](https://img.shields.io/github/release/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/releases/latest)
 [![](https://img.shields.io/github/tag/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/tags) 
 [![](https://img.shields.io/github/stars/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/stargazers)

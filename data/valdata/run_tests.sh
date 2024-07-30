@@ -33,7 +33,7 @@ do
         do
             for dmax in 300 500 700
             do
-                testcode=0${ivel:7:1}${gstep:0:1}00${Wt}01${dmax}0210
+                testcode=1${ivel:7:1}${gstep:0:1}00${Wt}01${dmax}0210
                 ${pth2st}/bin/./StrainTensor.py -i ${pth2st}/data/valdata/${ivel} \
                     --x-grid-step ${gstep} \
                     --y-grid-step ${gstep} \
