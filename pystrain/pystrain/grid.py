@@ -38,12 +38,8 @@ class Grid:
     """
 
     def split2four(self):
-        if self.xpts % 2 !=0:
-            self.xpts += 1
-        if self.ypts % 2 !=0:
-            self.ypts += 1
-        x2 = self.x_min + (self.xpts/2)*self.x_step
-        y2 = self.y_min + (self.ypts/2)*self.y_step
+        x2 = self.x_min + (self.xpts//2)*self.x_step
+        y2 = self.y_min + (self.ypts//2)*self.y_step
         g1 = Grid(self.x_min, x2, self.x_step, self.y_min, y2, self.y_step)
         g2 = Grid(x2, self.x_max, self.x_step, self.y_min, y2, self.y_step)
         g3 = Grid(self.x_min, x2, self.x_step, y2, self.y_max, self.y_step)
