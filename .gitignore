@@ -42,3 +42,4 @@ station_info.dat
 
 # temporary test data
 test_data/
+*.log

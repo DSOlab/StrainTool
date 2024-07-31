@@ -3,7 +3,6 @@
 Software package to calculate strain tensor parameters
 
 [![License MIT](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/DSOlab/StrainTool/blob/dev-danast/LICENSE)
-[![Build Status](https://api.travis-ci.com/DSOlab/StrainTool.svg?branch=travis_patch)](https://app.travis-ci.com/github/DSOlab/StrainTool)
 [![](https://img.shields.io/github/release/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/releases/latest)
 [![](https://img.shields.io/github/tag/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/tags) 
 [![](https://img.shields.io/github/stars/DSOlab/StrainTool.svg)](https://github.com/DSOlab/StrainTool/stargazers)
@@ -78,7 +77,7 @@ That's it! The package modules should now be in place and you should be able to 
 
 The following scenarios have been tested to validate the installation procedure
 
-|    OS      |Python 2.7 | Python 3.6 | Python 3.9 | GMT 5.2 | GMT 5.4 | GMT 6.0
+|    OS      |Python 2.7 | Python 3.6 | Python 3.10 | GMT 5.2 | GMT 5.4 | GMT 6.3
 |:----------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|
 | Fedora     | :white_check_mark: |                    |                    | :white_check_mark: |                    |                    |
 | Manjaro    |                    | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: |
@@ -86,17 +85,34 @@ The following scenarios have been tested to validate the installation procedure
 | Windows 10 | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 
-## Example
+## Validate the installation
 
-To validate that the installation has succeded, you can run a "test case" scenario. Under the folder `data/`, you will find a file named `CNRS_midas.vel`. This ascii file, contains velocity and coordinate information for a large list of GPS/GNSS stations around the globe. We will use it to perform a test run of `StrainTensor.py`.
+To validate that the installation has succeeded, you can run various "test case" scenarios. In the `data/` folder, you will find a subfolder named `valdata/` that contains the script `runtests.py`. This script will execute all the validation tests and compare the results with the reference outputs.
 
-Go to the `bin/` folder and execute the command:
+We use four input files (`midas00[1-4].vel`), which are generated from the original station velocity file (`midas.IGS14.txt`) (*Blewitt, 2018*), within different grid boxes.
 
-    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c
+Reference results are produced using different parameters. The first 16 characters of the filename represent the various parameters as follows:
 
-_(You may not need the ./ part at the begining if you are on a Wnidows system)_. This command will compute Strain Tensor parameters for approximately the whole of Greece, using the input file `CNRS_midas.vel`. The results will be written in a (newly created) file, named `strain_info.dat`, while station information will be written in the file `station_info.dat` (this latter file is mainly used for plotting). You should be able to verify that both files have been succesefuly created.
-
-Under `data/` you will find the "reference" output files for checking, named `strain_info.dat.ref` and `station_info.dat.ref`. Verify that the files you have just created (placed under `bin/`) contain the same results as the "reference" files (this can be very easily performed using the [diff](https://www.gnu.org/software/diffutils/) command).
+```
+## Parameters codes
+# 1: [0: reference results 1:product]
+# 2: File   [1:midas001 2:midas002, 3:midas003, 4:midas004]
+# 3: step grid [0:0.5/0.5, 1:1/1, 2:0.25/0.25, 3:0.1/0.1 4:2/2]
+# 4: -c [0:no 1:yes]
+# 5: -b barycenter [0:False 1:set]
+# 6-7: Wt [<=99]
+# 8-9: dmin [< 100 km]
+# 10-12: dmax [001 - 999]
+# 13-14: dstep [01--99]
+# 15: -g generate statistics [0:False, 1:true]
+# 16: --multicore [0:False, 1:True]
+```
+Velocity files and reference results are stored at `refdata.7z`.
+All the files must  be extracted at `valdata/`  subfolder and then `runtests.py` pyhton script can executed with the follow command:
+```
+$> python runtests.py -p <path to StrainTool root path>
+```
+The script will run all the available tests and compare the results with the reference files to validate the installation.
 
 
 # How to use StrainTensor.py
@@ -153,11 +169,11 @@ The whole list of available options, is:
   -v                    Display version and exit. (default: False)
                         </samp></pre>
 
-For example, the command we used on the [Example](#straintensor_prg_example) section:
+For example, the command:
 
-    $> ./StrainTensor.py -i ../data/CNRS_midas.vel -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c -g
+    $> ./StrainTensor.py -i ../data/<input-file> -r 18.75/30.25/32.75/42.25 --x-grid-step=0.5 --y-grid-step=0.5 --dmin=1 --dmax=500 --dstep=1 --Wt=24 -c -g
 
-meant that we are estimating strain tensor parameters for the region within min/max longtitude: 18.75/30.25 degrees and min/max latitude: 32.75/42.25 degrees. We are seperating the region into cells of size 0.5 degrees and estimating one strain tensor in each cell centre (aka the first cell centre is $lon = lon_{min} + lon_{step}/2 = 18.75 + 0.5/2=19.0deg.$ and $lat = lat_{min} + lat_{step}/2 = 32.75 + 0.5/2 = 33.0deg.$, then next one will be at lon=19.5, lat=33.5, etc...). To estimate each strain tensor, the program will search for a "optimal" D coefficient within the range [1, 500) km with a step of 1km. This "optimal" D will be found when the condition $W = \sum_{n=1}^{\#sta*2} Z(i)*L(i) \geq W_t$ is met. The stations that will be used for the calculations are only those that fall within the specified longtitude/latitude range. For more information, see [Background and Algorithms](#bck_and_algorithms) section.
+meant that we are estimating strain tensor parameters for the region within min/max longtitude: 18.75/30.25 degrees and min/max latitude: 32.75/42.25 degrees. We are seperating the region into cells of size 0.5 degrees and estimating one strain tensor in each cell centre (aka the first cell centre is $lon = lon_{min} + lon_{step}/2 = 18.75 + 0.5/2=19.0deg.$ and $lat = lat_{min} + lat_{step}/2 = 32.75 + 0.5/2 = 33.0deg.$, then next one will be at lon=19.5, lat=33.5, etc...). To estimate each strain tensor, the program will search for a "optimal" D coefficient within the range [1, 500) km with a step of 1km. This "optimal" D will be found when the condition $W = \sum_{n=1}^{sta*2} Z(i)*L(i) \geq W_t$ is met. The stations that will be used for the calculations are only those that fall within the specified longtitude/latitude range. For more information, see [Background and Algorithms](#bck_and_algorithms) section.
 
 ## Input Files
 
@@ -168,7 +184,7 @@ To perform the computations, `StrainTensor.py` needs an input file, that holds i
 
 Station coordinates are provided in longtitude/latitude pairs in decimal degrees. Velocities and velocity standard deviations are provided in mm per years (mm/yr). `Sne` is the correlation coefficient between East and North velocity components and `time-span` is the total time span of the station timeseries in decimal degrees. _Note that at this point the last two columns (aka `Sne` and `time-span`) are not used, so they could have random values._
 
-There are no strict formating rules on how the individual elements should be printed (i.e. how many fields, decimal places, etc). The only condition is that fields are seperated by whitespace(s). To see an example of a valid input file, you can check `data/CNRS_midas.vel`.
+There are no strict formating rules on how the individual elements should be printed (i.e. how many fields, decimal places, etc). The only condition is that fields are seperated by whitespace(s). To see an example of a valid input file, you can check `data/valdata/valdata.7z/midas00[1-4].vel`.
 
 Note that when using the Shen method (aka --method='shen'), standard deviation values for north and east velocities (SigmaVe and SigmaVn) cannot be zero (see [#65](https://github.com/DSOlab/StrainTool/issues/65)).
 
@@ -308,6 +324,8 @@ For example, to plot the principal axis fo strain rates for the example case abo
 ## Significant Bugs Fixed
 **v1.0-rc2.0** The calculation of second invariant was corrected due to a mistake in the previous version (v1.0-rc1.0))
 
+## Known Issues
+* Calculating strains at the North or South Pole using UTM (Universal Transverse Mercator) is problematic because UTM zones converge at the poles, making it impractical for coordinate transformations from ellipsoid to projected coordinates in those regions. Working on that bug!!
 
 ## Contributing
 
@@ -325,11 +343,11 @@ The work is licensed under [MIT-license](LICENSE)
 
 
 ## Authors & Bug Reports
-**Dimitrios G. Anastasiou**
-> Dr. Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | dganastasiou@gmail.com
+**Prof. Dimitrios G. Anastasiou**
+> Assistant Professor NTUA | Dionysos Satellite Observatory - NTUA | [danastasiou@mail.ntua.gr](mailto:danastasiou@mail.ntua.gr)
 
-**Xanthos Papanikolaou**
-> Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
+**Dr. Xanthos Papanikolaou**
+> Dr. Rural & Surveying Engineer | Dionysos Satellite Observatory - NTUA | [xanthos@mail.ntua.gr](mailto:xanthos@mail.ntua.gr)
 
 **Dr. Athanassios Ganas**
 > Research Director | Institute of Geodynamics | National Observatory of Athens | [aganas@gein.noa.gr](mailto:aganas@gein.noa.gr)
@@ -342,9 +360,12 @@ The work is licensed under [MIT-license](LICENSE)
 The history of releases can be viewed at [ChangeLog](.github/CHANGELOG.md)
 
 ## Acknowlegments
-**EPOS IP - EPOS Implementation Phase**
 
-This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
+This project has received funding from:
+
+**EPOS IP - EPOS Implementation Phase** funded from  the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
+
+**Geo-INQUIRE** funded by the European Commission under project number 101058518 within the HORIZON-INFRA-2021-SERV-01 call
 
 Disclaimer: the content of this website reflects only the author’s view and the Commission is not responsible for any use that may be made of the information it contains.
 
@@ -355,7 +376,11 @@ Disclaimer: the content of this website reflects only the author’s view and th
 
 * Veis, G., Billiris, H., Nakos, B., and Paradissis, D. (1992), Tectonic strain in greece from geodetic measurements, C.R.Acad.Sci.Athens, 67:129--166
 
-* Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org
+* Python Software Foundation. Python Language Reference, versions 2.x/3.x. Available at http://www.python.org
 
 * [The Generic Mapping Tools - GMT](http://gmt.soest.hawaii.edu/)
+
+For validation data:
+
+* Blewitt, G., W. C. Hammond, and C. Kreemer (2018), Harnessing the GPS data explosion for interdisciplinary science, Eos, 99, [https://doi.org/10.1029/2018EO104623](https://doi.org/10.1029/2018EO104623).
 

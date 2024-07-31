@@ -38,10 +38,10 @@ class Grid:
     """
 
     def split2four(self):
-        x2 = self.x_min + (self.xpts/2)*self.x_step
-        y2 = self.y_min + (self.ypts/2)*self.y_step
+        x2 = self.x_min + (self.xpts//2)*self.x_step
+        y2 = self.y_min + (self.ypts//2)*self.y_step
         g1 = Grid(self.x_min, x2, self.x_step, self.y_min, y2, self.y_step)
-        g2 = Grid(x2, self.x_max, self.x_step, self.y_min, y2, self.y_step) 
+        g2 = Grid(x2, self.x_max, self.x_step, self.y_min, y2, self.y_step)
         g3 = Grid(self.x_min, x2, self.x_step, y2, self.y_max, self.y_step)
         g4 = Grid(x2, self.x_max, self.x_step, y2, self.y_max, self.y_step)
         #print('--> /grd1/: X:{:}/{:}/{:} Y:{:}/{:}/{:}'.format(g1.x_min, g1.x_max, g1.x_step, g1.y_min, g1.y_max, g1.y_step))
@@ -72,8 +72,8 @@ class Grid:
                 each of the axis (aka x and y), the function will perform a
                 computation of the type:
                 xpts = int(floor((x_max-x_min) / float(x_step)))
-                This is quite accurate, but due to roundoff errors, it may 
-                happen that the quantity x_min + xpts * x_step is just a bit 
+                This is quite accurate, but due to roundoff errors, it may
+                happen that the quantity x_min + xpts * x_step is just a bit
                 larger than x_max.
                 If the user definitely wants the formula:
                 x_min + self.xpts * x_step <= x_max to hold, then the option
@@ -117,7 +117,7 @@ class Grid:
 
     def xidx2xval(self, idx):
         """Index to value for x-axis.
-         
+
             Given an index (on x-axis), return the value at the centre of this
             cell. The index represents the number of a cell (starting from
             zero).
@@ -127,10 +127,10 @@ class Grid:
         """
         assert idx >= 0 and idx < self.xpts
         return self.x_min + self.x_step/2e0 + self.x_step*float(idx)
-    
+
     def yidx2yval(self, idx):
         """Index to value for y-axis.
-         
+
             Given an index (on y-axis), return the value at the centre of this
             cell. The index represents the number of a cell (starting from
             zero).
@@ -200,7 +200,7 @@ def generate_grid(sta_lst, x_step, y_step, sta_lst_to_deg=False):
             the y-axis)
 
         Todo:
-            The lines 
+            The lines
             assert divmod(y_max-y_min, y_step)[1] == 0e0 and
             assert divmod(x_max-x_min, x_step)[1] == 0e0
             may throw dues to rounding errors; how can i fix that?

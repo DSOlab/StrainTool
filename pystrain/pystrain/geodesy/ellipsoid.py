@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 from __future__ import print_function
-from math import cos, sin, sqrt
+from math import cos, sin, sqrt, ceil, floor
 
 ##  A dictionary holding standard reference ellipsoids. The keys are the
 ##+ ellipsoid names, and the respective values are the defining geometric
@@ -151,6 +151,20 @@ class Ellipsoid:
         if name == "b"   : return self.semi_minor()
         if name == "finv": return 1.0e0/self.f
         raise AttributeError
+
+def normalize_angle(num, lower=0.0, upper=360.0):
+    res = num
+    total_length = abs(lower) + abs(upper)
+    if num < -total_length:
+        num += ceil(num / (-2 * total_length)) * 2 * total_length
+    if num > total_length:
+        num -=floor(num / (2 * total_length)) * 2 * total_length
+    if num > upper:
+        num = total_length - num
+    if num < lower:
+        num = -total_length - num
+    res = num * 1.0  # Make all numbers float, to be consistent
+    return res
 
 if __name__ == "__main__":
     ell1 = Ellipsoid("grs80")

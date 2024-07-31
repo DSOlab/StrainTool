@@ -16,12 +16,12 @@ PAPER_SIZE="30cx30c" # width x height
 
 # //////////////////////////////////////////////////////////////////////////////
 # Set default REGION 
-west=17 #19.5
-east=30 #29
-south=34
-north=43 #42
-projscale=6000000
-frame=1
+west=95
+east=105
+south=-4
+north=6
+projscale=5000000
+frame=2
 
 # length of plot scale (Km)
 sclength=100
@@ -37,7 +37,7 @@ VSC=0.05
 strscmagn=100
 STRSC=.0080
 ROTSC=.65
-ROT_wedge_mag=1 #(deg/My)
+ROT_wedge_mag=0.5 #(deg/My)
 # strsclon=20.4 #delete
 # strsclat=36.3 #delete
 

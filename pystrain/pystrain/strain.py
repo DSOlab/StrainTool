@@ -11,7 +11,7 @@ from math import atan2, exp, sqrt, floor, pi, degrees
 import pystrain.grid
 from pystrain.station import Station
 from pystrain.strain import *
-from pystrain.geodesy.utm import *
+from pystrain.geodesy.proj import *
 from pystrain.iotools.iparser import *
 
 DEBUG_MODE = False
@@ -81,7 +81,7 @@ class ShenStrain:
             d = sqrt((__stalst__[i].lon - __xcmp__)^2 + (__stalst__[i].lat - __ycmp__)^2)
     """
 
-    def __init__(self, x=0e0, y=0e0, in_southern_hemisphere=False, station_list=[], **kwargs):
+    def __init__(self, x, y, lon, lat, station_list=[], **kwargs):
         """ ShenStrain constructor.
 
             Args:
@@ -99,8 +99,8 @@ class ShenStrain:
                     * dstep (float): step for range dmin, dmax (km)
                     * d_coef (float): optimal D value (km)
                     * cutoff_dis (float): cut off distance (km) --see Warning--
-                    * weighting_function (str): can be 'shen' (to use shen 
-                      weighting algorithm), or 'equal_weights' (to use equal 
+                    * weighting_function (str): can be 'shen' (to use shen
+                      weighting algorithm), or 'equal_weights' (to use equal
                       weights for all stations)
                     * verbose_mode (bool): sets verbose mode on if True; i.e.
                       print debugging messages.
@@ -115,12 +115,13 @@ class ShenStrain:
         self.__stalst__ = station_list
         self.__xcmp__   = x
         self.__ycmp__   = y
-        self.__in_shemisphere__ = in_southern_hemisphere
+        self.__lon__ = lon
+        self.__lat__ = lat
         self.__zweights__ = None
         self.__lweights__ = None
         self.__options__  = {
             'ltype': 'gaussian',
-            'Wt': 24, 
+            'Wt': 24,
             'dmin': 1,
             'dmax': 500,
             'dstep': 2,
@@ -132,7 +133,7 @@ class ShenStrain:
         self.__parameters__ = {
             'Ux':0e0,
             'Uy':0e0,
-            'omega':0e0, 
+            'omega':0e0,
             'taux':0e0,
             'tauxy':0e0,
             'tauy':0e0
@@ -151,7 +152,7 @@ class ShenStrain:
         self.vprint = print if self.__options__['verbose_mode'] else lambda *a, **k: None
 
     def clean_weight_matrices(self):
-        """ Set both distance and spatial weight lists (aka zweights and 
+        """ Set both distance and spatial weight lists (aka zweights and
             lweigts) to None.
         """
         self.__zweights__ = None
@@ -159,7 +160,7 @@ class ShenStrain:
 
     def filter_sta_wrt_distance(self, d=None):
         """ Filter instance's station list wrt the cutof distance.
-            
+
             This function will compute a cut-off distance:
                 COD = self.__options__['cutoff_dis'] * D
             and filter all stations in the instance's __stalst__ list. A new
@@ -172,7 +173,7 @@ class ShenStrain:
 
             Args:
                 d (float): parameter for computing the cut-off distance. If not
-                           provided, __options__['d_coef'] will be used. d 
+                           provided, __options__['d_coef'] will be used. d
                            should be provided in km.
 
             Returns:
@@ -200,27 +201,27 @@ class ShenStrain:
             for i,s in enumerate(nlst1):
                 assert s.name == nlst[i].name
         return nlst
-    
+
     def azimouths(self, other_sta_lst=None):
         """ Azimouth of line containing the instance's centre and each point.
-            
-            Get the azimouth of each line from central point (__xcmp__, __ycmp__) 
-            to each point in the other_sta_lst list. The computed azimouths 
-            are stored in a sorted list (aka azimouths). This list is made up 
+
+            Get the azimouth of each line from central point (__xcmp__, __ycmp__)
+            to each point in the other_sta_lst list. The computed azimouths
+            are stored in a sorted list (aka azimouths). This list is made up
             of dictionary elements, where each dictionary contains:
               1. the azimouth value (in radians) as 'az' and
               2. the index of the station in the other_sta_lst, as 'nr'.
-            To compute the azimouths, we need the ΔX and ΔY components, which 
+            To compute the azimouths, we need the ΔX and ΔY components, which
             are computed as:
                 ΔX = sta.lon-self.__xcmp__
                 ΔY = sta.lat-self.__ycmp__
                 az = atan2(ΔX, ΔY), normalized to [0, 2π)
             Obviously, all of these quantities **should** be in a cartesian RF.
             For example, if the instance's station list is:
-            [ankr, buku, dion, ...] and the function returns: 
+            [ankr, buku, dion, ...] and the function returns:
             [{'az':0.34, 'nr':2}, ..., {'az':3.01, 'nr':0}]
-            it means, that the line from the instance's centre to dion has an 
-            azimouth of 0.34 radians, the line from the instance's centre to 
+            it means, that the line from the instance's centre to dion has an
+            azimouth of 0.34 radians, the line from the instance's centre to
             ankr has an azimouth of 3.01 radians, etc...
             Note that sorted means **in ascending order** (obviously).
             If the user does not provide a other_sta_lst parameter, then
@@ -231,7 +232,7 @@ class ShenStrain:
                     If not provided, __stalst__ will be used.
 
            Returns:
-                (sorted) list: This list is made up of dictionary elements, 
+                (sorted) list: This list is made up of dictionary elements,
                 where each dictionary contains:
                     1. the azimouth value (in radians) as 'az' and
                     2. the index of the station in the other_sta_lst, as 'nr'.
@@ -254,10 +255,10 @@ class ShenStrain:
 
     def ls_matrices(self, sigma0=1):
         """ Construct Least Squares Matrices (A and b) to be solved for.
-        
+
             Matrix A is the "design matrix" and b is the observation vector.
             This function, will first compute the weight matrix (W). The
-            formulation of the weight matrix depends on the option 
+            formulation of the weight matrix depends on the option
             "weighting_function" of the instance (shen or equal_weights).
             Note that the computation of the weight matrix is actually performed
             via a call to this->make_weight_matrix().
@@ -274,18 +275,18 @@ class ShenStrain:
             A(i,:)   = (1, 0, Δx, Δy, 0, Δy)*W(i)
             A(i+1,:) = (0, 1, 0, Δx, Δy, -Δx)*W(i+1),
             where:
-            Δx is the distance (x-component) between station i and the 
+            Δx is the distance (x-component) between station i and the
                instance's centre in meters
-            Δy is the distance (y-component) between station i and the 
+            Δy is the distance (y-component) between station i and the
                instance's centre in meters
-            W(i) is the (scalar) square root of weight of station i, for the x 
+            W(i) is the (scalar) square root of weight of station i, for the x
                (or east) component
-            W(i+1) is the (scalar) square root of weight of station i, for the 
+            W(i+1) is the (scalar) square root of weight of station i, for the
                y (or north) component
             For the matrix (actually vector) b, the function will form:
             b(i)   = sta.ve * W(i)
             b(i+1) = sta.vn * W(i+1)
-            
+
             If we solve A\b, we' ll end up with the parameter vector:
             [ Ux, Uy, τx, τxy, τy, ω ]**T
             The number of rows in A and b matrices, will be:
@@ -306,9 +307,9 @@ class ShenStrain:
         N = len(self.__stalst__)*2
         ## number of columns (parameters)
         M = 6
-        ## the weights, i.e. σ0 * W(i)
-        W = sigma0 * self.make_weight_matrix()
-        assert W.shape == (N,1)
+        ## the weights, i.e. σ0 * W(i); collapse matrix to 1d array
+        W = sigma0 * self.make_weight_matrix(True)
+        assert(W.ndim == 1)
         ##  Distances, dx and dy for each station from (cx, cy). Each element
         ##+ of the array is xyr = [ ... (dx, dy, dr) ... ]
         cc  = Station(lon=self.__xcmp__, lat=self.__ycmp__)
@@ -329,7 +330,7 @@ class ShenStrain:
         assert i == N, "[DEBUG] Failed to construct ls matrices"
         return A, b
 
-    def make_weight_matrix(self):
+    def make_weight_matrix(self, flatten=False):
         """ Construct the square root of weight matrix W <- P^(1/2)
 
             This function will construct the weight matrix to be used for
@@ -354,14 +355,19 @@ class ShenStrain:
             If weighting scheme is 'equal weights', then the function will
             return a weight matrix with all elements equal to 1.
 
+            By default, the function will return W as a 2-DIM matrix (i.e. a
+            column matrix of size Nx1); if the parameter 'flatten' is set to
+            true, then the function will return a 'collapsed' 1-DIM version
+            of the matrix/vector.
+
             Returns:
-                numpy matrix (Nx1): The weight matrix computed, of size 
+                numpy matrix (Nx1): The weight matrix computed, of size
                 (2*len(__stalst__),1), where
                 W[0] <- weight of __stalst__[0] x component
                 W[1] <- weight of __stalst__[0] y component
                 W[2] <- weight of __stalst__[1] x component
                 [ ... ]
-            
+
             Note:
                 If using the 'shen' weighting scheme, then the L and Z weights
                 should have already been computed.
@@ -387,15 +393,15 @@ class ShenStrain:
             #pass
         else:
             raise RuntimeError("[ERROR] Invalid weighting function option")
-        return W
+        return W if not flatten else W.flatten('C')
 
     def z_weights(self, other_sta_lst=None):
         """ Compute spatial (i.e. azimouthal coverage) weights, accordin to
             Shen et al, 2015
-        
+
             Given a list of Stations, compute and return the function:
             Z(i) = n*θ(i) / 4π
-            which is used as a weighting function fom strain estimation in Shen 
+            which is used as a weighting function fom strain estimation in Shen
             et al, 2015, see Equation (5a).
             The individual station weights are returned in a list, in the
             order they were passed in in the other_sta_lst list.
@@ -412,7 +418,7 @@ class ShenStrain:
 
             Returns:
                 list of floats: Each element in the list is the weight of the
-                    respective station in the input station list (aka 
+                    respective station in the input station list (aka
                     len(list) == len(other_sta_lst))
 
             Warning:
@@ -435,9 +441,9 @@ class ShenStrain:
         """ Compute θ angles, aka next minus the previous point.
 
             Make a list of the 'theta' angles; for each point i, the theta angle
-            is an azimouth difference, of the previous (i-1) minus the next 
+            is an azimouth difference, of the previous (i-1) minus the next
             point (i+1). All of the θ angles will be in the range (0, 2π).
-               
+
                P(i-1)
                 \
                  \           P(i)
@@ -452,7 +458,7 @@ class ShenStrain:
                           \
                            \
                            P(i+1)
-            
+
             Args:
                 other_sta_lst: A list of Station instances. For each one a θ (theta)
                     angle is computed and returned. If not given, the instance's
@@ -482,7 +488,7 @@ class ShenStrain:
 
     def l_weights(self, other_sta_lst=None):
         """ Compute distance-dependent weights.
-        
+
             Compute L(i) for each of the points in the station list sta_lst,
             where
                 L(i) = exp(-ΔR(i)**2/D**2) -- Gaussian, or
@@ -518,7 +524,7 @@ class ShenStrain:
             l_i = quadratic
         else:
             raise RuntimeError("[ERROR] Invalid distance-dependent weighting function")
-        
+
         stalst = self.__stalst__ if other_sta_lst is None else other_sta_lst
 
         #  Distances for each point from center in km.
@@ -552,7 +558,7 @@ class ShenStrain:
                     * compute L-weights
                     * compute W = Sum{l(i)*z(i)} for i=1, ..., len(newstalst)
                     * if int(W) >= Wt stop
-            
+
             Note:
                 The function will use the instance's:
                     __options__['dmin']
@@ -564,7 +570,7 @@ class ShenStrain:
 
             Returns:
                 a tuple with elements:
-                -- list (floats): the lweights (i.e. distance weights) computed 
+                -- list (floats): the lweights (i.e. distance weights) computed
                     with the optimal D coeff.
                 -- list (floats): the zweights (i.e. spatial weights) computed
                     with the optimal D coeff
@@ -621,7 +627,7 @@ class ShenStrain:
             Returns:
                 list (float): The β angles (all in range [0, 2π)). The length
                     of the returned list, is the length of __stalst__ minus one.
-                    Note that the β angles are **not in correspondance** with 
+                    Note that the β angles are **not in correspondance** with
                     the __stalst__ list (aka, β[0] is not the angle between
                     __stalst__[0] and __stalst__[1]).
         """
@@ -662,7 +668,7 @@ class ShenStrain:
             passed in (as params_cov).
 
             The variance-covariance matrix, must be a numpy.array of size
-            6x6. It is assumed, that the rows concering the τx, τxy, τy 
+            6x6. It is assumed, that the rows concering the τx, τxy, τy
             parameters, are in indexes [2,5), i.e. the var-covar matrix is of
             type:
             | σ_Ux^2  σ_UxUy  σ_Uxτx σ_Uxτxy  σ_Uxτy   σ_Uxω  | (row 0)
@@ -671,7 +677,7 @@ class ShenStrain:
             | .       .       .      σ_τxy^2  σ_τxyτy  σ_τxyω | (row 3)
             | .       .       .      .        σ_τy^2   σ_τyω  | (row 4)
             | .       .       .      .        .        σ_ω^2  | (row 5)
-        col:  0       1       2      3        4         5       
+        col:  0       1       2      3        4         5
 
             Actualy, to perform the calculation, the function is going to cut
             the submatrix params_cov[2:5, 2:5], so all other elements could
@@ -703,7 +709,7 @@ class ShenStrain:
         x2  = self.__parameters__['tauxy']  ## strain/yr
         x3  = self.__parameters__['tauy']   ## strain/yr
         cov = pi / 180e0
-        ##  estimate principle strain rates emax, emin, maximum shear tau_max, 
+        ##  estimate principle strain rates emax, emin, maximum shear tau_max,
         ##+ and dextral tau_max azimuth
         emean = (x1+x3) / 2e0               ## strain/yr
         ediff = (x1-x3) / 2e0               ## strain/yr
@@ -782,7 +788,8 @@ class ShenStrain:
     def info(self):
         return __strain_info__(self.__parameters__)
 
-    def print_details(self, fout, utm_lcm=None):
+    # Oboslete
+    def print_details(self, fout):
         """Print Strain Tensor details
 
             With details, we mean the following parameters:
@@ -797,7 +804,7 @@ class ShenStrain:
             Args:
                 fout (output stream): the (already opened) output stream where
                     the details will be written
-                utm_zone (int): If given, then the instance's __xcmp__ and 
+                utm_zone (int): If given, then the instance's __xcmp__ and
                     __ycmp__ will be considered UTM Easting and Northing
                     coordinates in the given Zone, and will be transformed to
                     longtitude and latitude before the actual writting takes
@@ -806,10 +813,7 @@ class ShenStrain:
                 if the instance's __vcv__ is None (aka we have no var-covar
                 matrix), then the sigmas will be printed as '-'
         """
-        if utm_lcm:
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
-        else:
-            cx, cy = self.__xcmp__,  self.__ycmp__
+        cy, cx = math.degrees(self.__lat__), math.degrees(self.__lon__)
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
             dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
@@ -839,13 +843,9 @@ class ShenStrain:
             self.value_of('tauy')*1e9, novar, \
             emax*1e9, novar, emin*1e9, novar, taumax*1e9, \
             novar, azim, novar, dilat*1e9, novar, sec_inv*1e9, novar), file=fout)
-    
-    def print_details_v2(self, fout, utm_lcm=None):
-        if utm_lcm:
-            #cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , utm_zone) ]
-            cy, cx = [ degrees(c) for c in utm2ell(self.__xcmp__, self.__ycmp__ , None, Ellipsoid("wgs84"), utm_lcm, self.__in_shemisphere__ and utm_lcm>0) ]
-        else:
-            cx, cy = self.__xcmp__,  self.__ycmp__
+
+    def print_details_v2(self, fout):
+        cy, cx = math.degrees(self.__lat__), math.degrees(self.__lon__)
         emean, ediff, taumax, staumax, emax, semax, emin, semin, azim, sazim, \
             dilat, sdilat, sec_inv, ssec_inv =  self.cmp_strain(self.__vcv__)
         if self.__vcv__ is not None:
@@ -881,7 +881,7 @@ class ShenStrain:
         """Kinda getter.
 
             This function provides easy access to the instance's attributes,
-            specifically the ones in dictionaries. 
+            specifically the ones in dictionaries.
 
             Args:
                 Any of the following:
@@ -899,7 +899,7 @@ class ShenStrain:
         if key in self.__options__:
             return self.__options__[key]
         raise RuntimeError
-    
+
     def set_xy(self, x, y):
         """ Set the x,y values of the instance.
 
@@ -996,7 +996,7 @@ class ShenStrain:
             self.__vcv__ = None
         ##  Note: To silence warning in versions > 1.14.0, use a third argument,
         ##+ rcond=None; see https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html
-        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b)
+        estim, res, rank, sing_vals = numpy.linalg.lstsq(A, b, rcond=None)
         # Parameter variance-covariance matrix
         if m > 6:
             try:

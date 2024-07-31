@@ -16,11 +16,11 @@ PAPER_SIZE="30cx30c" # width x height
 
 # //////////////////////////////////////////////////////////////////////////////
 # Set default REGION 
-west=25
-east=50
-south=-30
-north=22
-projscale=20000000
+west=-5.5
+east=6.5
+south=38.5
+north=45.5
+projscale=5500000
 frame=2
 
 # length of plot scale (Km)
@@ -34,10 +34,10 @@ logo_pos="BL/.1c/.1c"
 vscmagn=20
 VSC=0.05
 
-strscmagn=100
-STRSC=.0080
-ROTSC=.65
-ROT_wedge_mag=1 #(deg/My)
+strscmagn=10
+STRSC=.080
+ROTSC=1 #.65
+ROT_wedge_mag=0.1 #(deg/My)
 # strsclon=20.4 #delete
 # strsclat=36.3 #delete
 

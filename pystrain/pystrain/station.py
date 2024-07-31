@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from math import sqrt, radians, sin, cos, atan2, pi, asin
+import math
+import sys
 
 # Any Station instance, can have any (or all) of these attributes
 station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
@@ -97,8 +98,8 @@ class Station:
         l = input_line.split()
         try:
             self.name = l[0]
-            self.lon  = radians(float(l[1]))
-            self.lat  = radians(float(l[2]))
+            self.lon  = math.radians(float(l[1]))
+            self.lat  = math.radians(float(l[2]))
             self.ve   = float(l[3]) / 1e3
             self.vn   = float(l[4]) / 1e3
             self.se   = float(l[5]) / 1e3
@@ -124,6 +125,24 @@ class Station:
         self.sn   = None
         self.rho  = None
         self.t    = None
+
+    def normalize_geodetic_crd(self, trigger_ofb_error=False):
+        if self.lat < -math.pi/2 or self.lat > math.pi/2:
+            print('[WRNNG] Invalid latitude {:.3f} for station {:}'.format(math.degrees(self.lat), self.name), file=sys.stderr)
+            raise RuntimeError('Latitude out-of-bounds')
+        if self.lon < -math.pi or self.lon > math.pi:
+            print('[WRNNG] Invalid longitude {:.3f} for station {:}; '.format(math.degrees(self.lon), self.name), end='', file=sys.stderr)
+            if trigger_ofb_error:
+                print('', file=sys.stderr)
+                raise RuntimeError('Longitude out-of-bounds')
+            else:
+                if self.lon < -math.pi:
+                    while self.lon < -math.pi: self.lon += 2*math.pi
+                if self.lon > math.pi:
+                    while self.lon < -math.pi: self.lon -= 2*math.pi
+                assert (self.lon >= -math.pi and self.lon < math.pi)
+                print('reset lon to {:.3f}'.format(math.degrees(self.lon)), file=sys.stderr)
+        return
 
     def distance_from(self, sta):
         '''Distance to another station.
@@ -158,7 +177,7 @@ class Station:
         '''
         dlon = sta.lon - self.lon
         dlat = sta.lat - self.lat
-        return dlon, dlat, sqrt(dlat*dlat + dlon*dlon)
+        return dlon, dlat, math.sqrt(dlat*dlat + dlon*dlon)
     
     def squared_distance_from(self, sta):
         '''Squared distance to another station.
@@ -210,10 +229,10 @@ class Station:
             """
             latarc = frm.lat - to.lat
             lonarc = frm.lon - to.lon
-            lath   = sin(latarc*0.5e0)
+            lath   = math.sin(latarc*0.5e0)
             lath  *= lath
-            lonh   = sin(lonarc*0.5e0)
+            lonh   = math.sin(lonarc*0.5e0)
             lonh  *= lonh
-            tmp    = cos(frm.lat) * cos(to.lat)
-            return 2e0 * asin(sqrt(lath + tmp*lonh))
+            tmp    = math.cos(frm.lat) * math.cos(to.lat)
+            return 2e0 * math.asin(math.sqrt(lath + tmp*lonh))
         return R*ArcInRadians(self, sta)
