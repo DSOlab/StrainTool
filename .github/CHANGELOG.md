@@ -1,5 +1,30 @@
 # Changelog
 
+## [v1.1](https://github.com/DSOlab/StrainTool/tree/v1.1) (2024-07-31)
+[Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0-r1...v1.1)
+
+**Implemented enhancements:**
+
+- Create a couple of validation tests [\#78](https://github.com/DSOlab/StrainTool/issues/78)
+
+**Fixed bugs:**
+
+- Multicore bug  for the output grid [\#80](https://github.com/DSOlab/StrainTool/issues/80)
+- Problem when the grid cover the longitude 0 [\#77](https://github.com/DSOlab/StrainTool/issues/77)
+- unable to reproduce the test [\#76](https://github.com/DSOlab/StrainTool/issues/76)
+- multicore proc error for Windows 10 [\#71](https://github.com/DSOlab/StrainTool/issues/71)
+
+**Closed issues:**
+
+- Add the main article to the project [\#74](https://github.com/DSOlab/StrainTool/issues/74)
+- Bug with Multiple UMT zones and the veis method [\#73](https://github.com/DSOlab/StrainTool/issues/73)
+- No Example input file [\#68](https://github.com/DSOlab/StrainTool/issues/68)
+
+**Merged pull requests:**
+
+- Dev11 [\#81](https://github.com/DSOlab/StrainTool/pull/81) ([demanasta](https://github.com/demanasta))
+- 77 problem when the grid cover the longitude 0 [\#79](https://github.com/DSOlab/StrainTool/pull/79) ([demanasta](https://github.com/demanasta))
+
 ## [v1.0-r1](https://github.com/DSOlab/StrainTool/tree/v1.0-r1) (2021-09-11)
 
 [Full Changelog](https://github.com/DSOlab/StrainTool/compare/v1.0...v1.0-r1)
