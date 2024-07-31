@@ -7,6 +7,10 @@ import argparse
 import subprocess
 import atexit
 
+RED = '\033[91m'
+GREEN = '\033[92m'
+RESET = '\033[0m'
+
 def fileql(f1, f2, start_at_line=None):
     cmp_started = 0
     with open(f1, 'r') as fin1:
@@ -103,6 +107,8 @@ if __name__ == '__main__':
                             print('ERROR. Failed locating reference result file {:}'.format(rfn), file=sys.stderr);
                             sys.exit(6)
                         if not fileql('{:}'.format(ref_type[1:]), rfn, start_at):
-                            print('{:140s} Failed@{:}'.format(' '.join([exe]+cmd), ref_type[1:]))
+                            #print('{:140s} Failed (@{:})'.format(' '.join([exe]+cmd), ref_type[1:]))
+                            print('{:140s}'.format(' '.join([exe]+cmd)) + RED + ' Failed ' + RESET + '(@{:})'.format(ref_type[1:]))
                         else:
-                            print('{:140s} Passed (@{:})'.format(' '.join([exe]+cmd), ref_type[1:]))
+                            #print('{:140s} Passed (@{:})'.format(' '.join([exe]+cmd), ref_type[1:]))
+                            print('{:140s}'.format(' '.join([exe]+cmd)) + GREEN + ' Passed ' + RESET + '(@{:})'.format(ref_type[1:]))

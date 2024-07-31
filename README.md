@@ -87,11 +87,32 @@ The following scenarios have been tested to validate the installation procedure
 
 ## Validate the installation
 
-To validate that the installation has succeded, you can run many "test case" scenarios. Under the folder `data/`, in the folder `valdata/` you will find a script that will run all the validation tests and will make the comparison with the reference results. 
+To validate that the installation has succeeded, you can run various "test case" scenarios. In the `data/` folder, you will find a subfolder named `valdata/` that contains the script `runtests.py`. This script will execute all the validation tests and compare the results with the reference outputs.
 
-We use four input files (`midas00[1-4].vel`) produced from the original station velocity file ([midas.IGS14.txt](http://geodesy.unr.edu/velocities/midas.IGS14.txt)) (*Blewitt, 2018*) in different grid boxes.
+We use four input files (`midas00[1-4].vel`), which are generated from the original station velocity file (`midas.IGS14.txt`) (*Blewitt, 2018*), within different grid boxes.
 
+Reference results are produced using different parameters. The first 16 characters of the filename represent the various parameters as follows:
 
+```
+## Parameters codes
+# 1: [0: reference results 1:product]
+# 2: File   [1:midas001 2:midas002, 3:midas003, 4:midas004]
+# 3: step grid [0:0.5/0.5, 1:1/1, 2:0.25/0.25, 3:0.1/0.1 4:2/2]
+# 4: -c [0:no 1:yes]
+# 5: -b barycenter [0:False 1:set]
+# 6-7: Wt [<=99]
+# 8-9: dmin [< 100 km]
+# 10-12: dmax [001 - 999]
+# 13-14: dstep [01--99]
+# 15: -g generate statistics [0:False, 1:true]
+# 16: --multicore [0:False, 1:True]
+```
+Velocity files and reference results are stored at `refdata.7z`.
+All the files must  be extracted at `valdata/`  subfolder and then `runtests.py` pyhton script can executed with the follow command:
+```
+$> python runtests.py -p <path to StrainTool root path>
+```
+The script will run all the available tests and compare the results with the reference files to validate the installation.
 
 
 # How to use StrainTensor.py
@@ -304,7 +325,7 @@ For example, to plot the principal axis fo strain rates for the example case abo
 **v1.0-rc2.0** The calculation of second invariant was corrected due to a mistake in the previous version (v1.0-rc1.0))
 
 ## Known Issues
-
+* Calculating strains at the North or South Pole using UTM (Universal Transverse Mercator) is problematic because UTM zones converge at the poles, making it impractical for coordinate transformations from ellipsoid to projected coordinates in those regions. Working on that bug!!
 
 ## Contributing
 
@@ -340,7 +361,7 @@ The history of releases can be viewed at [ChangeLog](.github/CHANGELOG.md)
 
 ## Acknowlegments
 
-This project has received funding from
+This project has received funding from:
 
 **EPOS IP - EPOS Implementation Phase** funded from  the European Union’s Horizon 2020 research and innovation programme under grant agreement N° 676564
 
