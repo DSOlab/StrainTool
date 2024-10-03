@@ -2,9 +2,10 @@
 
 import math
 import sys
+import copy
 
 # Any Station instance, can have any (or all) of these attributes
-station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't']
+station_member_names = ['name', 'lat', 'lon', 've', 'vn', 'se', 'sn', 'rho', 't', 'technique']
 
 class Station:
     '''A simple Station class.
@@ -37,6 +38,7 @@ class Station:
             rho (float): correlation coefficient between East and North velocity
                          components
             t (float)  : time-span in decimal years
+            technique (char): 'G' for GNSS, 'S' for SAR
             
     '''
 
@@ -69,6 +71,7 @@ class Station:
                     * sn
                     * rho
                     * t
+                    * technique
         '''
         self.set_none()
 
@@ -106,6 +109,7 @@ class Station:
             self.sn   = float(l[6]) / 1e3
             self.rho  = float(l[7]) / 1e3
             self.t    = float(l[8])
+            self.technique = 'g' # default
         except:
             print('[DEBUG] Invalid Station instance constrution.')
             print('[DEBUG] Input line \"{}\"'.format(input_line.strip()))
@@ -125,6 +129,21 @@ class Station:
         self.sn   = None
         self.rho  = None
         self.t    = None
+        self.technique = None
+
+    def __str__(self):
+        cp = copy.deepcopy(self)
+        if cp.ve is None: cp.ve = math.nan
+        if cp.se is None: cp.se = math.nan
+        if cp.vn is None: cp.vn = math.nan
+        if cp.sn is None: cp.sn = math.nan
+        if cp.rho is None: cp.rho = math.nan
+        if cp.t is None: cp.t = math.nan
+        return "{:} {:+.3f} {:+.3f} {:+.6f} +/- {:.6f} {:+.6f} +/- {:.6f} {:} {:}".format(
+            "-" if cp.name is None else cp.name, 
+            cp.lon, cp.lat, 
+            cp.ve, cp.se, cp.vn, cp.sn, cp.technique, 
+            cp.t)
 
     def normalize_geodetic_crd(self, trigger_ofb_error=False):
         if self.lat < -math.pi/2 or self.lat > math.pi/2:

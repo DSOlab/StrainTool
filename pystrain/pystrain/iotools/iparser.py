@@ -1,6 +1,7 @@
 from pystrain.station import Station
+import math
 
-def parse_ascii_input(filename, zero_std_is_error=False):
+def parse_ascii_gnss_input(filename, zero_std_is_error=False):
   """Parse station info from an input file.
 
       This function will try to read Stations of from the input file, named
@@ -45,5 +46,33 @@ def parse_ascii_input(filename, zero_std_is_error=False):
       
        ## append station
       stations.append(nSta)
+
+  return stations if len(stations)>0 else None
+
+def parse_ascii_sar_input(filename, zero_std_is_error=False):
+  """Parse station info from an input file.
+
+      Args:
+          filename (string): the name of the file holding station info (see
+                             description above).
+          zero_std_is_error (bool): if set to True, then the function will throw
+                             if a station has zero std. deviation for either the
+                             north or east component (or both)
+
+      Returns:
+          list of Station instances or None (if no station was read)
+
+  """
+  stations = []
+  with open(filename) as fin:
+    for line in fin.readlines():
+        if not line.startswith('#'):
+            if not line.split()[-1] == 'nan':
+                lon, lat, ve = [ float(x) for x in line.split() ]
+                nSta=Station(**{'lon': math.radians(lon), 'lat': math.radians(lat), 've': ve, 'technique': 's'})
+                ## check that geodetic coordinates fall within valid range
+                nSta.normalize_geodetic_crd(True)
+                ## append station
+                stations.append(nSta)
 
   return stations if len(stations)>0 else None

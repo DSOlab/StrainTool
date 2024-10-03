@@ -15,6 +15,7 @@ from pystrain.strain import *
 import pystrain.geodesy.proj as proj
 from pystrain.iotools.iparser import *
 import pystrain.grid
+from pystrain.velintrp import *
 
 Version = 'StrainTensor.py Version: 1.0-r1'
 STRAIN_OUT_FILE = 'strain_info.dat'
@@ -36,9 +37,10 @@ def crop_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
         (they are supposed to be in radians).
     """
     def f(sta):
-        lon, lat = math.degrees(sta.lon),math.degrees(sta.lat) if sta_list_to_degrees else sta.lon, sta.lat
+        lon, lat = (math.degrees(sta.lon),math.degrees(sta.lat)) if sta_list_to_degrees else (sta.lon, sta.lat)
         return (lon >= xmin and lon <= xmax) and (lat >= ymin and lat <= ymax)
-    return filter(f, sta_lst)
+    # return filter(f, sta_lst)
+    return [ pt for pt in sta_lst if f(pt) ]
 
 def write_station_info(sta_lst, filename='station_info.dat'):
     """ Write station information to an output file. sta_list if a list of
@@ -152,12 +154,19 @@ Send bug reports to:
   Dimitris Anastasiou,dganastasiou@gmail.com
 September, 2021'''))
 
-parser.add_argument('-i', '--input-file',
+parser.add_argument('-i', '--gps-file',
     default=argparse.SUPPRESS,
-    metavar='INPUT_FILE',
+    metavar='GPS_INPUT_FILE',
     dest='gps_file',
     required=True,
     help='The input file. This must be an ascii file containing the columns: \'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span\'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.')
+
+parser.add_argument('-s', '--sar-file',
+    default=argparse.SUPPRESS,
+    metavar='SAR_INPUT_FILE',
+    dest='sar_file',
+    required=False,
+    help='')
 
 parser.add_argument('--x-grid-step',
     default=0.5,
@@ -330,23 +339,49 @@ if __name__ == '__main__':
     fstats = open(STATISTICS_FILE, 'w') if args.generate_stats else None
     if fstats: print_model_info(fstats, sys.argv, dargs)
 
+    ##  GNSS Data section
+    ## --------------------------------
     ##  Parse stations from input file; at input, station coordinates are in 
     ##  decimal degrees and velocities are in mm/yr.
     ##  After reading, station coordinates are in radians and velocities are 
     ##  in m/yr.
     if not os.path.isfile(args.gps_file):
-        print('[ERROR] Cannot find input file \'{}\'.'.format(
+        print('[ERROR] Cannot find GNS input file \'{}\'.'.format(
             args.gps_file), file=sys.stderr)
         sys.exit(1)
     try:
-        sta_list_ell = parse_ascii_input(args.gps_file, args.zero_vel_std_is_error)
+        sta_list_ell = parse_ascii_gnss_input(args.gps_file, args.zero_vel_std_is_error)
     except ValueError as err:
         print(err)
-        print('[ERROR] Failed to parse input file: \"{:}\"'.format(args.gps_file))
+        print('[ERROR] Failed to parse GNSS input file: \"{:}\"'.format(args.gps_file))
         sys.exit(1)
     print('[DEBUG] Reading station coordinates and velocities from {}'.format(
         args.gps_file))
     print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
+    
+    ##  SAR Data section
+    ## --------------------------------
+    ##  Parse stations from input file; at input
+    ##  After reading, station coordinates are in radians and velocities are 
+    ##  in m/yr.
+    if args.sar_file:
+        if not os.path.isfile(args.sar_file):
+            print('[ERROR] Cannot find SAR input file \'{}\'.'.format(
+                args.sar_file), file=sys.stderr)
+            sys.exit(1)
+        try:
+            sta_list2_ell = parse_ascii_sar_input(args.sar_file)
+        except ValueError as err:
+            print(err)
+            print('[ERROR] Failed to parse SAR input file: \"{:}\"'.format(args.sar_file))
+            sys.exit(1)
+
+        print('[DEBUG] Reading station coordinates and velocities from {}'.format(
+            args.sar_file))
+        print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list2_ell)))
+
+        ## merge SAR and GNSS data
+        sta_list_ell += sta_list2_ell
 
     ##  If a region is passed in, resolve it (from something like 
     ##+ '21.0/23.5/36.0/38.5'). Note that limits are in dec. degrees.
@@ -372,6 +407,7 @@ if __name__ == '__main__':
             ## TODO we should exit with error here
             print('[ERROR] Failed to parse region argument \"{:}\"'.format(
                 args.region), file=sys.stderr)
+            sys.exit(9)
 
     ##  Filter out stations that are never going to be used. This is an opt!
     ##  This is only needed when the used has specified:
@@ -409,6 +445,14 @@ if __name__ == '__main__':
     ##+ cartesian (projection) coordinates are in meters.
     sta_list_utm, zone_num, zone_let = proj.ell2utm_list(sta_list_ell)
     vprint('[DEBUG] Station list transformed to UTM.')
+
+    ## Interpolate vn velocities for SAR data points, using the GNSS data
+    ##+ points
+    sta_list_utm = interpolate_sar_from_gnss(sta_list_utm)
+
+    for entry in zip(sta_list_utm, sta_list_ell):
+        print("{:.6f} {:.6f} {:}".format(math.degrees(entry[1].lon), math.degrees(entry[1].lat), entry[0]))
+    sys.exit(2)
 
     ##  Open file to write Strain Tensor estimates; write the header
     fout = open(STRAIN_OUT_FILE, 'w')
