@@ -290,7 +290,8 @@ parser.add_argument('-v',
     help='Display version and exit.',
     action='store_true')
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
+def main():
     ##  Wait!! maybe the user just paseed in "-v" without an input file. Do not
     ##+ resolve the parser yet (it ll cause an error)
     if len(sys.argv[1:]) == 1 and sys.argv[1] == "-v":
@@ -568,3 +569,6 @@ if __name__ == '__main__':
     ##  Before exiting, write the station information to a file
     write_station_info(sta_list_ell)
     print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))
+
+if __name__ == "__main__":
+    main()

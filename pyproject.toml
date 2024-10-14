@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pystrain"
+version = "1.1.2"
+#dynamic = ["version",]
+authors = [
+  { name="Demitris Anastasiou", email="danastasiou@mail.ntua.gr" },
+  { name="Xanthos Papanikolaou", email="xanthos@mail.ntua.gr" },
+  { name="Athanasios Ganas", email="aganas@noa.gr" },
+]
+description = "Python Strain Tensor estimation."
+readme = "README.md"
+requires-python = ">=3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  'numpy',
+  'scipy',
+  'utm'
+]
+
+[project.urls]
+Homepage = "https://dsolab.github.io/StrainTool/"
+Repository = "https://github.com/DSOlab/StrainTool"
+Issues = "https://github.com/DSOlab/StrainTool/issues"
+
+[project.scripts]
+StrainTensor = "bin.StrainTensor:main"
+
+# Specify the packages/modules
+[tool.hatch.build]
+include = ["pystrain/", "bin/"]
+
+[tool.hatch.build.targets.sdist]
+include = ["pystrain/", "bin/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["pystrain/", "bin/"]
+
+# [tool.hatch.version]
+# path = "src/satellite/version.py"

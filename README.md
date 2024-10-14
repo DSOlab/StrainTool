@@ -55,12 +55,17 @@ To install the Project, you will need:
 *   [python](https://www.python.org/downloads/); the installation has been tested under Versions 2.7 and 3.6 and both work fine.
 *   [NumPy](http://www.numpy.org/); NumPy is the fundamental package for scientific computing with Python.
 *   [SciPy](https://www.scipy.org/); SciPy is a Python-based ecosystem of open-source software for mathematics, science, and engineering. Actually, we are only using the [SciPy.linalg](https://docs.scipy.org/doc/scipy/reference/linalg.html) and [SciPy.spatial](https://docs.scipy.org/doc/scipy/reference/spatial.html) modules.
+*   [utm](https://github.com/Turbo87/utm); handles bidirectional UTM-WGS84 convertions
 
 Both `NumPy` and `SciPy` have extended installation guides for most, if not all, operating systems.
+
+<span style="color:blue">Note that if you install the software as described below, dependencies ([NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [utm](https://github.com/Turbo87/utm)) will be automatically installed</span>
 
 To use the [Plot Tools](#plot_tools_pck) bundle, you must have [GMT](http://gmt.soest.hawaii.edu/) (> 5.0.0) installed, along with a variety of UNIX-based tools. If you are on a UNIX/Linux operating system, most or all of them are pre-installed.
 
 ## Installation Procedure
+
+### Version 1.0
 
 To install the Project, you actualy only need to install the [pystrain](pystrain_pkg) package. What this means, is that python will see that the package modules are build and extracted to a suitable folder on your local system (something like `/usr/lib/python2.7/site-packages/` on a UNIX-like system). After this step, you will be able to make use of the modules in the package, both for running `StrainTool.py` and for any new program you may wish to code. [StrainTensor.py](#straintensor_prg) and [Plot Tools](#plot_tools_pck) are programs, so you do not to "install" them.
 
@@ -72,6 +77,25 @@ To install [pystrain](#pystrain_pkg), do the following:
         $> python setup.py install
 
 That's it! The package modules should now be in place and you should be able to use the main script, [StrainTensor.py](#straintensor_prg)
+
+### Version >= 1.1
+
+Since version 1.1, the build procedure has been a bit more simplified, using 
+[pip](https://packaging.python.org/en/latest/guides/installing-using-linux-tools/) and  
+[hatch](https://hatch.pypa.io/latest/). 
+
+Steps:
+
+*  make sure you have Hatch installed; if not, you can install it via `pip install hatch`
+*  go to the top-level directory (i.e. where the `pyproject.toml` file is located) and run: `hatch build`. This will create a `dist/` directory with the build artifacts (such as a `.whl` file). 
+*  then, you can install the project using: `pip install dist/pystrain-0.1.0-py3-none-any.whl`
+*  once installed, you can test if the executable works by running it from the command line, i.e. `StrainTool --version`
+
+### Install in Editable Mode (for version >= 1.1)
+
+Editable mode allows you to make changes to your project and have them reflected immediately without having to reinstall it every time. This is great for development.
+
+To install in editable mode, run the following command from the root of the project (where the `pyproject.toml` is located): `pip install -e`
 
 ### Installation tests
 
