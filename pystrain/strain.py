@@ -159,7 +159,7 @@ class ShenStrain:
         self.__lweights__ = None
 
     def filter_sta_wrt_distance(self, d=None):
-        """ Filter instance's station list wrt the cutof distance.
+        """ Filter instance's station list wrt the cut-off distance.
 
             This function will compute a cut-off distance:
                 COD = self.__options__['cutoff_dis'] * D
@@ -167,6 +167,7 @@ class ShenStrain:
             station list will be returned, containing only stations that are
             less (or equal to) COD km apart from the instance's centre (aka
             __xcmp__, __ycmp__) point.
+
             If the input parameter d is provided, then the function will use
             that as D, else the function will use self.__options__['d_coef']
             as D (in COD computation).
