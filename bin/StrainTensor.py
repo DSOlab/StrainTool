@@ -27,7 +27,7 @@ def crop_rectangle(xmin, xmax, ymin, ymax, sta_lst, sta_list_to_degrees=False):
         |       |
         +-------+--ymin
         |       |
-        xmin    xmax 
+        xmin    xmax
         The function will return a new list, where for each of the stations,
         the following is true:
             * xmin <= station.lon <= xmax and
@@ -59,7 +59,7 @@ def write_station_info(sta_lst, filename='station_info.dat'):
             file=fout)
         for idx, sta in enumerate(sta_lst):
             print('{:10s} {:+10.5f} {:10.5f} {:+7.2f} {:+7.2f} {:+7.3f} {:+7.3f}'.format(
-                sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03, 
+                sta.name, degrees(sta.lon), degrees(sta.lat), sta.ve*1e03,
                 sta.vn*1e03, sta.se*1e03, sta.sn*1e03), file=fout)
     return
 
@@ -102,8 +102,8 @@ def compute__(igrd, sta_list_utm, utm_zone, utm_letter, fout, fstats, vprint_fun
         Warning:
             The output streams are passed in open but are closed by the function!
             Leaving the streams open, may cause not proper reporting of results
-            in Python v2.x and in multithreading mode (probably the streams are 
-            not flushed before returning or something). Anyway, always close the 
+            in Python v2.x and in multithreading mode (probably the streams are
+            not flushed before returning or something). Anyway, always close the
             streams before exiting.
     """
     node_nr, nodes_estim = 0, 0
@@ -162,7 +162,7 @@ parser.add_argument('-i', '--gps-file',
     help='The input file. This must be an ascii file containing the columns: \'station-name longtitude latitude Ve Vn SigmaVe SigmaVn Sne time-span\'. Longtitude and latitude must be given in decimal degrees; velocities (in east and north components) in mm/yr. Columns should be seperated by whitespaces. Note that at his point the last two columns (aka Sne and time-span) are not used, so they could have random values.')
 
 parser.add_argument('-s', '--sar-file',
-    default=argparse.SUPPRESS,
+    default=None,
     metavar='SAR_INPUT_FILE',
     dest='sar_file',
     required=False,
@@ -301,7 +301,7 @@ def main():
     ##  Time the program (for opt/ing purpose only)
     start_time = time.time()
 
-    ## This is a fix for accepting negative min values for longitude, i.e. 
+    ## This is a fix for accepting negative min values for longitude, i.e.
     ## accespt a region switch as:
     ## -r -1/2/3/4
     ## User an still do --region=-1/2/3/4
@@ -330,7 +330,7 @@ def main():
                 cpu_count))
         else:
             print("[DEBUG] Multithreading is only available when using shen method; ignoring the \"--multicore\" switch!")
-    
+
 	## import dill module for windows multithreading processing
     if args.multiproc_mode and os.name == 'nt':
         print("[DEBUG] Import dill module for windows multithreading processing")
@@ -342,9 +342,9 @@ def main():
 
     ##  GNSS Data section
     ## --------------------------------
-    ##  Parse stations from input file; at input, station coordinates are in 
+    ##  Parse stations from input file; at input, station coordinates are in
     ##  decimal degrees and velocities are in mm/yr.
-    ##  After reading, station coordinates are in radians and velocities are 
+    ##  After reading, station coordinates are in radians and velocities are
     ##  in m/yr.
     if not os.path.isfile(args.gps_file):
         print('[ERROR] Cannot find GNS input file \'{}\'.'.format(
@@ -359,11 +359,11 @@ def main():
     print('[DEBUG] Reading station coordinates and velocities from {}'.format(
         args.gps_file))
     print('[DEBUG] Number of stations parsed: {}'.format(len(sta_list_ell)))
-    
+
     ##  SAR Data section
     ## --------------------------------
     ##  Parse stations from input file; at input
-    ##  After reading, station coordinates are in radians and velocities are 
+    ##  After reading, station coordinates are in radians and velocities are
     ##  in m/yr.
     if args.sar_file:
         if not os.path.isfile(args.sar_file):
@@ -384,18 +384,18 @@ def main():
         ## merge SAR and GNSS data
         sta_list_ell += sta_list2_ell
 
-    ##  If a region is passed in, resolve it (from something like 
+    ##  If a region is passed in, resolve it (from something like
     ##+ '21.0/23.5/36.0/38.5'). Note that limits are in dec. degrees.
-    ##+ If cutting out-of-limits stations option is set, or method is veis, 
+    ##+ If cutting out-of-limits stations option is set, or method is veis,
     ##+ then  only keep the stations that fall within it.
-    ##  The region coordinates (min/max pairs) should be given in decimal 
+    ##  The region coordinates (min/max pairs) should be given in decimal
     ##+ degrees.
     if 'region' in args:
         try:
             lonmin, lonmax, latmin, latmax = [ float(i) for i in args.region.split('/') ]
             if args.cut_outoflim_sta or args.method == 'veis':
                 Napr = len(sta_list_ell)
-                #  Note that we have to convert radians to degrees for station 
+                #  Note that we have to convert radians to degrees for station
                 #+ coordinates, hence 'sta_list_to_degrees=True'
                 sta_list_ell = crop_rectangle(lonmin, lonmax, latmin, latmax, sta_list_ell, True)
                 Npst = len(sta_list_ell)
@@ -442,7 +442,7 @@ def main():
 
     ##  Make a new station list (copy of the original one), where all coordinates
     ##+ are in UTM. All points should belong to the same ZONE.
-    ##  Note that station ellipsoidal coordinates are in radians while the 
+    ##  Note that station ellipsoidal coordinates are in radians while the
     ##+ cartesian (projection) coordinates are in meters.
     sta_list_utm, zone_num, zone_let = proj.ell2utm_list(sta_list_ell)
     vprint('[DEBUG] Station list transformed to UTM.')
@@ -474,12 +474,12 @@ def main():
         sstr.print_details(fout, utm_lcm)
         fout.close()
         write_station_info(sta_list_ell)
-        print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))      
+        print('[DEBUG] Total running time: {:10.2f} sec.'.format((time.time() - start_time)))
         sys.exit(0)
 
     if args.method == 'shen':  ## Going for Shen algorithm ...
         ##  Construct the grid, in ellipsoidal coordinates --degrees--. If a region
-        ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs 
+        ##+ is not passed in, the grid.generate_grid will transform lon/lat pairs
         ##+ to degrees and produce a grid from extracting min/max crds from the
         ##+ station list.
         if 'region' in args:
@@ -537,7 +537,7 @@ def main():
                         with open(".sta.thread"+str(fnr), "r") as slave_f:
                             fstats.write(slave_f.read())
                         os.remove(".sta.thread"+str(fnr))
-           
+
         else:
             compute__(grd, sta_list_utm, zone_num, zone_let, fout, fstats, vprint, **dargs)
     else:
@@ -554,7 +554,7 @@ def main():
             ## triangle barycentre
             bcE = (sta_list_utm[trng[0]].lon + sta_list_utm[trng[1]].lon + sta_list_utm[trng[2]].lon)/3e0
             bcN = (sta_list_utm[trng[0]].lat + sta_list_utm[trng[1]].lat + sta_list_utm[trng[2]].lat)/3e0
-            bclon, bclat = proj.utm2ell_point(bcE, bcN, zone_num, zone_let) 
+            bclon, bclat = proj.utm2ell_point(bcE, bcN, zone_num, zone_let)
             ##  Construct a strain instance, at the triangle's barycentre, with only
             ##+ 3 points (in UTM) and equal_weights weighting scheme.
             sstr = ShenStrain(bcE, bcN, bclon, bclat, [sta_list_utm[trng[0]], sta_list_utm[trng[1]], sta_list_utm[trng[2]]], weighting_function='equal_weights')
